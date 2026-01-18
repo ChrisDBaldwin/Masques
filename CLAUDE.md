@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Masque is an agent identity framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling five components: intent, context, knowledge, access, and lens. The semantics mirror AWS IAM but extend beyond permissions to include knowledge pointers and cognitive framing.
 
-**Status**: Design documentation complete. Zig implementation in progress.
+**Status**: Design documentation complete. Zig CLI partially implemented (list/show commands work via DuckDB).
 
 ## Key Concepts
 
@@ -21,6 +21,7 @@ Masque is an agent identity framework — "AssumeRole for Agents." A masque is a
 masque/
 ├── README.md                       # Project overview and quick start
 ├── CLAUDE.md                       # This file
+├── AGENTS.md                       # Agent-specific instructions
 ├── docs/
 │   ├── concepts.md                 # The five components explained
 │   ├── trust-rings.md              # Continuous qualification model
@@ -30,12 +31,16 @@ masque/
 │   └── reflection.md               # Reflection model for observability
 ├── schemas/
 │   └── masque.schema.yaml          # Formal JSON Schema for masques
-├── personas/                       # Masque definitions
+├── personas/                       # Masque definitions (YAML source)
 │   └── codesmith.masque.yaml       # Example masque
+├── entities/
+│   └── masques/                    # Runtime masque data (JSON)
+│       └── codesmith.masque.json   # JSON version queried by CLI
 ├── src/                            # Zig implementation
-│   ├── main.zig
-│   └── root.zig
-└── build.zig                       # Zig build system
+│   ├── main.zig                    # CLI entry point (list, show, validate, help)
+│   └── root.zig                    # Library module
+├── build.zig                       # Zig build system
+└── build.zig.zon                   # Zig package manifest (zuckdb dependency)
 ```
 
 ## Build Commands
@@ -55,13 +60,27 @@ zig build test         # Run tests
 5. Composable — masques can form teams
 6. Graceful revocation — sessions wind down with dignity
 
+## CLI Commands
+
+```bash
+masque list              # List all masques (queries entities/masques/*.json)
+masque show <name>       # Show detailed masque information
+masque validate          # Validate masque definitions (stub)
+masque help              # Show help
+```
+
 ## Implementation Notes
 
-Masques are defined in `.masque.yaml` files — a declarative DSL validated against `schemas/masque.schema.yaml`.
+Masques are defined in `.masque.yaml` files — a declarative DSL validated against `schemas/masque.schema.yaml`. The CLI currently reads JSON from `entities/masques/`.
 
-The Zig runtime will provide:
-- YAML parsing and schema validation
+**Implemented:**
+- CLI with list/show commands
+- DuckDB integration for JSON queries (via zuckdb)
+
+**Not yet implemented:**
+- YAML parsing (CLI reads JSON, not YAML)
+- Schema validation
 - Intent pattern matching (glob-style allowed/denied)
 - MCP URI resolution for knowledge pointers
 - Session management (don/doff lifecycle)
-- Reflection queries via DuckDB
+- Credential minting
