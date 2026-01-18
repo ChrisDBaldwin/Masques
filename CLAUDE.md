@@ -19,17 +19,19 @@ Masque is an agent identity framework — "AssumeRole for Agents." A masque is a
 
 ```
 masque/
-├── README.md                       # Main design document
+├── README.md                       # Project overview and quick start
 ├── CLAUDE.md                       # This file
 ├── docs/
+│   ├── concepts.md                 # The five components explained
+│   ├── trust-rings.md              # Continuous qualification model
+│   ├── teams.md                    # Multi-agent patterns
+│   ├── implementation.md           # Masques as programs
 │   ├── schema.md                   # Schema reference guide
 │   └── reflection.md               # Reflection model for observability
 ├── schemas/
 │   └── masque.schema.yaml          # Formal JSON Schema for masques
 ├── personas/                       # Masque definitions
 │   └── codesmith.masque.yaml       # Example masque
-├── rings/
-│   └── README.md                   # Full trust ring model
 ├── src/                            # Zig implementation
 │   ├── main.zig
 │   └── root.zig
@@ -50,7 +52,7 @@ zig build test         # Run tests
 2. Session-scoped — masques are temporary
 3. Pointer-based — knowledge is looked up, not contained
 4. Versioned — pin to versions, upgrade deliberately
-5. Composable — masques can form teams (tank/healer/DPS pattern)
+5. Composable — masques can form teams
 6. Graceful revocation — sessions wind down with dignity
 
 ## Implementation Notes
