@@ -2,6 +2,9 @@
 zig-out/
 .zig-cache/
 
+# Claude session state
+.claude/masque.local.md
+
 # Binaries
 *.exe
 *.bin
