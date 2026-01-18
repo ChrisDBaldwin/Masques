@@ -58,7 +58,7 @@ Semantic version string. Masques are pinned to versions; upgrading is deliberate
 ring: admin|player|guest|outsider
 ```
 
-Determines who can assume this masque. See `rings/README.md` for full model.
+Determines who can assume this masque. See [trust-rings.md](trust-rings.md) for full model.
 
 | Ring | Qualification |
 |------|---------------|

@@ -10,27 +10,23 @@ Traditional IAM operates on "once trusted, trusted until revoked." Communities k
 
 Masques don't change. They're the definition of what a role requires, what it grants, what it expects. But whether an entity can don a masque is evaluated *continuously*. You were a great admin once? Doesn't matter. Your incentives shifted. You don't qualify anymore. No masque.
 
-This is the corruption problem solved: someone who *has* a role but *shouldn't* is a failure of continuous qualification. Rings aren't about what you were granted — they're about what you currently qualify for.
+This is the corruption problem solved: someone who *has* a role but *shouldn't* is a failure of continuous qualification. Rings aren't about what you were granted—they're about what you currently qualify for.
 
-## Communities as Graphs
+## The Two Questions
 
-Communities are graphs with opaque connections. Some edges are clear, some hidden. Some nodes are large and important, others peripheral. The structure is tree-like but messier — the environment in which the community exists shapes what's possible.
+| System | Question |
+|--------|----------|
+| AWS IAM | "Do you have permission?" |
+| Trust Rings | "Do you *still* qualify?" |
 
-Communities are vulnerable to:
-- **Privilege escalation through impersonation** — pretending to be something you're not
-- **Trust decay** — someone who once qualified no longer does
-- **Misaligned incentives** — the community's structure rewards the wrong behavior
-- **Corruption** — an admin who shouldn't be anywhere near power
-
-These are graph problems. IAM is a graph system. The mathematical webbing is the same — roles, trust relationships, policy evaluation. But traditional IAM ignores the temporal dimension. It asks "do you have permission?"
-
-Rings ask: **"do you still qualify?"**
+The first is static. The second is continuous.
 
 ## The Four Rings
 
 Rings represent current relationship to the system, not historical grants.
 
 ### Admin
+
 *Full trust. The operator.*
 
 **Qualification**: Currently aligned with system goals. Currently competent. Currently accountable. Has skin in the game at the highest level.
@@ -42,6 +38,7 @@ Rings represent current relationship to the system, not historical grants.
 ---
 
 ### Player
+
 *Trusted participant. Has skin in the game.*
 
 **Qualification**: Currently invested in outcomes. Currently contributing value. Currently honest in dealings. Incentives are aligned with the community.
@@ -53,9 +50,10 @@ Rings represent current relationship to the system, not historical grants.
 ---
 
 ### Guest
+
 *Temporary access. Supervised.*
 
-**Qualification**: Currently supervised by a higher ring. Currently scoped to specific tasks. Explicitly temporary — there's an end condition.
+**Qualification**: Currently supervised by a higher ring. Currently scoped to specific tasks. Explicitly temporary—there's an end condition.
 
 **Can assume**: Limited masques with hard boundaries. Scoped sessions that expire.
 
@@ -64,15 +62,41 @@ Rings represent current relationship to the system, not historical grants.
 ---
 
 ### Outsider
+
 *No trust. Public interface only.*
 
 **Qualification**: None required. This is the default state. No relationship, no trust, no access beyond what's public.
 
-**Can assume**: Public masques only — personas designed for zero-trust interaction.
+**Can assume**: Public masques only—personas designed for zero-trust interaction.
 
 **Risk**: Impersonation. An outsider pretending to be a higher ring. The system must verify qualification, not assume it.
 
----
+## Communities as Graphs
+
+Communities are graphs with opaque connections. Some edges are clear, some hidden. Some nodes are large and important, others peripheral. The structure is tree-like but messier—the environment in which the community exists shapes what's possible.
+
+Communities are vulnerable to:
+
+| Threat | Description |
+|--------|-------------|
+| Privilege escalation | Pretending to be something you're not |
+| Trust decay | Someone who once qualified no longer does |
+| Misaligned incentives | The structure rewards the wrong behavior |
+| Corruption | An admin who shouldn't be anywhere near power |
+
+These are graph problems. IAM is a graph system. The mathematical webbing is the same—roles, trust relationships, policy evaluation. But traditional IAM ignores the temporal dimension.
+
+## Continual Approval
+
+Qualification isn't a self-check. It requires ongoing non-disapproval from higher rings. Teachers know students; students see peers and maybe the teacher's friends. The hierarchy is visible downward, opaque upward.
+
+## Tournament Merit
+
+Promotion happens through demonstrated competence under environmental circumstance. You don't apply for a ring—you earn it through action. Hierarchy is ephemeral, constantly challenged, as it should be.
+
+## No Ring Skipping
+
+You cannot skip rings unless you're founding the community. Founders start at the center. Everyone else climbs. The center is principled elders who care about the world, not the clan's survival for its own sake.
 
 ## For Agents
 
@@ -80,7 +104,7 @@ This matters even more for agents than humans. Agents don't have persistent iden
 
 This is a feature, not a bug. Humans accumulate trust (and corruption) over time. Agents start fresh. The masque is the constant; qualification is proven, not assumed.
 
-```
+```bash
 # Every assumption is an evaluation
 claude assume masque:homelab --reason "deploying monitoring"
 
@@ -90,7 +114,9 @@ claude assume masque:homelab --reason "deploying monitoring"
 
 ## Qualification Signals
 
-How do you know if someone still qualifies? Some signals:
+How do you know if someone still qualifies?
+
+### For Humans
 
 - **Recency of contribution** — are they still active?
 - **Alignment of actions** — do recent actions match stated goals?
@@ -98,15 +124,24 @@ How do you know if someone still qualifies? Some signals:
 - **Vouching** — do other qualified members still vouch for them?
 - **Behavior patterns** — does their usage match expected patterns?
 
-For agents, qualification might include:
+### For Agents
+
 - **Session context** — what triggered this assumption?
 - **Request patterns** — is this a reasonable ask?
 - **Audit history** — how have previous assumptions gone?
 - **Explicit authorization** — did a higher ring approve this?
 
-## The Temporal Dimension
+## IAM Mapping
 
-AWS asks: "Do you have permission?"
-Rings ask: "Do you *still* qualify?"
+The semantics mirror AWS AssumeRole:
 
-The masque is stable. The entity is not. Qualification is continuous.
+| IAM AssumeRole | Masque |
+|----------------|--------|
+| Role ARN | Masque identifier |
+| Trust policy | Who can don this masque (rings) |
+| Permission policy | What access it grants |
+| Session token | The active masque session |
+| Session duration | How long before it expires |
+| Role session name | Intent—why it was assumed |
+
+But extended beyond permissions to include knowledge, cognitive lens, and stated intent. And unlike IAM, qualification is continuous, not just at assumption time.
