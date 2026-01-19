@@ -21,7 +21,7 @@ pub fn main() !void {
         try cmdList(allocator);
     } else if (std.mem.eql(u8, command, "show")) {
         if (args.len < 3) {
-            std.debug.print("Usage: masque show <name>\n", .{});
+            std.debug.print("Usage: masques show <name>\n", .{});
             return;
         }
         try cmdShow(allocator, args[2]);
@@ -38,9 +38,9 @@ pub fn main() !void {
 
 fn printUsage() void {
     const usage =
-        \\masque - agent identity framework
+        \\masques - agent identity framework
         \\
-        \\Usage: masque <command> [args]
+        \\Usage: masques <command> [args]
         \\
         \\Commands:
         \\  list              List all masques

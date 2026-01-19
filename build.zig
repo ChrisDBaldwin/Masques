@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) void {
     // If neither case applies to you, feel free to delete the declaration you
     // don't need and to put everything under a single module.
     const exe = b.addExecutable(.{
-        .name = "masque",
+        .name = "masques",
         .root_module = b.createModule(.{
             // b.createModule defines a new module just like b.addModule but,
             // unlike b.addModule, it does not expose the module to consumers of
@@ -213,13 +213,13 @@ pub fn build(b: *std.Build) void {
         b.installArtifact(masque_exe);
     }
 
-    // install-masques step - copy binaries to ~/.masque/bin/
-    const install_masques_step = b.step("install-masques", "Install masque binaries to ~/.masque/bin/");
+    // install-masques step - copy binaries to ~/.masques/bin/
+    const install_masques_step = b.step("install-masques", "Install masque binaries to ~/.masques/bin/");
 
     // Create install directory
     const mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p" });
     const home = std.process.getEnvVarOwned(b.allocator, "HOME") catch "/tmp";
-    const install_dir = b.fmt("{s}/.masque/bin", .{home});
+    const install_dir = b.fmt("{s}/.masques/bin", .{home});
     mkdir_cmd.addArg(install_dir);
     install_masques_step.dependOn(&mkdir_cmd.step);
 

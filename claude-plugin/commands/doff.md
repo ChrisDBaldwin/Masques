@@ -1,5 +1,5 @@
 ---
-name: masque:doff
+name: masques:doff
 description: Doff the current masque - release the active identity and return to baseline
 arguments: []
 ---
@@ -10,7 +10,7 @@ You are doffing (removing) the current masque.
 
 ## Instructions
 
-1. **Read current state** from `.claude/masque.local.md`
+1. **Read current state** from `.claude/masques.local.md`
 
 2. **If no masque is active:**
    - Report "No masque is currently active."

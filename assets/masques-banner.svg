@@ -235,7 +235,7 @@
 
   <!-- MASQUE Logo (bottom-right corner) -->
   <g transform="translate(590, 225)">
-    <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="bold" fill="url(#goldGrad)">MASQUE</text>
+    <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="bold" fill="url(#goldGrad)">MASQUES</text>
     <text x="0" y="20" font-family="'Courier New', monospace" font-size="9" fill="#9B59B6" letter-spacing="1">SELECT IDENTITY</text>
   </g>
 

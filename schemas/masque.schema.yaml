@@ -5,7 +5,7 @@
 # intent, context, knowledge, access, and lens.
 
 $schema: "https://json-schema.org/draft/2020-12/schema"
-$id: "https://masque.dev/schemas/masque.schema.yaml"
+$id: "https://masques.ai/schemas/masque.schema.yaml"
 title: Masque
 description: A temporary cognitive identity for agents
 

@@ -18,7 +18,7 @@ Masque is an agent identity framework — "AssumeRole for Agents." A masque is a
 ## Directory Structure
 
 ```
-masque/
+masques/
 ├── README.md                       # Project overview and quick start
 ├── CLAUDE.md                       # This file
 ├── AGENTS.md                       # Agent-specific instructions
@@ -63,10 +63,10 @@ zig build test         # Run tests
 ## CLI Commands
 
 ```bash
-masque list              # List all masques (queries entities/masques/*.json)
-masque show <name>       # Show detailed masque information
-masque validate          # Validate masque definitions (stub)
-masque help              # Show help
+masques list              # List all masques (queries entities/masques/*.json)
+masques show <name>       # Show detailed masque information
+masques validate          # Validate masque definitions (stub)
+masques help              # Show help
 ```
 
 ## Implementation Notes

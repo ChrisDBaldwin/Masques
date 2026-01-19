@@ -97,7 +97,7 @@ The masque runtime (Zig implementation in progress) provides:
 
 ```bash
 # Validate a masque definition
-masque validate personas/codesmith.masque.yaml
+masques validate personas/codesmith.masque.yaml
 ```
 
 ### Intent Pattern Matching

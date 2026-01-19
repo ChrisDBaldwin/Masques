@@ -1,5 +1,5 @@
 ---
-name: masque:list
+name: masques:list
 description: List all available masques
 arguments: []
 ---
@@ -33,5 +33,5 @@ Display all available masques that can be donned.
    - Report: "No masques found in entities/masques/"
    - Suggest checking that masque JSON files exist
 
-5. **Indicate current masque** (if any) by checking `.claude/masque.local.md`:
+5. **Indicate current masque** (if any) by checking `.claude/masques.local.md`:
    - Mark the active masque with `*` or `(active)`
