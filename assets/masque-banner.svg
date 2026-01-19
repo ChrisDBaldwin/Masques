@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="50%" style="stop-color:#DAA520"/>
+      <stop offset="100%" style="stop-color:#B8860B"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9B59B6"/>
+      <stop offset="100%" style="stop-color:#4A235A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="280" fill="#0D0D0D"/>
+
+  <style>
+    .mask { font-family: 'Courier New', Consolas, monospace; font-size: 14px; }
+    .gold { fill: url(#goldGrad); }
+    .purple { fill: #9B59B6; }
+    .dim { fill: #4A235A; }
+    .bright { fill: #FFD700; }
+    .shadow { fill: #2D1B4E; }
+  </style>
+
+  <!-- ASCII Theatrical Mask -->
+  <g transform="translate(180, 20)">
+    <!-- Outer frame decorations -->
+    <text x="0" y="14" class="mask dim">                 .-"""-.                          .-"""-.                 </text>
+    <text x="0" y="28" class="mask purple">              .'         `.                      .'         `.              </text>
+    <text x="0" y="42" class="mask gold">             /   O     O   \                    /   .     .   \             </text>
+    <text x="0" y="56" class="mask gold">            :                :                  :                :            </text>
+    <text x="0" y="70" class="mask gold">            |    \     /    |                  |    \     /    |            </text>
+    <text x="0" y="84" class="mask bright">           :      '---'      :                :      .---.      :           </text>
+    <text x="0" y="98" class="mask gold">            \  '---------'  /                  \  '---------'  /            </text>
+    <text x="0" y="112" class="mask purple">             `.           .'                    `.           .'             </text>
+    <text x="0" y="126" class="mask dim">               '-._____.-'                        '-._____.-'               </text>
+
+    <!-- Connecting ribbons -->
+    <text x="0" y="154" class="mask shadow">          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~          </text>
+    <text x="0" y="168" class="mask purple">                              A S S U M E   R O L E                              </text>
+    <text x="0" y="182" class="mask shadow">          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~          </text>
+  </g>
+
+  <!-- Title -->
+  <text x="400" y="230" text-anchor="middle" font-family="'Georgia', serif" font-size="48" font-weight="bold" fill="url(#goldGrad)">MASQUE</text>
+  <text x="400" y="258" text-anchor="middle" font-family="'Georgia', serif" font-size="16" fill="#9B59B6" font-style="italic">Temporary Identities for Autonomous Agents</text>
+</svg>
