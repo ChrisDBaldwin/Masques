@@ -75,17 +75,46 @@ lens: |
 ```
 
 ```bash
-# Assume the masque with stated intent
-claude assume masque:codesmith@v0.1.0 --intent "implementing YAML parser"
+# Don the masque (Claude Code command)
+/don codesmith "implementing YAML parser"
 
 # Work happens with full identity context...
 
-# Session ends, masque doffed automatically
+# Doff when done
+/doff
+```
+
+## Installation
+
+```bash
+# As a Claude Code plugin
+claude plugins add github:ChrisDBaldwin/Masque
+
+# Or from source
+git clone https://github.com/ChrisDBaldwin/Masque.git
+cd Masque && zig build
+./scripts/postinstall.sh
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/don <masque> [intent]` | Assume a masque identity |
+| `/doff` | Release current masque |
+| `/whoami` | Show active masque info |
+
+**Binary commands** (for mesh networking):
+```bash
+codesmith announce          # Broadcast presence via mDNS
+codesmith discover          # Find peers on local network
+codesmith message <peer> <json>  # Send message to peer
+codesmith listen            # Start message listener
 ```
 
 ## Status
 
-Design documentation complete. Zig implementation in progress.
+Zig CLI implemented. Claude Code plugin packaged with prebuilt darwin-arm64 binaries.
 
 ## Learn More
 
