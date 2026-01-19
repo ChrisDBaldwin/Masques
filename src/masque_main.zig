@@ -299,7 +299,7 @@ fn cmdAnnounce(allocator: std.mem.Allocator, buf: *BufferedStdout) !void {
     try json.field("status", "success");
     try json.field("message", "Announced presence");
     try json.field("masque", masque.name);
-    try json.field("service", "_masque._tcp.local.");
+    try json.field("service", "_masques._tcp.local.");
     try json.fieldInt("port", mesh_coordinator.DEFAULT_PORT);
     try json.endObject();
     try buf.buffer.append(allocator, '\n');
@@ -468,7 +468,7 @@ fn cmdListen(allocator: std.mem.Allocator, buf: *BufferedStdout) !void {
     try json.field("status", "listening");
     try json.field("masque", masque.name);
     try json.fieldInt("port", mesh_coordinator.DEFAULT_PORT);
-    try json.field("service", "_masque._tcp.local.");
+    try json.field("service", "_masques._tcp.local.");
     try json.endObject();
     try buf.buffer.append(allocator, '\n');
     try buf.flush(allocator);

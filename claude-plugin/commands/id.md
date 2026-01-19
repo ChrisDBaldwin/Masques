@@ -1,5 +1,5 @@
 ---
-name: masque:id
+name: masques:whoami
 description: Show the currently active masque identity
 arguments: []
 ---
@@ -10,7 +10,7 @@ Display the current masque identity status.
 
 ## Instructions
 
-1. **Read state** from `.claude/masque.local.md`
+1. **Read state** from `.claude/masques.local.md`
 
 2. **If no masque is active** (active_masque is null or file doesn't exist):
    - Report: "No masque active. You are operating as baseline Claude."

@@ -1,11 +1,11 @@
 //! mDNS service advertisement and discovery for masque mesh networking.
 //!
 //! This module provides peer discovery using multicast DNS (mDNS) on the local network.
-//! Services are advertised as `_masque._tcp.local.` with TXT records containing
+//! Services are advertised as `_masques._tcp.local.` with TXT records containing
 //! name, version, and port information.
 //!
 //! Fallback: If mDNS discovery fails or finds no peers, reads explicit peers from
-//! `~/.masque/peers.txt`.
+//! `~/.masques/peers.txt`.
 
 const std = @import("std");
 const posix = std.posix;
@@ -18,7 +18,7 @@ pub const MDNS_MULTICAST_ADDR_V6 = "ff02::fb";
 /// mDNS port
 pub const MDNS_PORT: u16 = 5353;
 /// Service type for masque mesh
-pub const SERVICE_TYPE = "_masque._tcp.local.";
+pub const SERVICE_TYPE = "_masques._tcp.local.";
 
 /// DNS record types
 const DnsType = enum(u16) {
@@ -466,11 +466,11 @@ pub const MdnsService = struct {
         }
     }
 
-    /// Load peers from fallback file ~/.masque/peers.txt
+    /// Load peers from fallback file ~/.masques/peers.txt
     fn loadFallbackPeers(self: *Self) !void {
         const home = std.posix.getenv("HOME") orelse return;
         var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const path = try std.fmt.bufPrint(&path_buf, "{s}/.masque/peers.txt", .{home});
+        const path = try std.fmt.bufPrint(&path_buf, "{s}/.masques/peers.txt", .{home});
 
         const file = std.fs.openFileAbsolute(path, .{}) catch return;
         defer file.close();
@@ -620,9 +620,9 @@ test "writeDnsName" {
     var buffer: [256]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&buffer);
 
-    try writeDnsName(fbs.writer(), "_masque._tcp.local.");
+    try writeDnsName(fbs.writer(), "_masques._tcp.local.");
 
-    const expected = "\x07_masque\x04_tcp\x05local\x00";
+    const expected = "\x08_masques\x04_tcp\x05local\x00";
     try std.testing.expectEqualSlices(u8, expected, fbs.getWritten());
 }
 
@@ -733,5 +733,5 @@ test "constants" {
     try std.testing.expectEqualStrings("224.0.0.251", MDNS_MULTICAST_ADDR_V4);
     try std.testing.expectEqualStrings("ff02::fb", MDNS_MULTICAST_ADDR_V6);
     try std.testing.expectEqual(@as(u16, 5353), MDNS_PORT);
-    try std.testing.expectEqualStrings("_masque._tcp.local.", SERVICE_TYPE);
+    try std.testing.expectEqualStrings("_masques._tcp.local.", SERVICE_TYPE);
 }

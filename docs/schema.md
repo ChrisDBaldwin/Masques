@@ -201,7 +201,7 @@ Validate masques against the schema:
 
 ```bash
 # Future: Zig CLI
-masque validate personas/codesmith.masque.yaml
+masques validate personas/codesmith.masque.yaml
 
 # For now: any YAML linter with JSON Schema support
 ```

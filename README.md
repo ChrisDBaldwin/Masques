@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/masque-banner.svg" alt="Masque" width="600">
+  <img src="assets/masques-banner.svg" alt="Masques" width="600">
 </p>
 
-# Masque
+# Masques
 
 **AssumeRole for Agents.** A masque is a temporary cognitive identity—bundling intent, context, knowledge, access, and lens into a single assumable primitive.
 
@@ -16,11 +16,11 @@ When you don a masque, you get everything: goals, context, knowledge pointers, c
 
 ```bash
 # Install as a Claude Code plugin
-claude plugins add github:ChrisDBaldwin/Masque
+claude plugins add github:ChrisDBaldwin/masques
 
 # Or from source
-git clone https://github.com/ChrisDBaldwin/Masque.git
-cd Masque && zig build
+git clone https://github.com/ChrisDBaldwin/masques.git
+cd masques && zig build
 ```
 
 ### Commands

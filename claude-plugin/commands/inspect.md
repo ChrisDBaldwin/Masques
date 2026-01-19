@@ -1,5 +1,5 @@
 ---
-name: masque:inspect
+name: masques:inspect
 description: Inspect full details of a masque (current or named)
 arguments:
   - name: target
@@ -18,7 +18,7 @@ Display the complete details of a masque — all five components plus attributes
    - If a name is provided → inspect that masque directly
 
 2. **If inspecting self (no arg or "self"):**
-   - Read `.claude/masque.local.md` to get the active masque name
+   - Read `.claude/masques.local.md` to get the active masque name
    - If no masque is active: report "No masque active." and stop
    - Otherwise, load `entities/masques/<name>.masque.json`
 

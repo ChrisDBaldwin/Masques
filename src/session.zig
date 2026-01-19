@@ -1,5 +1,5 @@
 // Session management for masque binaries
-// Tracks active sessions in ~/.masque/sessions/
+// Tracks active sessions in ~/.masques/sessions/
 
 const std = @import("std");
 
@@ -31,7 +31,7 @@ pub const SessionManager = struct {
         };
         defer allocator.free(home);
 
-        const sessions_dir = try std.fmt.allocPrint(allocator, "{s}/.masque/sessions", .{home});
+        const sessions_dir = try std.fmt.allocPrint(allocator, "{s}/.masques/sessions", .{home});
 
         // Ensure directory exists
         std.fs.cwd().makePath(sessions_dir) catch |err| {

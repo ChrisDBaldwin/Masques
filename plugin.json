@@ -1,5 +1,5 @@
 {
-  "name": "masque",
+  "name": "masques",
   "version": "0.1.0",
   "description": "Agent identity framework - AssumeRole for Agents. Don temporary cognitive identities with bundled lens, context, and intent boundaries.",
   "author": "Chris",

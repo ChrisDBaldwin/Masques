@@ -1,5 +1,5 @@
 ---
-name: masque:don
+name: masques:don
 description: Don a masque - adopt a temporary cognitive identity with bundled lens, context, and intent boundaries
 arguments:
   - name: masque-name
@@ -22,7 +22,7 @@ First, check if a compiled masque binary exists:
 
 ```bash
 MASQUE_NAME=$(echo "$ARGUMENTS" | awk '{print $1}')
-MASQUE_BINARY="$HOME/.masque/bin/$MASQUE_NAME"
+MASQUE_BINARY="$HOME/.masques/bin/$MASQUE_NAME"
 
 if [ -f "$MASQUE_BINARY" ] && [ -x "$MASQUE_BINARY" ]; then
     echo "BINARY_EXISTS=true"
@@ -38,7 +38,7 @@ If the binary exists, invoke it with the don command and user intent:
 ```bash
 MASQUE_NAME=$(echo "$ARGUMENTS" | awk '{print $1}')
 USER_INTENT=$(echo "$ARGUMENTS" | cut -d' ' -f2-)
-MASQUE_BINARY="$HOME/.masque/bin/$MASQUE_NAME"
+MASQUE_BINARY="$HOME/.masques/bin/$MASQUE_NAME"
 
 # If no intent provided in arguments, use a default
 if [ -z "$USER_INTENT" ] || [ "$USER_INTENT" = "$MASQUE_NAME" ]; then
@@ -120,7 +120,7 @@ Output a `<masque-active>` block with the extracted information:
 
 ### Step 4: Persist State
 
-Write to `.claude/masque.local.md`:
+Write to `.claude/masques.local.md`:
 
 ```yaml
 ---

@@ -1,5 +1,5 @@
 ---
-name: masque
+name: masques
 description: Core skill for masque identity operations - reading masque definitions, extracting components, managing state
 ---
 
@@ -21,7 +21,7 @@ A masque bundles five components:
 
 - **Definitions:** `personas/*.masque.yaml` (source of truth)
 - **Runtime JSON:** `entities/masques/*.masque.json` (for easy parsing)
-- **State:** `.claude/masque.local.md` (active masque tracking)
+- **State:** `.claude/masques.local.md` (active masque tracking)
 
 ## Reading a Masque
 
@@ -41,7 +41,7 @@ To load a masque, read from `entities/masques/<name>.masque.json`:
 
 ## State File Format
 
-`.claude/masque.local.md` uses YAML frontmatter:
+`.claude/masques.local.md` uses YAML frontmatter:
 
 ```yaml
 ---
