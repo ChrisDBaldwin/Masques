@@ -63,3 +63,26 @@ $CONTEXT
 *Masque re-injected on session resume*
 </masque-active>
 EOF
+
+# --- Mesh Announcement Logic ---
+
+# Check if session file exists in ~/.masque/sessions/
+SESSION_FILE=$(ls -t "$HOME/.masque/sessions/$MASQUE_LOWER-"*.json 2>/dev/null | head -1)
+if [ -n "$SESSION_FILE" ]; then
+    echo "Active session: $(basename "$SESSION_FILE" .json)" >&2
+fi
+
+# Announce presence to mesh if binary exists
+MASQUE_BINARY="$HOME/.masque/bin/$MASQUE_LOWER"
+if [ -x "$MASQUE_BINARY" ]; then
+    # Announce to local network
+    "$MASQUE_BINARY" announce 2>/dev/null || true
+
+    # Discover peers
+    PEERS=$("$MASQUE_BINARY" discover 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(' '.join(p.get('name','') for p in d.get('peers',[])))" 2>/dev/null || echo "")
+    if [ -n "$PEERS" ]; then
+        echo "Mesh peers discovered: $PEERS" >&2
+    fi
+fi
+
+echo "Session resumed with masque: $ACTIVE_MASQUE" >&2
