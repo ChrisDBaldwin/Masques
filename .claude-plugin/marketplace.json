@@ -1,0 +1,15 @@
+{
+  "name": "masque-marketplace",
+  "description": "Masque plugin marketplace",
+  "owner": {
+    "name": "Chris Baldwin"
+  },
+  "plugins": [
+    {
+      "name": "masque",
+      "source": "./claude-plugin",
+      "description": "Agent identity framework - AssumeRole for Agents",
+      "version": "0.1.0"
+    }
+  ]
+}
