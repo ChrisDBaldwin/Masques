@@ -1,118 +1,245 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280">
   <defs>
+    <!-- Gradients -->
+    <linearGradient id="velvetBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A1528"/>
+      <stop offset="50%" style="stop-color:#2D0A18"/>
+      <stop offset="100%" style="stop-color:#1A0510"/>
+    </linearGradient>
     <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#FFD700"/>
       <stop offset="50%" style="stop-color:#DAA520"/>
       <stop offset="100%" style="stop-color:#B8860B"/>
     </linearGradient>
-    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9B59B6"/>
-      <stop offset="100%" style="stop-color:#4A235A"/>
+    <linearGradient id="curtainFold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3D1220"/>
+      <stop offset="15%" style="stop-color:#5C1E35"/>
+      <stop offset="30%" style="stop-color:#3D1220"/>
+      <stop offset="45%" style="stop-color:#5C1E35"/>
+      <stop offset="60%" style="stop-color:#3D1220"/>
+      <stop offset="75%" style="stop-color:#5C1E35"/>
+      <stop offset="90%" style="stop-color:#3D1220"/>
+      <stop offset="100%" style="stop-color:#5C1E35"/>
     </linearGradient>
-    <linearGradient id="maskGold" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFD700"/>
-      <stop offset="100%" style="stop-color:#B8860B"/>
+    <linearGradient id="oniRed" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC143C"/>
+      <stop offset="100%" style="stop-color:#8B0000"/>
     </linearGradient>
-    <linearGradient id="maskPurple" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#9B59B6"/>
-      <stop offset="100%" style="stop-color:#4A235A"/>
+    <linearGradient id="maskWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FAFAFA"/>
+      <stop offset="100%" style="stop-color:#D0D0D0"/>
     </linearGradient>
-    <!-- Glow filter for dramatic effect -->
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+    <linearGradient id="plagueBlack" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2A2A2A"/>
+      <stop offset="100%" style="stop-color:#0A0A0A"/>
+    </linearGradient>
+    <linearGradient id="venetianGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#DAA520"/>
+      <stop offset="100%" style="stop-color:#8B6914"/>
+    </linearGradient>
+
+    <!-- Selection glow filter -->
+    <filter id="selectGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#FFD700" flood-opacity="0.8"/>
+      <feComposite in2="blur" operator="in"/>
       <feMerge>
-        <feMergeNode in="coloredBlur"/>
+        <feMergeNode/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+
+    <!-- Subtle mask shadow -->
+    <filter id="maskShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Vignette -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#000;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#000;stop-opacity:0.6"/>
+    </radialGradient>
   </defs>
 
-  <!-- Background -->
-  <rect width="800" height="280" fill="#0D0D0D"/>
+  <!-- Background: Velvet curtain -->
+  <rect width="800" height="280" fill="url(#velvetBg)"/>
+  <rect width="800" height="280" fill="url(#curtainFold)" opacity="0.3"/>
 
-  <!-- Comedy Mask (Happy) - Left -->
-  <g transform="translate(260, 30)" filter="url(#glow)">
-    <!-- Mask face outline -->
-    <path d="M50 0
-             C80 0 100 15 105 45
-             C110 75 100 105 85 125
-             C70 145 50 155 50 155
-             C50 155 30 145 15 125
-             C0 105 -10 75 -5 45
-             C0 15 20 0 50 0Z"
-          fill="url(#maskGold)" stroke="#DAA520" stroke-width="2"/>
+  <!-- Gold rope trim at top -->
+  <rect x="0" y="0" width="800" height="6" fill="url(#goldGrad)"/>
+  <ellipse cx="100" cy="6" rx="15" ry="8" fill="#B8860B"/>
+  <ellipse cx="700" cy="6" rx="15" ry="8" fill="#B8860B"/>
 
-    <!-- Left eye hole -->
-    <ellipse cx="28" cy="55" rx="12" ry="16" fill="#0D0D0D"/>
-    <!-- Right eye hole -->
-    <ellipse cx="72" cy="55" rx="12" ry="16" fill="#0D0D0D"/>
+  <!-- Decorative swags -->
+  <path d="M0 6 Q200 35 400 6 Q600 35 800 6" stroke="#DAA520" stroke-width="2" fill="none" opacity="0.5"/>
 
-    <!-- Happy eyebrows (arched up) -->
-    <path d="M12 42 Q28 32 44 42" stroke="#B8860B" stroke-width="3" fill="none"/>
-    <path d="M56 42 Q72 32 88 42" stroke="#B8860B" stroke-width="3" fill="none"/>
+  <!-- Vignette overlay -->
+  <rect width="800" height="280" fill="url(#vignette)"/>
 
-    <!-- Happy mouth (big smile) -->
-    <path d="M25 100 Q50 135 75 100" stroke="#0D0D0D" stroke-width="4" fill="none"/>
-    <path d="M28 100 Q50 130 72 100" stroke="#B8860B" stroke-width="2" fill="none"/>
+  <!-- MASK GRID: 3x2, starting at x=90, y=35 -->
+  <!-- Cell size: ~130x115, mask ~80x90 centered in cell -->
 
-    <!-- Cheek highlights -->
-    <ellipse cx="25" cy="85" rx="8" ry="5" fill="#FFE066" opacity="0.3"/>
-    <ellipse cx="75" cy="85" rx="8" ry="5" fill="#FFE066" opacity="0.3"/>
+  <!-- Row 1 -->
 
-    <!-- Decorative forehead detail -->
-    <path d="M35 20 L50 10 L65 20" stroke="#DAA520" stroke-width="2" fill="none"/>
+  <!-- Guy Fawkes (top-left) -->
+  <g transform="translate(115, 45)" filter="url(#maskShadow)">
+    <g transform="scale(0.85)">
+      <!-- Face shape -->
+      <path d="M50 5 C75 5 90 25 90 50 C90 75 80 95 65 105 C55 112 45 112 35 105 C20 95 10 75 10 50 C10 25 25 5 50 5Z"
+            fill="url(#maskWhite)" stroke="#AAA" stroke-width="1"/>
+      <!-- Eyebrows - arched -->
+      <path d="M22 35 Q35 25 48 35" stroke="#222" stroke-width="3" fill="none"/>
+      <path d="M52 35 Q65 25 78 35" stroke="#222" stroke-width="3" fill="none"/>
+      <!-- Eyes - narrow slits -->
+      <ellipse cx="35" cy="45" rx="8" ry="4" fill="#111"/>
+      <ellipse cx="65" cy="45" rx="8" ry="4" fill="#111"/>
+      <!-- Nose - pointed -->
+      <path d="M50 45 L50 62 L45 65 M50 62 L55 65" stroke="#AAA" stroke-width="2" fill="none"/>
+      <!-- Mustache -->
+      <path d="M30 72 Q40 68 50 72 Q60 68 70 72" stroke="#222" stroke-width="3" fill="none"/>
+      <!-- Goatee -->
+      <path d="M42 80 L50 95 L58 80" stroke="#222" stroke-width="3" fill="none"/>
+      <!-- Smile -->
+      <path d="M30 78 Q50 90 70 78" stroke="#C41E3A" stroke-width="2" fill="none"/>
+      <!-- Cheek lines -->
+      <path d="M20 55 Q25 70 30 75" stroke="#DDD" stroke-width="1" fill="none" opacity="0.5"/>
+      <path d="M80 55 Q75 70 70 75" stroke="#DDD" stroke-width="1" fill="none" opacity="0.5"/>
+    </g>
   </g>
 
-  <!-- Tragedy Mask (Sad) - Right -->
-  <g transform="translate(440, 30)" filter="url(#glow)">
-    <!-- Mask face outline -->
-    <path d="M50 0
-             C80 0 100 15 105 45
-             C110 75 100 105 85 125
-             C70 145 50 155 50 155
-             C50 155 30 145 15 125
-             C0 105 -10 75 -5 45
-             C0 15 20 0 50 0Z"
-          fill="url(#maskPurple)" stroke="#7D3C98" stroke-width="2"/>
-
-    <!-- Left eye hole -->
-    <ellipse cx="28" cy="55" rx="12" ry="16" fill="#0D0D0D"/>
-    <!-- Right eye hole -->
-    <ellipse cx="72" cy="55" rx="12" ry="16" fill="#0D0D0D"/>
-
-    <!-- Sad eyebrows (angled down) -->
-    <path d="M12 38 Q28 48 44 38" stroke="#4A235A" stroke-width="3" fill="none"/>
-    <path d="M56 38 Q72 48 88 38" stroke="#4A235A" stroke-width="3" fill="none"/>
-
-    <!-- Sad mouth (frown) -->
-    <path d="M25 115 Q50 85 75 115" stroke="#0D0D0D" stroke-width="4" fill="none"/>
-    <path d="M28 112 Q50 88 72 112" stroke="#4A235A" stroke-width="2" fill="none"/>
-
-    <!-- Tear drop on left cheek -->
-    <path d="M20 75 Q18 85 20 90 Q24 85 20 75Z" fill="#6C3483" opacity="0.7"/>
-
-    <!-- Decorative forehead detail -->
-    <path d="M35 20 L50 10 L65 20" stroke="#7D3C98" stroke-width="2" fill="none"/>
+  <!-- Oni (top-center) - SELECTED -->
+  <g transform="translate(260, 35)">
+    <!-- Selection box -->
+    <rect x="-10" y="-5" width="115" height="120" rx="5" fill="none" stroke="url(#goldGrad)" stroke-width="3" filter="url(#selectGlow)"/>
+    <g transform="translate(5, 5)" filter="url(#maskShadow)">
+      <g transform="scale(0.9)">
+        <!-- Horns -->
+        <path d="M15 35 L5 5 L25 25Z" fill="#2A2A2A" stroke="#444" stroke-width="1"/>
+        <path d="M85 35 L95 5 L75 25Z" fill="#2A2A2A" stroke="#444" stroke-width="1"/>
+        <!-- Face -->
+        <path d="M50 15 C80 15 95 40 90 70 C87 90 70 105 50 105 C30 105 13 90 10 70 C5 40 20 15 50 15Z"
+              fill="url(#oniRed)" stroke="#8B0000" stroke-width="2"/>
+        <!-- Brow ridge -->
+        <path d="M20 40 Q50 30 80 40" stroke="#6B0000" stroke-width="4" fill="none"/>
+        <!-- Eyes - angry -->
+        <ellipse cx="35" cy="50" rx="10" ry="8" fill="#FFD700"/>
+        <ellipse cx="65" cy="50" rx="10" ry="8" fill="#FFD700"/>
+        <circle cx="35" cy="50" r="4" fill="#111"/>
+        <circle cx="65" cy="50" r="4" fill="#111"/>
+        <!-- Nose -->
+        <ellipse cx="50" cy="65" rx="8" ry="5" fill="#A01020"/>
+        <circle cx="45" cy="65" r="2" fill="#111"/>
+        <circle cx="55" cy="65" r="2" fill="#111"/>
+        <!-- Fanged mouth -->
+        <path d="M25 80 Q50 75 75 80 Q50 95 25 80Z" fill="#111"/>
+        <path d="M35 80 L35 88" stroke="#FFF" stroke-width="3"/>
+        <path d="M50 78 L50 90" stroke="#FFF" stroke-width="3"/>
+        <path d="M65 80 L65 88" stroke="#FFF" stroke-width="3"/>
+        <!-- Wild hair/flames -->
+        <path d="M20 20 Q15 10 25 15 Q20 5 35 12" stroke="#2A2A2A" stroke-width="3" fill="none"/>
+        <path d="M80 20 Q85 10 75 15 Q80 5 65 12" stroke="#2A2A2A" stroke-width="3" fill="none"/>
+      </g>
+    </g>
   </g>
 
-  <!-- Connecting ribbon between masks -->
-  <g transform="translate(310, 110)">
-    <path d="M0 30 Q90 0 180 30" stroke="#9B59B6" stroke-width="3" fill="none" opacity="0.6"/>
-    <path d="M0 35 Q90 65 180 35" stroke="#DAA520" stroke-width="2" fill="none" opacity="0.4"/>
+  <!-- Mr. Karate / Tengu (top-right) -->
+  <g transform="translate(405, 45)" filter="url(#maskShadow)">
+    <g transform="scale(0.85)">
+      <!-- Face shape - more angular -->
+      <path d="M50 5 C78 5 92 28 90 55 C88 80 72 100 50 100 C28 100 12 80 10 55 C8 28 22 5 50 5Z"
+            fill="url(#maskWhite)" stroke="#AAA" stroke-width="1"/>
+      <!-- Dramatic eyebrows -->
+      <path d="M15 32 L45 38" stroke="#222" stroke-width="4" fill="none"/>
+      <path d="M85 32 L55 38" stroke="#222" stroke-width="4" fill="none"/>
+      <!-- Intense eyes -->
+      <path d="M25 48 L45 48 L35 55Z" fill="#111"/>
+      <path d="M75 48 L55 48 L65 55Z" fill="#111"/>
+      <!-- Long tengu nose -->
+      <path d="M50 45 L50 80 L45 78 M50 80 L55 78" stroke="#CCC" stroke-width="3" fill="none"/>
+      <ellipse cx="50" cy="80" rx="6" ry="4" fill="#DDD"/>
+      <!-- Stern mouth -->
+      <path d="M35 88 L65 88" stroke="#666" stroke-width="2"/>
+      <!-- Forehead marking -->
+      <circle cx="50" cy="22" r="6" fill="none" stroke="#C41E3A" stroke-width="2"/>
+    </g>
   </g>
 
-  <!-- Decorative flourishes -->
-  <g opacity="0.3">
-    <path d="M180 100 Q200 80 220 100 Q200 90 180 100Z" fill="#DAA520"/>
-    <path d="M580 100 Q600 80 620 100 Q600 90 580 100Z" fill="#9B59B6"/>
+  <!-- Row 2 -->
+
+  <!-- Phantom of the Opera (bottom-left) -->
+  <g transform="translate(115, 155)" filter="url(#maskShadow)">
+    <g transform="scale(0.85)">
+      <!-- Half-face mask - right side of face -->
+      <path d="M50 10 C70 10 85 30 85 55 C85 75 75 90 60 95 L50 95 L50 10Z"
+            fill="url(#maskWhite)" stroke="#AAA" stroke-width="1"/>
+      <!-- Left side - shadowed/absent -->
+      <path d="M50 10 C30 10 18 30 20 55 C22 75 32 88 50 95 L50 10Z"
+            fill="#1A0510" stroke="#333" stroke-width="1" opacity="0.8"/>
+      <!-- Eye hole -->
+      <ellipse cx="67" cy="45" rx="10" ry="12" fill="#111"/>
+      <!-- Nose hint -->
+      <path d="M55 50 Q58 65 55 70" stroke="#CCC" stroke-width="2" fill="none"/>
+      <!-- Elegant contour lines -->
+      <path d="M55 20 Q75 35 75 55" stroke="#DDD" stroke-width="1" fill="none" opacity="0.5"/>
+      <!-- Tie ribbon at bottom -->
+      <path d="M50 95 Q45 100 40 95 M50 95 Q55 100 60 95" stroke="#222" stroke-width="2" fill="none"/>
+    </g>
   </g>
 
-  <!-- Title -->
-  <text x="400" y="225" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="bold" fill="url(#goldGrad)" filter="url(#glow)">MASQUE</text>
+  <!-- Venetian Bauta (bottom-center) -->
+  <g transform="translate(265, 155)" filter="url(#maskShadow)">
+    <g transform="scale(0.85)">
+      <!-- Main mask shape - angular with projecting chin -->
+      <path d="M50 8 C80 8 95 30 92 55 L85 70 L75 75 L50 95 L25 75 L15 70 L8 55 C5 30 20 8 50 8Z"
+            fill="url(#venetianGold)" stroke="#6B4A0A" stroke-width="2"/>
+      <!-- Eye holes - cat-eye shape -->
+      <path d="M20 40 Q35 35 45 45 Q35 50 20 45Z" fill="#111"/>
+      <path d="M80 40 Q65 35 55 45 Q65 50 80 45Z" fill="#111"/>
+      <!-- Nose ridge -->
+      <path d="M50 45 L50 60 L45 65 L50 70 L55 65 L50 60" stroke="#8B6914" stroke-width="2" fill="none"/>
+      <!-- Decorative scrollwork -->
+      <path d="M25 25 Q35 20 45 25" stroke="#FFD700" stroke-width="1.5" fill="none"/>
+      <path d="M55 25 Q65 20 75 25" stroke="#FFD700" stroke-width="1.5" fill="none"/>
+      <!-- Forehead jewel -->
+      <circle cx="50" cy="20" r="5" fill="#C41E3A" stroke="#FFD700" stroke-width="1"/>
+      <!-- Lower decorative line -->
+      <path d="M30 80 Q50 85 70 80" stroke="#FFD700" stroke-width="1" fill="none"/>
+    </g>
+  </g>
 
-  <!-- Tagline -->
-  <text x="400" y="255" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#9B59B6" font-style="italic">Temporary Identities for Autonomous Agents</text>
+  <!-- Plague Doctor (bottom-right) -->
+  <g transform="translate(405, 155)" filter="url(#maskShadow)">
+    <g transform="scale(0.85)">
+      <!-- Hood/head shape -->
+      <path d="M50 5 C75 5 88 25 88 50 C88 70 78 85 60 90 L40 90 C22 85 12 70 12 50 C12 25 25 5 50 5Z"
+            fill="url(#plagueBlack)" stroke="#444" stroke-width="1"/>
+      <!-- Long beak -->
+      <path d="M50 40 L50 45 L95 60 L95 65 L50 55 L50 60 Q45 58 45 52 L45 48 Q45 42 50 40Z"
+            fill="#1a1a1a" stroke="#444" stroke-width="1"/>
+      <!-- Beak ridge line -->
+      <path d="M50 42 L90 58" stroke="#333" stroke-width="1"/>
+      <!-- Round goggle eyes -->
+      <circle cx="35" cy="40" r="12" fill="#333" stroke="#555" stroke-width="2"/>
+      <circle cx="35" cy="40" r="8" fill="#1a1a1a"/>
+      <circle cx="33" cy="38" r="2" fill="#444"/>
+      <circle cx="60" cy="40" r="12" fill="#333" stroke="#555" stroke-width="2"/>
+      <circle cx="60" cy="40" r="8" fill="#1a1a1a"/>
+      <circle cx="58" cy="38" r="2" fill="#444"/>
+      <!-- Strap -->
+      <path d="M12 45 Q0 45 0 55" stroke="#333" stroke-width="3" fill="none"/>
+      <path d="M88 45 Q100 45 100 55" stroke="#333" stroke-width="3" fill="none"/>
+      <!-- Forehead stitching detail -->
+      <path d="M35 20 L40 25 L45 20 L50 25 L55 20 L60 25 L65 20" stroke="#444" stroke-width="1" fill="none"/>
+    </g>
+  </g>
 
-  <!-- Subtle "ASSUME ROLE" text -->
-  <text x="400" y="195" text-anchor="middle" font-family="'Courier New', monospace" font-size="11" fill="#4A235A" letter-spacing="4">ASSUME ROLE</text>
+  <!-- MASQUE Logo (bottom-right corner) -->
+  <g transform="translate(590, 225)">
+    <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="bold" fill="url(#goldGrad)">MASQUE</text>
+    <text x="0" y="20" font-family="'Courier New', monospace" font-size="9" fill="#9B59B6" letter-spacing="1">SELECT IDENTITY</text>
+  </g>
+
+  <!-- Corner decorations -->
+  <path d="M15 265 L15 250 Q15 240 25 240 L40 240" stroke="#DAA520" stroke-width="1.5" fill="none" opacity="0.5"/>
+  <path d="M785 265 L785 250 Q785 240 775 240 L760 240" stroke="#DAA520" stroke-width="1.5" fill="none" opacity="0.5"/>
 </svg>
