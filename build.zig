@@ -7,6 +7,8 @@ const std = @import("std");
 // build runner to parallelize the build automatically (and the cache system to
 // know when a step doesn't need to be re-run).
 pub fn build(b: *std.Build) void {
+    // Get masque name option for single masque builds
+    const masque_name = b.option([]const u8, "name", "Name of the masque to build");
     // Standard target options allow the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -163,4 +165,147 @@ pub fn build(b: *std.Build) void {
     //
     // Lastly, the Zig build system is relatively simple and self-contained,
     // and reading its source code will allow you to master it.
+
+    // === Masque Build Steps ===
+
+    // yaml2zig tool - compiles YAML masques to Zig struct literals
+    const yaml2zig = b.addExecutable(.{
+        .name = "yaml2zig",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tools/yaml2zig.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    b.installArtifact(yaml2zig);
+
+    const yaml2zig_step = b.step("yaml2zig", "Build the YAML to Zig compiler");
+    yaml2zig_step.dependOn(&yaml2zig.step);
+
+    // generate step - run yaml2zig to generate Zig files from YAML
+    const generate_cmd = b.addRunArtifact(yaml2zig);
+    generate_cmd.addArgs(&.{ "generate", "personas", "generated" });
+
+    const generate_step = b.step("generate", "Generate Zig from YAML masques");
+    generate_step.dependOn(&generate_cmd.step);
+
+    // masque step - build a single masque binary
+    const masque_step = b.step("masque", "Build a single masque binary (use --name=<masque>)");
+
+    if (masque_name) |name| {
+        const masque_exe = buildMasqueBinary(b, target, optimize, name);
+        masque_step.dependOn(&masque_exe.step);
+        b.installArtifact(masque_exe);
+    } else {
+        // If no name provided, show help
+        const help_step = b.addSystemCommand(&.{ "echo", "Usage: zig build masque -- --name=<masque>" });
+        masque_step.dependOn(&help_step.step);
+    }
+
+    // masques step - build all masques
+    const masques_step = b.step("masques", "Build all masque binaries");
+
+    // List of known masques (we'll add more as they're created)
+    const masque_names = [_][]const u8{ "codesmith", "chartwright" };
+    for (masque_names) |name| {
+        const masque_exe = buildMasqueBinary(b, target, optimize, name);
+        masques_step.dependOn(&masque_exe.step);
+        b.installArtifact(masque_exe);
+    }
+
+    // install-masques step - copy binaries to ~/.masque/bin/
+    const install_masques_step = b.step("install-masques", "Install masque binaries to ~/.masque/bin/");
+
+    // Create install directory
+    const mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p" });
+    const home = std.process.getEnvVarOwned(b.allocator, "HOME") catch "/tmp";
+    const install_dir = b.fmt("{s}/.masque/bin", .{home});
+    mkdir_cmd.addArg(install_dir);
+    install_masques_step.dependOn(&mkdir_cmd.step);
+
+    // Copy each masque binary
+    for (masque_names) |name| {
+        const copy_cmd = b.addSystemCommand(&.{"cp"});
+        copy_cmd.addArg(b.fmt("zig-out/bin/{s}", .{name}));
+        copy_cmd.addArg(b.fmt("{s}/{s}", .{ install_dir, name }));
+        copy_cmd.step.dependOn(&mkdir_cmd.step);
+        copy_cmd.step.dependOn(masques_step);
+        install_masques_step.dependOn(&copy_cmd.step);
+    }
+}
+
+fn buildMasqueBinary(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    name: []const u8,
+) *std.Build.Step.Compile {
+    // Create shared modules (these will be reused)
+    const intent_mod = b.createModule(.{
+        .root_source_file = b.path("src/intent.zig"),
+    });
+
+    const interface_mod = b.createModule(.{
+        .root_source_file = b.path("src/interface.zig"),
+        .imports = &.{
+            .{ .name = "intent", .module = intent_mod },
+        },
+    });
+
+    const output_mod = b.createModule(.{
+        .root_source_file = b.path("src/output.zig"),
+    });
+
+    const session_mod = b.createModule(.{
+        .root_source_file = b.path("src/session.zig"),
+    });
+
+    // Mesh networking modules
+    const mesh_protocol_mod = b.createModule(.{
+        .root_source_file = b.path("src/mesh/protocol.zig"),
+    });
+
+    const mesh_connection_mod = b.createModule(.{
+        .root_source_file = b.path("src/mesh/connection.zig"),
+    });
+
+    const mesh_mdns_mod = b.createModule(.{
+        .root_source_file = b.path("src/mesh/mdns.zig"),
+    });
+
+    const mesh_coordinator_mod = b.createModule(.{
+        .root_source_file = b.path("src/mesh/mesh.zig"),
+        .imports = &.{
+            .{ .name = "mdns", .module = mesh_mdns_mod },
+            .{ .name = "connection", .module = mesh_connection_mod },
+            .{ .name = "protocol", .module = mesh_protocol_mod },
+        },
+    });
+
+    // Create the masque definition module (generated file)
+    const masque_def_mod = b.createModule(.{
+        .root_source_file = b.path(b.fmt("generated/{s}.zig", .{name})),
+        .imports = &.{
+            .{ .name = "interface", .module = interface_mod },
+        },
+    });
+
+    // Create a masque binary that embeds the generated struct
+    const masque_exe = b.addExecutable(.{
+        .name = name,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/masque_main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "masque_def", .module = masque_def_mod },
+                .{ .name = "interface", .module = interface_mod },
+                .{ .name = "output", .module = output_mod },
+                .{ .name = "session", .module = session_mod },
+                .{ .name = "mesh_coordinator", .module = mesh_coordinator_mod },
+            },
+        }),
+    });
+
+    return masque_exe;
 }
