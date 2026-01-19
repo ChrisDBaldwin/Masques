@@ -1,10 +1,10 @@
 ---
-name: whoami
+name: masque:id
 description: Show the currently active masque identity
 arguments: []
 ---
 
-# Whoami Command
+# Masque ID Command
 
 Display the current masque identity status.
 

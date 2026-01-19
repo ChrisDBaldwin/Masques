@@ -1,5 +1,5 @@
 ---
-name: doff
+name: masque:doff
 description: Doff the current masque - release the active identity and return to baseline
 arguments: []
 ---

@@ -1,5 +1,5 @@
 ---
-name: don
+name: masque:don
 description: Don a masque - adopt a temporary cognitive identity with bundled lens, context, and intent boundaries
 arguments:
   - name: masque-name
