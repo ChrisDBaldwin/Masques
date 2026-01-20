@@ -92,6 +92,8 @@ pub fn main() !void {
         try cmdMessage(allocator, &buf, args[2], args[3]);
     } else if (std.mem.eql(u8, command, "listen")) {
         try cmdListen(allocator, &buf);
+    } else if (std.mem.eql(u8, command, "source") or std.mem.eql(u8, command, "--source")) {
+        try cmdSource(allocator, &buf);
     } else if (std.mem.eql(u8, command, "help") or std.mem.eql(u8, command, "--help")) {
         try printUsage(allocator, &buf);
     } else {
@@ -126,6 +128,7 @@ fn printUsage(allocator: std.mem.Allocator, buf: *BufferedStdout) !void {
         \\  qualify <intent>  Check if intent is allowed for this masque
         \\  don --intent "..."  Start session, output lens/context
         \\  doff              End session
+        \\  source            Print original YAML definition (--source)
         \\  announce          Broadcast presence to mesh
         \\  discover          List known peers
         \\  message <peer> <json>  Send message to peer
@@ -265,6 +268,12 @@ fn cmdDoff(allocator: std.mem.Allocator, buf: *BufferedStdout) !void {
         try json.endObject();
         try buf.buffer.append(allocator, '\n');
     }
+}
+
+fn cmdSource(_: std.mem.Allocator, _: *BufferedStdout) !void {
+    // Output the original YAML source directly to stdout (not buffered)
+    const stdout = std.io.getStdOut().writer();
+    try stdout.writeAll(masque_def.source_yaml);
 }
 
 fn cmdAnnounce(allocator: std.mem.Allocator, buf: *BufferedStdout) !void {

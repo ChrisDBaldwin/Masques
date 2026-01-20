@@ -424,6 +424,9 @@ fn generateZigCode(allocator: std.mem.Allocator, masque: Masque) ![]const u8 {
         \\
         \\const interface = @import("interface");
         \\
+        \\// Original YAML source embedded for --source command
+        \\pub const source_yaml = @embedFile("../personas/{s}.masque.yaml");
+        \\
         \\pub const masque = interface.Masque{{
         \\    .name = "{s}",
         \\    .index = {d},
@@ -433,6 +436,7 @@ fn generateZigCode(allocator: std.mem.Allocator, masque: Masque) ![]const u8 {
     , .{
         masque.name,
         lower_name,
+        lower_name, // for @embedFile path
         escapeString(masque.name),
         masque.index,
         escapeString(masque.version),

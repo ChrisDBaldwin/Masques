@@ -91,6 +91,10 @@ pub fn build(b: *std.Build) void {
                 // importing modules from different packages).
                 .{ .name = "masque", .module = mod },
                 .{ .name = "zuckdb", .module = zuckdb },
+                .{ .name = "emit", .module = b.createModule(.{
+                    .root_source_file = b.path("src/emit.zig"),
+                    .target = target,
+                }) },
             },
         }),
     });

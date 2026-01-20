@@ -1,6 +1,7 @@
 const std = @import("std");
 const zuckdb = @import("zuckdb");
 const masque = @import("masque");
+const emit_mod = @import("emit");
 
 pub fn main() !void {
     var gpa: std.heap.GeneralPurposeAllocator(.{}) = .{};
@@ -28,6 +29,23 @@ pub fn main() !void {
     } else if (std.mem.eql(u8, command, "validate")) {
         const file = if (args.len >= 3) args[2] else null;
         try cmdValidate(allocator, file);
+    } else if (std.mem.eql(u8, command, "emit")) {
+        if (args.len < 3) {
+            std.debug.print("Usage: masques emit <file.masque.yaml> [--format=<target>]\n", .{});
+            std.debug.print("Formats: claude (default), json, markdown\n", .{});
+            return;
+        }
+        const input_file = args[2];
+        const format = parseFormatArg(args);
+        try cmdEmit(allocator, input_file, format);
+    } else if (std.mem.eql(u8, command, "compile")) {
+        if (args.len < 3) {
+            std.debug.print("Usage: masques compile <file.masque.yaml> [-o output]\n", .{});
+            return;
+        }
+        const input_file = args[2];
+        const output_path = parseOutputArg(args);
+        try cmdCompile(allocator, input_file, output_path);
     } else if (std.mem.eql(u8, command, "help") or std.mem.eql(u8, command, "--help")) {
         printUsage();
     } else {
@@ -38,15 +56,21 @@ pub fn main() !void {
 
 fn printUsage() void {
     const usage =
-        \\masques - agent identity framework
+        \\masques - agent identity compiler
         \\
         \\Usage: masques <command> [args]
         \\
         \\Commands:
-        \\  list              List all masques
-        \\  show <name>       Show details for a masque
-        \\  validate [file]   Validate masque file(s)
-        \\  help              Show this help
+        \\  list                           List all masques
+        \\  show <name>                    Show details for a masque
+        \\  emit <file> [--format=target]  Emit masque to format (claude, json, markdown)
+        \\  compile <file> [-o output]     Compile masque to standalone binary
+        \\  validate [file]                Validate masque file(s)
+        \\  help                           Show this help
+        \\
+        \\Examples:
+        \\  masques emit personas/codesmith.masque.yaml --format=claude
+        \\  masques compile personas/codesmith.masque.yaml -o ./codesmith
         \\
     ;
     std.debug.print("{s}", .{usage});
@@ -199,6 +223,115 @@ fn cmdValidate(allocator: std.mem.Allocator, file: ?[]const u8) !void {
     _ = allocator;
     _ = file;
     std.debug.print("validate: not yet implemented\n", .{});
+}
+
+fn cmdEmit(allocator: std.mem.Allocator, input_file: []const u8, format: emit_mod.Format) !void {
+    // Read the YAML file
+    const yaml_content = std.fs.cwd().readFileAlloc(allocator, input_file, 1024 * 1024) catch |err| {
+        std.debug.print("Failed to read '{s}': {}\n", .{ input_file, err });
+        return;
+    };
+    defer allocator.free(yaml_content);
+
+    // Parse YAML
+    var parser = emit_mod.YamlParser.init(allocator, yaml_content);
+    defer parser.deinit();
+
+    var masque_def = parser.parseMasque() catch |err| {
+        std.debug.print("Failed to parse '{s}': {}\n", .{ input_file, err });
+        return;
+    };
+    defer masque_def.deinit(allocator);
+
+    // Emit to requested format
+    emit_mod.emit(allocator, masque_def, format) catch |err| {
+        std.debug.print("Failed to emit: {}\n", .{err});
+        return;
+    };
+}
+
+fn cmdCompile(allocator: std.mem.Allocator, input_file: []const u8, output_path: ?[]const u8) !void {
+    // Extract masque name from filename
+    const basename = std.fs.path.basename(input_file);
+    if (!std.mem.endsWith(u8, basename, ".masque.yaml")) {
+        std.debug.print("Error: Input must be a .masque.yaml file\n", .{});
+        return;
+    }
+    const name = basename[0 .. basename.len - ".masque.yaml".len];
+
+    std.debug.print("Compiling {s}...\n", .{name});
+
+    // Step 1: Run yaml2zig to generate Zig code
+    const gen_output_path = try std.fmt.allocPrint(allocator, "generated/{s}.zig", .{name});
+    defer allocator.free(gen_output_path);
+
+    var yaml2zig_result = std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &.{ "zig", "build", "yaml2zig", "--", "single", input_file, gen_output_path },
+    }) catch |err| {
+        std.debug.print("Failed to run yaml2zig: {}\n", .{err});
+        return;
+    };
+    defer allocator.free(yaml2zig_result.stdout);
+    defer allocator.free(yaml2zig_result.stderr);
+
+    if (yaml2zig_result.term.Exited != 0) {
+        std.debug.print("yaml2zig failed:\n{s}\n", .{yaml2zig_result.stderr});
+        return;
+    }
+
+    // Step 2: Run zig build to compile masque binary
+    const name_arg = try std.fmt.allocPrint(allocator, "-Dname={s}", .{name});
+    defer allocator.free(name_arg);
+
+    var build_result = std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &.{ "zig", "build", "masque", name_arg },
+    }) catch |err| {
+        std.debug.print("Failed to run zig build: {}\n", .{err});
+        return;
+    };
+    defer allocator.free(build_result.stdout);
+    defer allocator.free(build_result.stderr);
+
+    if (build_result.term.Exited != 0) {
+        std.debug.print("Build failed:\n{s}\n", .{build_result.stderr});
+        return;
+    }
+
+    // Step 3: Copy to output path if specified
+    const default_output = try std.fmt.allocPrint(allocator, "zig-out/bin/{s}", .{name});
+    defer allocator.free(default_output);
+
+    if (output_path) |out| {
+        std.fs.cwd().copyFile(default_output, std.fs.cwd(), out, .{}) catch |err| {
+            std.debug.print("Failed to copy to {s}: {}\n", .{ out, err });
+            return;
+        };
+        std.debug.print("Compiled: {s}\n", .{out});
+    } else {
+        std.debug.print("Compiled: {s}\n", .{default_output});
+    }
+}
+
+fn parseFormatArg(args: [][]const u8) emit_mod.Format {
+    for (args) |arg| {
+        if (std.mem.startsWith(u8, arg, "--format=")) {
+            const format_str = arg["--format=".len..];
+            return emit_mod.Format.fromString(format_str) orelse .claude;
+        }
+    }
+    return .claude; // default
+}
+
+fn parseOutputArg(args: [][]const u8) ?[]const u8 {
+    var i: usize = 0;
+    while (i < args.len) : (i += 1) {
+        if (std.mem.eql(u8, args[i], "-o") and i + 1 < args.len) {
+            return args[i + 1];
+        }
+    }
+    return null;
 }
 
 test "simple test" {
