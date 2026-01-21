@@ -3,6 +3,33 @@
 
 const std = @import("std");
 
+// Stdout helper for Zig 0.15 - uses ArrayList for buffered output
+const StdoutWriter = struct {
+    buffer: std.ArrayList(u8),
+    allocator: std.mem.Allocator,
+
+    fn init(allocator: std.mem.Allocator) StdoutWriter {
+        return .{
+            .buffer = .empty,
+            .allocator = allocator,
+        };
+    }
+
+    fn writer(self: *StdoutWriter) std.ArrayList(u8).Writer {
+        return self.buffer.writer(self.allocator);
+    }
+
+    fn flush(self: *StdoutWriter) !void {
+        const stdout = std.fs.File{ .handle = std.posix.STDOUT_FILENO };
+        try stdout.writeAll(self.buffer.items);
+        self.buffer.clearRetainingCapacity();
+    }
+
+    fn deinit(self: *StdoutWriter) void {
+        self.buffer.deinit(self.allocator);
+    }
+};
+
 pub const Skill = struct {
     uri: []const u8,
     level: []const u8,
@@ -308,8 +335,10 @@ pub fn emit(allocator: std.mem.Allocator, masque: Masque, format: Format) !void 
     }
 }
 
-fn emitClaude(_: std.mem.Allocator, masque: Masque) !void {
-    const stdout = std.io.getStdOut().writer();
+fn emitClaude(allocator: std.mem.Allocator, masque: Masque) !void {
+    var out = StdoutWriter.init(allocator);
+    defer out.deinit();
+    const stdout = out.writer();
 
     // Identity
     try stdout.print("# Identity\nYou are {s}", .{masque.name});
@@ -371,6 +400,8 @@ fn emitClaude(_: std.mem.Allocator, masque: Masque) !void {
         try stdout.print("Vault role: {s}\n", .{masque.vault_role});
         try stdout.print("TTL: {s}\n", .{masque.ttl});
     }
+
+    try out.flush();
 }
 
 fn extractSkillName(uri: []const u8) []const u8 {
@@ -381,8 +412,10 @@ fn extractSkillName(uri: []const u8) []const u8 {
     return uri;
 }
 
-fn emitJson(_: std.mem.Allocator, masque: Masque) !void {
-    const stdout = std.io.getStdOut().writer();
+fn emitJson(allocator: std.mem.Allocator, masque: Masque) !void {
+    var out = StdoutWriter.init(allocator);
+    defer out.deinit();
+    const stdout = out.writer();
 
     try stdout.writeAll("{\n");
     try stdout.print("  \"name\": \"{s}\",\n", .{masque.name});
@@ -442,17 +475,19 @@ fn emitJson(_: std.mem.Allocator, masque: Masque) !void {
     try stdout.writeAll("  }\n");
 
     try stdout.writeAll("}\n");
+    try out.flush();
 }
 
 fn escapeJsonString(s: []const u8) []const u8 {
     // Simple pass-through for now - a full implementation would escape special chars
     // This is safe for our use case since masque files don't typically have JSON special chars
-    _ = s;
     return s;
 }
 
-fn emitMarkdown(_: std.mem.Allocator, masque: Masque) !void {
-    const stdout = std.io.getStdOut().writer();
+fn emitMarkdown(allocator: std.mem.Allocator, masque: Masque) !void {
+    var out = StdoutWriter.init(allocator);
+    defer out.deinit();
+    const stdout = out.writer();
 
     try stdout.print("# {s}\n\n", .{masque.name});
     if (masque.tagline.len > 0) {
@@ -507,4 +542,6 @@ fn emitMarkdown(_: std.mem.Allocator, masque: Masque) !void {
         }
         try stdout.writeAll("\n");
     }
+
+    try out.flush();
 }

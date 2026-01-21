@@ -198,8 +198,8 @@ pub fn build(b: *std.Build) void {
 
     if (masque_name) |name| {
         const masque_exe = buildMasqueBinary(b, target, optimize, name);
-        masque_step.dependOn(&masque_exe.step);
-        b.installArtifact(masque_exe);
+        const install_step = b.addInstallArtifact(masque_exe, .{});
+        masque_step.dependOn(&install_step.step);
     } else {
         // If no name provided, show help
         const help_step = b.addSystemCommand(&.{ "echo", "Usage: zig build masque -- --name=<masque>" });

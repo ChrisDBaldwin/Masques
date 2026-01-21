@@ -272,7 +272,7 @@ fn cmdDoff(allocator: std.mem.Allocator, buf: *BufferedStdout) !void {
 
 fn cmdSource(_: std.mem.Allocator, _: *BufferedStdout) !void {
     // Output the original YAML source directly to stdout (not buffered)
-    const stdout = std.io.getStdOut().writer();
+    const stdout = std.fs.File{ .handle = std.posix.STDOUT_FILENO };
     try stdout.writeAll(masque_def.source_yaml);
 }
 

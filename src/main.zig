@@ -265,7 +265,7 @@ fn cmdCompile(allocator: std.mem.Allocator, input_file: []const u8, output_path:
     const gen_output_path = try std.fmt.allocPrint(allocator, "generated/{s}.zig", .{name});
     defer allocator.free(gen_output_path);
 
-    var yaml2zig_result = std.process.Child.run(.{
+    const yaml2zig_result = std.process.Child.run(.{
         .allocator = allocator,
         .argv = &.{ "zig", "build", "yaml2zig", "--", "single", input_file, gen_output_path },
     }) catch |err| {
@@ -284,7 +284,7 @@ fn cmdCompile(allocator: std.mem.Allocator, input_file: []const u8, output_path:
     const name_arg = try std.fmt.allocPrint(allocator, "-Dname={s}", .{name});
     defer allocator.free(name_arg);
 
-    var build_result = std.process.Child.run(.{
+    const build_result = std.process.Child.run(.{
         .allocator = allocator,
         .argv = &.{ "zig", "build", "masque", name_arg },
     }) catch |err| {
@@ -314,7 +314,7 @@ fn cmdCompile(allocator: std.mem.Allocator, input_file: []const u8, output_path:
     }
 }
 
-fn parseFormatArg(args: [][]const u8) emit_mod.Format {
+fn parseFormatArg(args: []const [:0]const u8) emit_mod.Format {
     for (args) |arg| {
         if (std.mem.startsWith(u8, arg, "--format=")) {
             const format_str = arg["--format=".len..];
@@ -324,7 +324,7 @@ fn parseFormatArg(args: [][]const u8) emit_mod.Format {
     return .claude; // default
 }
 
-fn parseOutputArg(args: [][]const u8) ?[]const u8 {
+fn parseOutputArg(args: []const [:0]const u8) ?[]const u8 {
     var i: usize = 0;
     while (i < args.len) : (i += 1) {
         if (std.mem.eql(u8, args[i], "-o") and i + 1 < args.len) {
