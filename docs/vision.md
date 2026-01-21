@@ -189,4 +189,4 @@ The foundation is the same: temporary, coherent, intentional identity.
 
 ---
 
-*See [Concepts](concepts.md) for component details, [Trust Rings](trust-rings.md) for the qualification model, and [Teams](teams.md) for multi-agent coordination.*
+*See [Concepts](concepts.md) for component details and [Schema](schema.md) for the full YAML specification.*

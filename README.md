@@ -10,25 +10,22 @@
 
 Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
 
-When you don a masque, you get everything: goals, context, knowledge pointers, credentials, and cognitive framing. When the session ends, credentials expire—but work product remains.
+When you don a masque, you get everything: goals, context, knowledge pointers, credentials, and cognitive framing. Masques can even bundle MCP servers to provide domain-specific tools.
 
 ## Quick Start
 
 ```bash
 # Install as a Claude Code plugin
 claude plugins add github:ChrisDBaldwin/masques
-
-# Or from source
-git clone https://github.com/ChrisDBaldwin/masques.git
-cd masques && zig build
 ```
 
 ### Commands
 
 ```bash
 /don <masque> [intent]    # Assume a masque identity
-/doff                     # Release current masque
-/whoami                   # Show active masque info
+/id                       # Show active masque info
+/list                     # List available masques
+/inspect [masque]         # View full masque details
 ```
 
 ### Example
@@ -38,12 +35,17 @@ name: Codesmith
 version: "0.1.0"
 ring: player
 
+attributes:
+  domain: systems-programming
+  philosophy: "build slowly, understand deeply"
+  tagline: "every line should teach"
+
 intent:
   allowed: ["implement *", "design *", "test *"]
   denied: ["ship without tests", "rush *"]
 
 context: |
-  Building the Masque framework in Zig. Prioritize clarity over cleverness.
+  Building the Masque framework. Prioritize clarity over cleverness.
 
 knowledge:
   - mcp://masque/design-docs
@@ -56,12 +58,19 @@ access:
 lens: |
   You are Codesmith, a methodical builder. Write code that teaches.
   Small commits. Tests as documentation.
+
+# Optional: Bundle MCP servers with this masque
+mcp:
+  servers:
+    - name: zig-docs
+      type: stdio
+      command: npx
+      args: ["-y", "@anthropic/mcp-zig-docs"]
 ```
 
 ```bash
 /don codesmith "implementing YAML parser"
 # Work happens with full identity context...
-/doff
 ```
 
 ## Documentation
@@ -70,15 +79,11 @@ lens: |
 |-------|-------------|
 | [Vision](docs/vision.md) | The theater metaphor and why masques exist |
 | [Concepts](docs/concepts.md) | The five components explained |
-| [Trust Rings](docs/trust-rings.md) | Continuous qualification model |
-| [Teams](docs/teams.md) | Multi-agent coordination patterns |
-| [Implementation](docs/implementation.md) | Masques as programs |
 | [Schema](docs/schema.md) | Full YAML specification |
-| [Reflection](docs/reflection.md) | Observability model |
 
 ## Status
 
-Zig CLI implemented. Claude Code plugin packaged with prebuilt darwin-arm64 binaries.
+Claude Code plugin for YAML-based masque definitions with MCP server bundling.
 
 ---
 

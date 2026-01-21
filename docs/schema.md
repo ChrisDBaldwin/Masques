@@ -36,6 +36,13 @@ access:             # Optional. Credential config
 lens: |             # Required. Cognitive framing
   System prompt fragment.
 
+mcp:                # Optional. Bundled MCP servers
+  servers:
+    - name: server-name
+      type: stdio
+      command: npx
+      args: ["-y", "@package/name"]
+
 performance:        # Optional. Contribution evaluation
   score: "*"
   history: []
@@ -58,7 +65,7 @@ Semantic version string. Masques are pinned to versions; upgrading is deliberate
 ring: admin|player|guest|outsider
 ```
 
-Determines who can assume this masque. See [trust-rings.md](trust-rings.md) for full model.
+Determines who can assume this masque.
 
 | Ring | Qualification |
 |------|---------------|
@@ -156,6 +163,46 @@ lens: |
 
 How to think, what to prioritize, what to reject.
 
+## MCP Server Bundling
+
+Masques can bundle MCP servers to provide domain-specific tools:
+
+```yaml
+mcp:
+  servers:
+    - name: zig-docs
+      type: stdio
+      command: npx
+      args: ["-y", "@anthropic/mcp-zig-docs"]
+    - name: local-tools
+      type: stdio
+      command: python
+      args: ["./servers/tools.py"]
+      env:
+        API_KEY: "${API_KEY}"
+```
+
+### Server Properties
+
+| Property | Required | Description |
+|----------|----------|-------------|
+| `name` | Yes | Unique identifier for the server |
+| `type` | Yes | Transport type: `stdio`, `sse`, or `http` |
+| `command` | Yes | Command to start the server |
+| `args` | No | Array of command arguments |
+| `env` | No | Environment variables for the server |
+
+### On Don
+
+When a masque with MCP servers is donned, the plugin displays instructions for enabling the servers:
+
+```
+This masque bundles MCP servers:
+• zig-docs: npx -y @anthropic/mcp-zig-docs
+
+To enable: claude mcp add zig-docs -- npx -y @anthropic/mcp-zig-docs
+```
+
 ## Performance Scoring
 
 Masques are evaluated on their contribution to the community:
@@ -197,14 +244,9 @@ personas/
 
 ## Validation
 
-Validate masques against the schema:
+Validate masques against the schema using any YAML linter with JSON Schema support.
 
-```bash
-# Future: Zig CLI
-masques validate personas/codesmith.masque.yaml
-
-# For now: any YAML linter with JSON Schema support
-```
+The formal schema is at `schemas/masque.schema.yaml`.
 
 ## Example
 

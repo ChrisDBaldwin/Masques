@@ -112,6 +112,40 @@ properties:
         description: Token lifetime (session or ISO 8601 duration)
         pattern: "^(session|PT?\\d+[HMS]?)$"
 
+  # === MCP Server Bundling ===
+  mcp:
+    type: object
+    description: MCP servers bundled with this masque for tool access
+    properties:
+      servers:
+        type: array
+        description: List of MCP server configurations
+        items:
+          type: object
+          required: [name, type, command]
+          properties:
+            name:
+              type: string
+              description: Unique server name for reference
+              pattern: "^[a-z0-9-]+$"
+            type:
+              type: string
+              description: Server transport type
+              enum: [stdio, sse, http]
+            command:
+              type: string
+              description: Command to start the server
+            args:
+              type: array
+              description: Command arguments
+              items:
+                type: string
+            env:
+              type: object
+              description: Environment variables for the server
+              additionalProperties:
+                type: string
+
   lens:
     type: string
     description: |

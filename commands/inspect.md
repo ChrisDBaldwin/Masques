@@ -9,7 +9,7 @@ arguments:
 
 # Masque Inspect Command
 
-Display the complete details of a masque — all five components plus attributes.
+Display the complete details of a masque — all components plus attributes.
 
 ## Instructions
 
@@ -18,13 +18,13 @@ Display the complete details of a masque — all five components plus attributes
    - If a name is provided → inspect that masque directly
 
 2. **If inspecting self (no arg or "self"):**
-   - Read `.claude/masques.local.md` to get the active masque name
-   - If no masque is active: report "No masque active." and stop
-   - Otherwise, load `entities/masques/<name>.masque.json`
+   - Read `.claude/masques.local.md` to get the active masque name from frontmatter
+   - If no masque is active: report "No masque active. Use `/don <name>` to adopt one."
+   - Otherwise, use that name to find the YAML file
 
-3. **If inspecting by name:**
-   - Load `entities/masques/<name>.masque.json`
-   - If not found, report: "Masque '<name>' not found."
+3. **Read the masque file:**
+   - Load `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+   - If not found, report: "Masque '<name>' not found." and list available masques
 
 4. **Display the full masque:**
 
@@ -33,12 +33,13 @@ Display the complete details of a masque — all five components plus attributes
    [Name] v[version]                                    ring: [ring]
    ═══════════════════════════════════════════════════════════════
 
-   [tagline or philosophy]
+   [tagline]
 
    ── Attributes ──────────────────────────────────────────────────
    Domain:     [domain]
    Stack:      [stack]
    Style:      [style]
+   Philosophy: [philosophy]
 
    ── Intent ──────────────────────────────────────────────────────
    Allowed:
@@ -50,28 +51,24 @@ Display the complete details of a masque — all five components plus attributes
      • [pattern]
 
    ── Context ─────────────────────────────────────────────────────
-   [context block]
+   [context block - full content]
 
    ── Knowledge ───────────────────────────────────────────────────
      • [mcp://uri]
      • [mcp://uri]
 
-   ── Access ──────────────────────────────────────────────────────
-   Vault Role: [vault_role]
-   TTL:        [ttl]
-
    ── Skills ──────────────────────────────────────────────────────
-     • [uri] ([level])
-     • [uri] ([level])
+     • [skill://uri] ([level])
+     • [skill://uri] ([level])
 
    ── Lens ────────────────────────────────────────────────────────
    [full lens content]
    ```
 
-5. **If masque has performance data**, optionally show:
+5. **If masque has MCP server definitions**, show them:
    ```
-   ── Performance ─────────────────────────────────────────────────
-   Score: [score or "not rated"]
+   ── MCP Servers ─────────────────────────────────────────────────
+     • [name]: [command] [args...]
    ```
 
-6. **Omit empty sections** — if a masque lacks knowledge or skills, skip those headers.
+6. **Omit empty sections** — if a masque lacks knowledge, skills, or MCP servers, skip those headers.
