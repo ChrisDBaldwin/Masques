@@ -8,7 +8,7 @@
 
 ## What Is This?
 
-Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masque unifies them into a single "become this identity" operation.
+Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
 
 When you don a masque, you get everything: goals, context, knowledge pointers, credentials, and cognitive framing. When the session ends, credentials expire—but work product remains.
 

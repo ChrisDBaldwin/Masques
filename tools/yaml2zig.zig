@@ -120,8 +120,8 @@ fn generateSingle(allocator: std.mem.Allocator, input_path: []const u8, output_p
     };
     defer masque.deinit(allocator);
 
-    // Generate Zig code
-    const zig_code = try generateZigCode(allocator, masque);
+    // Generate Zig code (pass yaml_content for source embedding)
+    const zig_code = try generateZigCode(allocator, masque, yaml_content);
     defer allocator.free(zig_code);
 
     // Write output
@@ -407,7 +407,7 @@ const YamlParser = struct {
     }
 };
 
-fn generateZigCode(allocator: std.mem.Allocator, masque: Masque) ![]const u8 {
+fn generateZigCode(allocator: std.mem.Allocator, masque: Masque, yaml_source: []const u8) ![]const u8 {
     var code: std.ArrayList(u8) = .empty;
     errdefer code.deinit(allocator);
     const writer = code.writer(allocator);
@@ -425,8 +425,17 @@ fn generateZigCode(allocator: std.mem.Allocator, masque: Masque) ![]const u8 {
         \\const interface = @import("interface");
         \\
         \\// Original YAML source embedded for --source command
-        \\pub const source_yaml = @embedFile("../personas/{s}.masque.yaml");
-        \\
+        \\pub const source_yaml =
+    , .{
+        masque.name,
+        lower_name,
+    });
+
+    // Embed the YAML source as a multiline string literal
+    try writeMultilineString(writer, yaml_source);
+    try writer.writeAll(";\n\n");
+
+    try writer.print(
         \\pub const masque = interface.Masque{{
         \\    .name = "{s}",
         \\    .index = {d},
@@ -434,9 +443,6 @@ fn generateZigCode(allocator: std.mem.Allocator, masque: Masque) ![]const u8 {
         \\    .ring = .{s},
         \\    .context =
     , .{
-        masque.name,
-        lower_name,
-        lower_name, // for @embedFile path
         escapeString(masque.name),
         masque.index,
         escapeString(masque.version),

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Masque is an agent identity framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling five components: intent, context, knowledge, access, and lens. The semantics mirror AWS IAM but extend beyond permissions to include knowledge pointers and cognitive framing.
+Masques is an agent identity framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling five components: intent, context, knowledge, access, and lens. The semantics mirror AWS IAM but extend beyond permissions to include knowledge pointers and cognitive framing.
 
 **Status**: Design documentation complete. Zig CLI partially implemented (list/show commands work via DuckDB).
 
