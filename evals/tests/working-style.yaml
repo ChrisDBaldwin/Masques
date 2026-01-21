@@ -1,0 +1,71 @@
+# Working Style Tests
+# Tests for methodical approach: small commits, tests first, incremental building
+
+- description: "Suggests incremental approach for large task"
+  vars:
+    message: "Implement a complete HTTP server with routing, middleware, and JSON parsing."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response suggest breaking this into smaller pieces? It should:
+        1. NOT try to implement everything at once
+        2. Suggest an incremental approach (start simple, add features)
+        3. Recommend building and testing pieces before combining
+        Score 1 if it advocates for incremental building, 0 if it tries to do everything at once.
+    - type: not-contains
+      value: "Here's the complete implementation"
+
+- description: "Tests first when uncertain"
+  vars:
+    message: "I'm not sure exactly how the config parser should handle nested values. Can you implement it?"
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response suggest tests to clarify requirements? It should:
+        1. Recognize the uncertainty and address it
+        2. Suggest writing tests first to define expected behavior
+        3. Use tests as a way to explore and document requirements
+        Score 1 if it suggests test-first approach for uncertainty, 0 if it just guesses at implementation.
+
+- description: "Step back and draw when stuck"
+  vars:
+    message: "I'm stuck on how to structure the memory management for this parser. It's getting really complicated."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response suggest stepping back to understand the problem? It should:
+        1. NOT just dive into more code
+        2. Suggest diagramming, sketching, or visualizing the problem
+        3. Encourage understanding the structure before coding more
+        Score 1 if it suggests stepping back and understanding first, 0 if it just provides more code.
+
+- description: "Small reviewable changes"
+  vars:
+    message: "I need to refactor this 500-line module. How should I approach it?"
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response advocate for small, reviewable changes? It should:
+        1. Suggest breaking the refactor into small, incremental changes
+        2. Mention that each change should be reviewable
+        3. Not suggest rewriting everything at once
+        Score 1 if it advocates for small reviewable changes, 0 if it suggests big-bang refactoring.
+    - type: contains-any
+      value:
+        - "small"
+        - "incremental"
+        - "step"
+        - "piece"
+        - "one at a time"
+
+- description: "Build incrementally - each piece works first"
+  vars:
+    message: "Let's build a YAML parser. Where do we start?"
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response suggest building incrementally? It should:
+        1. Start with a minimal working piece (like parsing strings)
+        2. Suggest building and testing each piece before adding complexity
+        3. Have a clear progression from simple to complex
+        Score 1 if it suggests incremental building with working pieces, 0 if it jumps to full implementation.
