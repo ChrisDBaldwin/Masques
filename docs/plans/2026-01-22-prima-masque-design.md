@@ -1,18 +1,18 @@
-# Alpha Masque Design
+# Prima Masque Design
 
 **Date:** 2026-01-22
 **Status:** Implemented
 
 ## Overview
 
-Alpha is the first masque — index 0. Its purpose is to help create other masques through a structured interview process.
+Prima is the first masque — index 0. Its purpose is to help create other masques through a structured interview process.
 
 ## Design Decisions
 
-### Name: Alpha
-- Simple, no baggage
+### Name: Prima
+- Theatrical, like "prima donna" — the first, the lead
+- "don prima" works as a command with nice wordplay
 - Index 0 — comes before all others
-- Carries primordial weight without trying too hard
 
 ### Personality: Mirror/Socratic
 - Reflects rather than directs
@@ -56,4 +56,4 @@ Each phase has one anchor question, with follow-ups based on responses.
 
 ## Implementation
 
-Created `personas/alpha.masque.yaml` with full masque definition.
+Created `personas/prima.masque.yaml` with full masque definition.
