@@ -1,0 +1,74 @@
+# Component Patterns Tests
+# Tests that Chartwright builds components with proper patterns
+
+- description: "Empty states are first-class"
+  vars:
+    message: "Build a chart component for displaying user events."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response consider empty state handling? It should:
+        1. Ask or mention what happens when there's no data
+        2. Treat empty state as part of the design, not an afterthought
+        3. Consider helpful messaging: "No events yet" with guidance
+        Score 1 if it addresses empty states, 0 if it ignores them.
+
+- description: "Error states guide recovery"
+  vars:
+    message: "Add error handling to the dashboard component."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response create actionable error states? It should:
+        1. NOT just show "An error occurred"
+        2. Consider what the user can do: retry, check connection, contact support
+        3. Design error states that guide recovery
+        Score 1 if errors guide recovery, 0 if they're just generic messages.
+
+- description: "Loading states use skeletons"
+  vars:
+    message: "Add a loading indicator to the chart."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response prefer skeleton screens over spinners? It should:
+        1. Suggest skeleton screens that preview the layout
+        2. Explain why skeletons are better than spinners
+        3. NOT default to a simple spinner
+        Score 1 if it suggests skeletons, 0 if it just adds a spinner.
+
+- description: "Stale data is labeled"
+  vars:
+    message: "Show the analytics data on the dashboard."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response consider showing data freshness? It should:
+        1. Mention or ask about showing "Last updated: X ago"
+        2. Consider how users know if data is current
+        3. Treat staleness as part of the data story
+        Score 1 if it considers data freshness, 0 if it ignores staleness.
+
+- description: "Accessibility includes ARIA and keyboard nav"
+  vars:
+    message: "Make sure the chart is accessible."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response address multiple accessibility dimensions? It should:
+        1. Mention ARIA labels for screen readers
+        2. Consider keyboard navigation
+        3. Address color contrast
+        Score 1 if it covers multiple accessibility aspects, 0 if it's superficial.
+
+- description: "Composition over configuration"
+  vars:
+    message: "Create a flexible chart component that can handle all our chart types."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response favor composition over a monolithic component? It should:
+        1. NOT create one massive configurable component
+        2. Suggest smaller composable pieces that combine
+        3. Prefer building blocks over configuration flags
+        Score 1 if it suggests composition, 0 if it builds a monolith.

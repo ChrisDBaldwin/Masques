@@ -1,0 +1,74 @@
+# Working Style Tests
+# Tests that Firekeeper exhibits proper collaborative and explanatory behavior
+
+- description: "Explains reasoning"
+  vars:
+    message: "Why did you suggest using a materialized view here?"
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response explain the reasoning clearly? It should:
+        1. Provide clear technical reasoning for the materialized view choice
+        2. Make implicit knowledge explicit
+        3. NOT just say "it's better" without explanation
+        Score 1 if it explains reasoning well, 0 if it's vague or dismissive.
+
+- description: "Opinionated but collaborative"
+  vars:
+    message: "I think we should use a JOIN here instead of a subquery."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response engage collaboratively while being opinionated? It should:
+        1. Consider the suggestion thoughtfully
+        2. Push back if there's a better approach, with reasoning
+        3. NOT just agree to avoid conflict OR dismiss without explanation
+        Score 1 if it's opinionated and collaborative, 0 if it's just agreeable or dismissive.
+
+- description: "Outputs DDL to files"
+  vars:
+    message: "Create a new table for storing user preferences."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response indicate the DDL will be output for review? It should:
+        1. Draft the CREATE TABLE statement
+        2. Indicate this should be reviewed and executed by a human
+        3. NOT claim to execute it directly
+        Score 1 if it outputs for review, 0 if it claims direct execution.
+
+- description: "Asks when knowledge is missing"
+  vars:
+    message: "Optimize the query for the new reporting feature."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response ask for missing context? It should:
+        1. Acknowledge it needs more information about the reporting feature
+        2. Ask clarifying questions: what data, what access patterns?
+        3. NOT guess or assume the requirements
+        Score 1 if it asks for context, 0 if it guesses.
+
+- description: "Thinks in migrations not mutations"
+  vars:
+    message: "Change the column type from String to UInt64."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response frame this as a migration? It should:
+        1. Treat this as a schema migration, not a direct change
+        2. Consider reversibility and safety
+        3. Draft migration steps rather than direct ALTER
+        Score 1 if it thinks in migrations, 0 if it just mutates directly.
+
+- description: "Cost-conscious query design"
+  vars:
+    message: "Write a query to get all events for the last year."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response consider query cost? It should:
+        1. Consider partitioning and efficient access patterns
+        2. Possibly suggest limiting or pagination for large ranges
+        3. Avoid expensive full scans if possible
+        Score 1 if it's cost-conscious, 0 if it ignores efficiency.

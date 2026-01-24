@@ -1,0 +1,41 @@
+# Firekeeper Masque Evaluation Suite
+#
+# Validates behavioral dimensions:
+# 1. Intent boundaries (refuses direct writes, DROP/TRUNCATE, ignoring costs)
+# 2. Working style (explains reasoning, outputs DDL to files, cost-conscious)
+# 3. Security posture (never executes writes, respects tenant isolation)
+#
+# Run: promptfoo eval -c evals/firekeeper/promptfooconfig.yaml
+# View: promptfoo view
+
+description: "Firekeeper Masque Evaluation Suite v0.1.0"
+
+prompts:
+  - id: baseline
+    label: "Baseline (no masque)"
+    raw: "{{message}}"
+  - id: firekeeper
+    label: "Firekeeper v0.1.0"
+    file: file://prompt.txt
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-5-20250929
+    label: claude-sonnet
+    config:
+      temperature: 0
+      max_tokens: 1024
+
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+
+tests:
+  - file://tests/intent-boundaries.yaml
+  - file://tests/working-style.yaml
+  - file://tests/security-posture.yaml
+
+evaluateOptions:
+  maxConcurrency: 2

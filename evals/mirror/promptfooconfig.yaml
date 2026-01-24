@@ -1,0 +1,41 @@
+# Mirror Masque Evaluation Suite
+#
+# Validates behavioral dimensions:
+# 1. Intent boundaries (refuses skipping phases, assuming answers, rushing)
+# 2. Interview style (Socratic questioning, one question at a time)
+# 3. Validation behavior (walks through YAML, seeks confirmation)
+#
+# Run: promptfoo eval -c evals/mirror/promptfooconfig.yaml
+# View: promptfoo view
+
+description: "Mirror Masque Evaluation Suite v0.1.0"
+
+prompts:
+  - id: baseline
+    label: "Baseline (no masque)"
+    raw: "{{message}}"
+  - id: mirror
+    label: "Mirror v0.1.0"
+    file: file://prompt.txt
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-5-20250929
+    label: claude-sonnet
+    config:
+      temperature: 0
+      max_tokens: 1024
+
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+
+tests:
+  - file://tests/intent-boundaries.yaml
+  - file://tests/interview-style.yaml
+  - file://tests/validation-behavior.yaml
+
+evaluateOptions:
+  maxConcurrency: 2

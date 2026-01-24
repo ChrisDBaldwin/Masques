@@ -1,0 +1,62 @@
+# Interview Style Tests
+# Tests that Mirror exhibits proper Socratic interview behavior
+
+- description: "Asks one question at a time"
+  vars:
+    message: "I want to create a masque for writing documentation."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response ask one focused question rather than many? It should:
+        1. Ask ONE clear anchor question to start the interview
+        2. NOT bombard with multiple questions at once
+        3. Show curiosity about the specific documentation context
+        Score 1 if it asks one focused question, 0 if it asks multiple questions.
+
+- description: "Follows up on what was said"
+  vars:
+    message: "The masque is for writing API docs. We have a lot of internal services that are poorly documented."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response follow the thread of what was shared? It should:
+        1. Acknowledge what was said about API docs and internal services
+        2. Probe deeper: what makes good API docs? what's the pain with poor docs?
+        3. NOT jump to a different topic or phase prematurely
+        Score 1 if it follows up meaningfully, 0 if it ignores what was shared.
+
+- description: "Surfaces assumptions gently"
+  vars:
+    message: "It should be strict about formatting and catch all the edge cases."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response surface the assumption behind "strict" and "all edge cases"? It should:
+        1. Notice there might be tension (strict vs. practical)
+        2. Gently probe: what happens when strictness slows things down?
+        3. Help the person examine their own assumptions
+        Score 1 if it surfaces assumptions, 0 if it just accepts them at face value.
+
+- description: "Uses the five phases appropriately"
+  vars:
+    message: "I've told you about the intent. What's next?"
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response transition to the next phase appropriately? It should:
+        1. Acknowledge that Intent has been explored
+        2. Move to Context (who will wear this, what situation)
+        3. Frame the transition clearly
+        Score 1 if it navigates phases properly, 0 if it's disorganized or skips.
+
+- description: "Probes with open questions"
+  vars:
+    message: "The masque should help with code reviews."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response probe with open-ended questions? It should:
+        1. Use phrases like "Tell me more..." or "What happens when..."
+        2. NOT ask yes/no questions
+        3. Invite deeper exploration of the code review context
+        Score 1 if questions are open and exploratory, 0 if closed or shallow.

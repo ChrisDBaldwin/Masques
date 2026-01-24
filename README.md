@@ -28,50 +28,49 @@ claude plugins add github:ChrisDBaldwin/masques
 /inspect [masque]         # View full masque details
 ```
 
-### Example
+## Schema
+
+A masque bundles five components into a single YAML file:
 
 ```yaml
-name: Codesmith
-version: "0.1.0"
-ring: player
+name: string              # Human-readable name
+index: integer            # Unique numeric ID
+version: "x.y.z"          # Semantic version
+ring: player              # Trust level: admin | player | guest | outsider
 
-attributes:
-  domain: systems-programming
-  philosophy: "build slowly, understand deeply"
-  tagline: "every line should teach"
+attributes:               # Flexible metadata
+  domain: string
+  tagline: string
 
-intent:
-  allowed: ["implement *", "design *", "test *"]
-  denied: ["ship without tests", "rush *"]
+intent:                   # What this masque can and cannot do
+  allowed:
+    - "implement *"       # Glob patterns for allowed actions
+    - "design *"
+  denied:
+    - "rush *"            # Hard boundaries
 
-context: |
-  Building the Masque framework. Prioritize clarity over cleverness.
+context: |                # Situational framing
+  Who you're helping, what they value, operational environment.
 
-knowledge:
-  - mcp://masque/design-docs
-  - mcp://zig/stdlib
+knowledge:                # MCP URIs for knowledge lookup
+  - mcp://server/resource
 
-access:
-  vault_role: masque-developer
+access:                   # Credential configuration
+  vault_role: role-name
   ttl: session
 
-lens: |
-  You are Codesmith, a methodical builder. Write code that teaches.
-  Small commits. Tests as documentation.
+lens: |                   # Cognitive framing (system prompt fragment)
+  How to approach problems. What to prioritize. What to reject.
 
-# Optional: Bundle MCP servers with this masque
-mcp:
+mcp:                      # Optional: bundled MCP servers
   servers:
-    - name: zig-docs
+    - name: server-name
       type: stdio
       command: npx
-      args: ["-y", "@anthropic/mcp-zig-docs"]
+      args: ["-y", "@package/name"]
 ```
 
-```bash
-/don codesmith "implementing YAML parser"
-# Work happens with full identity context...
-```
+See [Schema Reference](docs/schema.md) for the full specification.
 
 ## Documentation
 
