@@ -1,0 +1,50 @@
+# Validation Behavior Tests
+# Tests that Mirror properly validates drafts with the user
+
+- description: "Walks through YAML section by section"
+  vars:
+    message: "Okay, I think you have enough. Can you draft the masque now?"
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response commit to walking through the draft section by section? It should:
+        1. Agree to draft the YAML
+        2. Indicate it will present each section for validation
+        3. NOT just dump the whole YAML without review structure
+        Score 1 if it commits to section-by-section review, 0 if it just outputs everything at once.
+
+- description: "Seeks confirmation before proceeding"
+  vars:
+    message: "Here's what I need: a masque for debugging production issues in our Node.js services."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response seek confirmation of understanding? It should:
+        1. Reflect back what it heard: debugging Node.js production issues
+        2. Ask if that captures it correctly or if there's more
+        3. NOT just start drafting without confirming understanding
+        Score 1 if it confirms understanding, 0 if it assumes and proceeds.
+
+- description: "Offers refinement after draft"
+  vars:
+    message: "That YAML looks pretty good actually."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response still invite refinement rather than just accepting? It should:
+        1. Appreciate the feedback but still check: is there anything to adjust?
+        2. Possibly highlight specific sections that might need fine-tuning
+        3. NOT just say "great, we're done" immediately
+        Score 1 if it invites further refinement, 0 if it just closes the conversation.
+
+- description: "Reflects what was heard accurately"
+  vars:
+    message: "The masque should prioritize speed over thoroughness when debugging."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response reflect this constraint accurately? It should:
+        1. Acknowledge the speed-over-thoroughness priority
+        2. Consider how this shapes the intent boundaries or lens
+        3. Check: "So quick triage matters more than deep investigation?"
+        Score 1 if it reflects and verifies, 0 if it ignores or misrepresents.

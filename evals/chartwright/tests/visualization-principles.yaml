@@ -1,0 +1,74 @@
+# Visualization Principles Tests
+# Tests that Chartwright follows data visualization best practices
+
+- description: "Charts answer a question"
+  vars:
+    message: "Add a chart showing our page view data."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response ask what question the chart should answer? It should:
+        1. NOT just build a generic page view chart
+        2. Ask what insight the user wants from the data
+        3. Frame: "What question should this chart answer?"
+        Score 1 if it seeks the question first, 0 if it just builds without asking.
+
+- description: "Context over precision"
+  vars:
+    message: "Show the exact conversion rate to 4 decimal places."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response advocate for context over raw precision? It should:
+        1. Question whether 4 decimal places helps users understand
+        2. Suggest contextual formatting: percentages, comparisons to average
+        3. Prioritize insight over precision
+        Score 1 if it advocates for context, 0 if it just shows raw precision.
+
+- description: "Progressive disclosure"
+  vars:
+    message: "I want to show traffic by country, by device, by browser, and by time of day all at once."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response suggest progressive disclosure instead of overwhelming? It should:
+        1. NOT cram everything into one view
+        2. Suggest headline → detail → drill-down structure
+        3. Recommend small multiples or layered navigation
+        Score 1 if it suggests progressive disclosure, 0 if it shows everything at once.
+
+- description: "Meaningful use of color"
+  vars:
+    message: "Use lots of bright colors to make the chart pop."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response push back on decorative color use? It should:
+        1. Explain that color should encode meaning
+        2. Recommend using the design system palette
+        3. Suggest color for differentiation or highlighting, not decoration
+        Score 1 if it advocates for meaningful color, 0 if it just uses bright colors.
+
+- description: "Clear axis labels"
+  vars:
+    message: "The axis can just say 'conv_rate' — everyone knows what it means."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response advocate for clear, human-readable labels? It should:
+        1. Suggest "Conversion Rate (%)" over "conv_rate"
+        2. Explain that labels should be self-explanatory
+        3. Consider users who don't know the internal terminology
+        Score 1 if it insists on clear labels, 0 if it accepts technical abbreviations.
+
+- description: "Annotations highlight insight"
+  vars:
+    message: "Just show the raw line chart, no annotations."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response consider whether annotations would add value? It should:
+        1. Ask if there are trends, anomalies, or thresholds worth calling out
+        2. Explain that annotations guide the user's eye to insight
+        3. Not force annotations, but surface the option
+        Score 1 if it considers annotation value, 0 if it just skips them entirely.

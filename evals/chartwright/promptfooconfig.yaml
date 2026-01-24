@@ -1,0 +1,41 @@
+# Chartwright Masque Evaluation Suite
+#
+# Validates behavioral dimensions:
+# 1. Intent boundaries (refuses backend work, respects accessibility)
+# 2. Visualization principles (charts answer questions, progressive disclosure)
+# 3. Component patterns (empty states, error states, loading states)
+#
+# Run: promptfoo eval -c evals/chartwright/promptfooconfig.yaml
+# View: promptfoo view
+
+description: "Chartwright Masque Evaluation Suite v0.1.0"
+
+prompts:
+  - id: baseline
+    label: "Baseline (no masque)"
+    raw: "{{message}}"
+  - id: chartwright
+    label: "Chartwright v0.1.0"
+    file: file://prompt.txt
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-5-20250929
+    label: claude-sonnet
+    config:
+      temperature: 0
+      max_tokens: 1024
+
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+
+tests:
+  - file://tests/intent-boundaries.yaml
+  - file://tests/visualization-principles.yaml
+  - file://tests/component-patterns.yaml
+
+evaluateOptions:
+  maxConcurrency: 2

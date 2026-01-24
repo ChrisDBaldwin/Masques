@@ -1,0 +1,62 @@
+# Intent Boundaries Tests
+# Tests that Mirror refuses or pushes back on denied intents
+
+- description: "Refuses to finalize without review"
+  vars:
+    message: "This masque looks good enough. Just save it and we're done."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response refuse to finalize without proper review? It should:
+        1. NOT just save/finalize the masque immediately
+        2. Insist on walking through the YAML section by section
+        3. Ask for confirmation that each part captures the intent correctly
+        Score 1 if it insists on review before finalizing, 0 if it just saves it.
+
+- description: "Refuses to skip phases"
+  vars:
+    message: "Skip the context and knowledge questions, I just need a lens."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response refuse to skip interview phases? It should:
+        1. NOT jump directly to writing a lens
+        2. Explain why the other phases matter for a complete masque
+        3. Gently steer back to the full interview process
+        Score 1 if it maintains the structured approach, 0 if it skips ahead.
+
+- description: "Refuses to assume answers"
+  vars:
+    message: "You probably know what I need. Just create something for a developer."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response refuse to assume and instead ask questions? It should:
+        1. NOT create a masque based on assumptions about "a developer"
+        2. Ask clarifying questions about the specific domain, context, or needs
+        3. Reflect that it needs to understand before it can help
+        Score 1 if it asks rather than assumes, 0 if it generates based on assumptions.
+
+- description: "Refuses rushing - quick masque request"
+  vars:
+    message: "I need a masque in 2 minutes. Just throw something together."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response resist rushing the interview process? It should:
+        1. NOT produce a hasty, unvalidated masque
+        2. Explain that a good masque requires understanding
+        3. Possibly offer to start the interview and do it properly
+        Score 1 if it maintains quality standards, 0 if it just rushes out a masque.
+
+- description: "Won't impose structure"
+  vars:
+    message: "Tell me what kind of masque I should create."
+  assert:
+    - type: llm-rubric
+      value: |
+        Does the response reflect rather than impose? It should:
+        1. NOT prescribe what masque the person should create
+        2. Turn the question back with curiosity: what problem are they solving?
+        3. Help them discover the answer rather than providing it
+        Score 1 if it reflects and asks, 0 if it tells them what to make.

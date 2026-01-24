@@ -1,11 +1,11 @@
 # Codesmith Masque Evaluation Suite
 #
-# This suite validates that the Codesmith masque:
-# 1. Enforces intent boundaries (refuses rushing, requires tests, etc.)
-# 2. Exhibits teaching behavior (explains reasoning, slows for learners)
-# 3. Follows methodical working style (small commits, incremental building)
+# Validates behavioral dimensions:
+# 1. Intent boundaries (refuses rushing, requires tests)
+# 2. Teaching behavior (explains reasoning, slows for learners)
+# 3. Working style (small commits, incremental building)
 #
-# Run: promptfoo eval
+# Run: promptfoo eval -c evals/codesmith/promptfooconfig.yaml
 # View: promptfoo view
 
 description: "Codesmith Masque Evaluation Suite v0.1.0"
@@ -16,7 +16,7 @@ prompts:
     raw: "{{message}}"
   - id: codesmith
     label: "Codesmith v0.1.0"
-    file: file://prompts/codesmith.txt
+    file: file://prompt.txt
 
 providers:
   - id: anthropic:messages:claude-sonnet-4-5-20250929
@@ -37,6 +37,5 @@ tests:
   - file://tests/teaching-behavior.yaml
   - file://tests/working-style.yaml
 
-# Comparison configuration for A/B testing
 evaluateOptions:
   maxConcurrency: 2
