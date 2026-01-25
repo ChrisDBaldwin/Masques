@@ -6,8 +6,11 @@
   },
   "plugins": [
     {
-      "name": "masque",
-      "source": "./claude-plugin",
+      "name": "masques",
+      "source": {
+        "source": "github",
+        "repo": "ChrisDBaldwin/masques"
+      },
       "description": "Agent identity framework - AssumeRole for Agents",
       "version": "0.1.0"
     }

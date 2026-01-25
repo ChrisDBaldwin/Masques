@@ -1,6 +1,5 @@
 {
   "name": "masques",
   "version": "0.1.0",
-  "description": "Agent identity framework - don masques to adopt temporary cognitive identities",
-  "commands": "../commands"
+  "description": "Agent identity framework - don masques to adopt temporary cognitive identities"
 }
