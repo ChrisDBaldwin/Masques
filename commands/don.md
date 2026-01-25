@@ -22,6 +22,17 @@ Extract the masque name from arguments:
 - First word is the masque name (case-insensitive)
 - Remaining words (if any) are the user's intent
 
+**If no arguments provided:**
+Report an error and exit:
+```
+✗ Missing masque name
+
+Usage: /don <masque-name> [intent]
+
+Run /list to see available masques.
+```
+Do not proceed to subsequent steps.
+
 ### Step 2: Read the Masque YAML
 
 Read the masque definition from `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`

@@ -29,11 +29,13 @@ Display all available masques that can be donned.
 
    Name          Version   Ring     Domain
    ─────────────────────────────────────────
+ ★ Mirror        0.1.0     admin    masque-creation         ← start here
    Codesmith     0.1.0     player   systems-programming     (active)
    Chartwright   0.1.0     player   frontend-analytics
    ```
 
-   Mark the active masque with `(active)` if one is donned.
+   - Mark the active masque with `(active)` if one is donned
+   - Always show Mirror first with ★ marker and "← start here" hint (it's the meta-masque for creating others)
 
 5. **Show taglines** below the table:
    ```
@@ -47,4 +49,9 @@ Display all available masques that can be donned.
 
 ## Usage Hint
 
-After listing, suggest: "Use `/don <name>` to adopt a masque identity."
+After listing, suggest:
+```
+Use `/don <name>` to adopt a masque identity.
+
+New to masques? Start with `/don mirror` - it's designed to help you create custom masques for your own domains.
+```
