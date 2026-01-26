@@ -80,6 +80,20 @@ See [Schema Reference](docs/schema.md) for the full specification.
 | [Concepts](docs/concepts.md) | The five components explained |
 | [Schema](docs/schema.md) | Full YAML specification |
 
+## Contributing
+
+Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
+
+**The process:** Open an issue first, then fork, branch, and submit a PR referencing that issue.
+
+## Support
+
+This is a personal project maintained in spare time. For bugs, please [open an issue](https://github.com/ChrisDBaldwin/masques/issues/new?template=bug_report.md) with:
+
+- What you tried and what happened
+- A screenshot or GIF of the experience (really helps!)
+- Your environment details
+
 ## Status
 
 Claude Code plugin for YAML-based masque definitions with MCP server bundling.
