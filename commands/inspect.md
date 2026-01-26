@@ -27,8 +27,11 @@ Display the complete details of a masque — all components plus attributes.
    **Fallback:** If `.claude/active.masque` exists as a regular file, read the masque name from it
 
 3. **Read the masque file:**
-   - Load `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
-   - If not found, report: "Masque '<name>' not found." and list available masques
+   - If inspecting self: use the symlink target directly (it already points to the correct location)
+   - If inspecting by name: look up in this order (first match wins):
+     1. `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
+     2. `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+   - If not found in either location, report: "Masque '<name>' not found." and list available masques from both paths
 
 4. **Display the full masque:**
 

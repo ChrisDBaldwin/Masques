@@ -10,7 +10,19 @@ Display all available masques that can be donned.
 
 ## Instructions
 
-1. **List masque files** by globbing `${CLAUDE_PLUGIN_ROOT}/personas/*.masque.yaml`
+1. **List masque files** from both discovery paths (priority order):
+
+   **Private masques (user's personal):**
+   - Path: `${MASQUES_HOME:-~/.masques}/*.masque.yaml`
+   - These are the user's private masques, stored outside any repo
+
+   **Shared masques (project/plugin):**
+   - Path: `${CLAUDE_PLUGIN_ROOT}/personas/*.masque.yaml`
+   - These are bundled with the plugin or shared in the project
+
+   **Merge logic:**
+   - If a masque name exists in both locations, the private version wins
+   - Track which location each masque came from for display
 
 2. **For each masque file**, read and extract:
    - `name` - Display name
@@ -32,14 +44,17 @@ Display all available masques that can be donned.
    ```
    Available Masques:
 
-   Name          Version   Ring     Domain
-   ─────────────────────────────────────────
- ★ Mirror        0.1.0     admin    masque-creation         ← start here
-   Codesmith     0.1.0     player   systems-programming     (active)
-   Chartwright   0.1.0     player   frontend-analytics
+   Name          Version   Ring     Domain                   Source
+   ────────────────────────────────────────────────────────────────────
+ ★ Mirror        0.1.0     admin    masque-creation          shared     ← start here
+   Nash          0.1.0     player   architecture             [private]
+   Codesmith     0.1.0     player   systems-programming      shared     (active)
+   Chartwright   0.1.0     player   frontend-analytics       shared
    ```
 
    - Mark the active masque with `(active)` if one is donned
+   - Show `[private]` for masques from `${MASQUES_HOME:-~/.masques}/`
+   - Show `shared` for masques from `${CLAUDE_PLUGIN_ROOT}/personas/`
    - Always show Mirror first with ★ marker and "← start here" hint (it's the meta-masque for creating others)
 
 5. **Show taglines** below the table:
@@ -49,8 +64,8 @@ Display all available masques that can be donned.
    ```
 
 6. **If no masques found:**
-   - Report: "No masques found in personas/"
-   - Suggest creating a masque YAML file
+   - Report: "No masques found."
+   - Suggest: "Create a masque in `~/.masques/` (private) or `personas/` (shared)"
 
 ## Usage Hint
 
