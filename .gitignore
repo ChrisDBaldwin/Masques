@@ -1,15 +1,10 @@
-# Zig build artifacts
-zig-out/
-.zig-cache/
-
 # Claude session state
 .claude/masques.local.md
+.claude/masque.session
+.claude/active.masque
+.claude/settings.local.json
 
-# Binaries
-*.exe
-*.bin
-*.o
-*.a
-*.so
-*.dylib
-*.dll
+# Private masques (stored in ~/.masques/, not here)
+
+# OS files
+.DS_Store
