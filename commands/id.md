@@ -14,29 +14,37 @@ Display the current masque identity status.
    - Test if symlink exists: `test -L .claude/active.masque`
    - If symlink exists, read target: `readlink .claude/active.masque`
 
-2. **If no symlink exists** (or readlink fails):
+2. **Read session file (if exists):**
+   - Check for `.claude/masque.session`
+   - Parse key=value pairs to get `donned_at`, `doffed_at`, `last_masque`
+
+3. **If no symlink exists** (or readlink fails):
    - Report: "No masque active. You are operating as baseline Claude."
+   - If session file has `last_masque` and `doffed_at`:
+     - Show: "Last worn: [last_masque] (doffed [doffed_at])"
    - Suggest: "Use `/list` to see available masques, `/don <name>` to adopt one."
 
-3. **If symlink exists:**
+4. **If symlink exists:**
    - Extract masque name from symlink target (basename, strip `.masque.yaml`)
    - Read the masque YAML file from the symlink target path
    - Display:
      - Masque name and version
      - Trust ring
+     - Donned timestamp (from session file, with relative time if possible)
      - Key attributes (domain, stack, philosophy)
 
    Format:
    ```
    Active Masque: [name] v[version]
    Ring: [ring]
+   Donned: [donned_at]
 
    Domain: [domain]
    Stack: [stack]
    Philosophy: [philosophy]
    ```
 
-4. **Suggest next actions:**
+5. **Suggest next actions:**
    - "Use `/inspect` to see full masque details"
    - "Use `/don <name>` to switch to a different masque"
    - "Use `/doff` to remove the masque and return to baseline"

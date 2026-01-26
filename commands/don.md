@@ -104,6 +104,20 @@ ln -sf "${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml" .claude/active.masque
 echo "<name>" > .claude/active.masque
 ```
 
+### Step 5b: Write Session File
+
+Write the session file with timestamp:
+
+```bash
+cat > .claude/masque.session << EOF
+donned_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+doffed_at=
+masque=<name>
+EOF
+```
+
+This tracks when the masque was donned for display in `/id`.
+
 ### Step 6: Handle MCP Servers (if defined)
 
 If the masque defines an `mcp` section with server configurations:
