@@ -10,28 +10,27 @@ Display all available masques that can be donned.
 
 ## Instructions
 
-1. **List masque files** from both discovery paths (priority order):
+1. **Read manifest files** from both locations (priority order):
 
-   **Private masques (user's personal):**
-   - Path: `${MASQUES_HOME:-~/.masques}/*.masque.yaml`
-   - These are the user's private masques, stored outside any repo
+   **Private manifest:**
+   - Path: `${MASQUES_HOME:-~/.masques}/manifest.yaml`
 
-   **Shared masques (project/plugin):**
-   - Path: `${CLAUDE_PLUGIN_ROOT}/personas/*.masque.yaml`
-   - These are bundled with the plugin or shared in the project
+   **Shared manifest:**
+   - Path: `${CLAUDE_PLUGIN_ROOT}/personas/manifest.yaml`
 
-   **Merge logic:**
-   - If a masque name exists in both locations, the private version wins
-   - Track which location each masque came from for display
-
-2. **For each masque file**, read and extract:
+2. **Parse each manifest** and extract the `masques` array. Each entry has:
    - `name` - Display name
    - `version` - Version string
    - `ring` - Trust level
-   - `attributes.tagline` or `attributes.philosophy` - Brief description
-   - `attributes.domain` - Domain area
+   - `domain` - Domain area
+   - `tagline` - Brief description
 
-3. **Check for active masque:**
+3. **Merge masques from both sources:**
+   - Tag private masques with source `[private]`
+   - Tag shared masques with source `shared`
+   - If a masque name exists in both, the private version wins (skip the shared one)
+
+4. **Check for active masque:**
    - Test if symlink exists: `test -L .claude/active.masque`
    - If exists, read target: `readlink .claude/active.masque`
    - Extract masque name from target path (basename, strip `.masque.yaml`)
@@ -39,33 +38,41 @@ Display all available masques that can be donned.
 
    **Fallback:** If `.claude/active.masque` exists as a regular file, read the masque name from it
 
-4. **Format as a table:**
+5. **Format as a table:**
 
    ```
    Available Masques:
 
    Name          Version   Ring     Domain                   Source
    ────────────────────────────────────────────────────────────────────
- ★ Mirror        0.1.0     admin    masque-creation          shared     ← start here
+ ★ Mirror        0.1.0     player   masque-creation          shared     ← start here
    Nash          0.1.0     player   architecture             [private]
    Codesmith     0.1.0     player   systems-programming      shared     (active)
    Chartwright   0.1.0     player   frontend-analytics       shared
    ```
 
    - Mark the active masque with `(active)` if one is donned
-   - Show `[private]` for masques from `${MASQUES_HOME:-~/.masques}/`
-   - Show `shared` for masques from `${CLAUDE_PLUGIN_ROOT}/personas/`
+   - Show `[private]` for masques from the private manifest
+   - Show `shared` for masques from the shared manifest
    - Always show Mirror first with ★ marker and "← start here" hint (it's the meta-masque for creating others)
 
-5. **Show taglines** below the table:
+6. **Show taglines** below the table:
    ```
    • Codesmith: "every line should teach"
    • Chartwright: "every chart should answer a question before the user asks it"
    ```
 
-6. **If no masques found:**
-   - Report: "No masques found."
-   - Suggest: "Create a masque in `~/.masques/` (private) or `personas/` (shared)"
+7. **Handle missing manifests:**
+
+   If no manifests found at all:
+   ```
+   No manifest found. Run /sync-manifest to generate.
+   ```
+
+   If only one manifest exists, use it and note the missing one:
+   ```
+   Note: Private manifest not found. Run /sync-manifest to include private masques.
+   ```
 
 ## Usage Hint
 
