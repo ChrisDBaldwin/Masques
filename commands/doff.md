@@ -17,6 +17,15 @@ Remove the active masque and return to baseline.
 2. **If symlink exists:**
    - Read the symlink target: `readlink .claude/active.masque`
    - Extract the masque name from the target path (basename without `.masque.yaml`)
+   - Update the session file with doff timestamp:
+     ```bash
+     cat > .claude/masque.session << EOF
+     donned_at=
+     doffed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+     masque=
+     last_masque=<name>
+     EOF
+     ```
    - Remove the symlink: `rm .claude/active.masque`
    - Confirm: `✓ Doffed [name]. Back to baseline.`
 
