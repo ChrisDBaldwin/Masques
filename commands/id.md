@@ -25,17 +25,22 @@ Display the current masque identity status.
    - Suggest: "Use `/list` to see available masques, `/don <name>` to adopt one."
 
 4. **If symlink exists:**
+   - Read the symlink target path: `readlink .claude/active.masque`
+   - The symlink may point to either:
+     - Private: `~/.masques/<name>.masque.yaml` (or `$MASQUES_HOME/...`)
+     - Shared: `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
    - Extract masque name from symlink target (basename, strip `.masque.yaml`)
+   - Determine source from path (private if in `~/.masques` or `$MASQUES_HOME`, otherwise shared)
    - Read the masque YAML file from the symlink target path
    - Display:
-     - Masque name and version
+     - Masque name, version, and source indicator
      - Trust ring
      - Donned timestamp (from session file, with relative time if possible)
      - Key attributes (domain, stack, philosophy)
 
    Format:
    ```
-   Active Masque: [name] v[version]
+   Active Masque: [name] v[version] [private]
    Ring: [ring]
    Donned: [donned_at]
 
@@ -43,6 +48,8 @@ Display the current masque identity status.
    Stack: [stack]
    Philosophy: [philosophy]
    ```
+
+   Note: Show `[private]` indicator if the symlink points to the private masques directory.
 
 5. **Suggest next actions:**
    - "Use `/inspect` to see full masque details"
@@ -53,4 +60,6 @@ Display the current masque identity status.
 
 If `readlink` fails but `.claude/active.masque` exists as a regular file:
 - Read the masque name from the file: `cat .claude/active.masque`
-- Load the masque from `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+- Look up the masque in this order (first match wins):
+  1. `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
+  2. `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`

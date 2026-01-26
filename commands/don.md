@@ -35,9 +35,14 @@ Do not proceed to subsequent steps.
 
 ### Step 2: Read the Masque YAML
 
-Read the masque definition from `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+Look for the masque in this order (first match wins):
 
-If the file doesn't exist, list available masques from `${CLAUDE_PLUGIN_ROOT}/personas/*.masque.yaml` and report which ones are available.
+1. **Private path:** `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
+2. **Shared path:** `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+
+Track which path the masque was found at — you'll need this for the symlink in Step 5.
+
+If the file doesn't exist in either location, list available masques from both paths and report which ones are available.
 
 ### Step 3: Parse the YAML
 
@@ -89,15 +94,20 @@ Output a `<masque-active>` block that will shape your behavior:
 
 ### Step 5: Create State Symlink
 
-Create a symlink to track the active masque:
+Create a symlink to track the active masque, using the actual path where the masque was found:
 
 ```bash
-ln -sf "${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml" .claude/active.masque
+# Use the path from Step 2 (private or shared)
+ln -sf "<actual-masque-path>" .claude/active.masque
 ```
+
+For example:
+- Private masque: `ln -sf ~/.masques/nash.masque.yaml .claude/active.masque`
+- Shared masque: `ln -sf "${CLAUDE_PLUGIN_ROOT}/personas/codesmith.masque.yaml" .claude/active.masque`
 
 - The `-f` flag handles replacing an existing symlink (if switching masques)
 - Ensure `.claude/` directory exists first
-- The symlink points to the absolute path of the masque YAML
+- The symlink points to the absolute path of the masque YAML (wherever it was found)
 
 **Fallback (rare):** If symlinks fail, write the masque name as plain text:
 ```bash
@@ -151,6 +161,6 @@ Confirm with a brief message:
 
 ## Error Handling
 
-- If masque file not found: list available masques from `personas/`
+- If masque file not found: list available masques from both `~/.masques/` and `personas/`
 - If YAML is malformed: report the parse error with line number if possible
 - If required fields are missing: report which fields are missing

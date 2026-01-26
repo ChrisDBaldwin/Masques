@@ -19,7 +19,11 @@ Masques is an agent identity framework — "AssumeRole for Agents." A masque is 
 ## Directory Structure
 
 ```
-masques/
+~/.masques/                      # Private masques (user's home)
+├── personal.masque.yaml         # Your private masques here
+└── ...
+
+masques/                         # Plugin repo
 ├── README.md                    # Project overview and quick start
 ├── CLAUDE.md                    # This file
 ├── .claude-plugin/
@@ -29,7 +33,7 @@ masques/
 │   ├── id.md                    # /id - show current identity
 │   ├── list.md                  # /list - list masques
 │   └── inspect.md               # /inspect - detailed view
-├── personas/                    # Masque definitions (YAML source)
+├── personas/                    # Shared masque definitions (YAML source)
 │   ├── codesmith.masque.yaml
 │   └── chartwright.masque.yaml
 ├── schemas/
@@ -51,8 +55,29 @@ masques/
 
 State is persisted in `.claude/masques.local.md`.
 
+## Masque Discovery Paths
+
+Masques are loaded from two locations (in priority order):
+
+1. **Private masques**: `${MASQUES_HOME:-~/.masques}/*.masque.yaml`
+   - User's personal masques, stored outside any repo
+   - Not version controlled, completely private
+   - Configure location with `MASQUES_HOME` env var
+
+2. **Shared masques**: `${CLAUDE_PLUGIN_ROOT}/personas/*.masque.yaml`
+   - Bundled with the plugin or shared in projects
+   - Version controlled and shareable
+
+If a masque name exists in both locations, the private version takes precedence.
+
 ## Creating a New Masque
 
+**For private masques** (personal, not committed):
+1. Create `~/.masques/<name>.masque.yaml`
+2. Define required fields (see schema below)
+3. Test with `/don <name>`
+
+**For shared masques** (project/team):
 1. Create `personas/<name>.masque.yaml`
 2. Define required fields: `name`, `index`, `version`, `ring`, `intent`, `lens`
 3. Add optional fields: `attributes`, `context`, `knowledge`, `access`, `skills`, `mcp`
