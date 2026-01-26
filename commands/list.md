@@ -19,8 +19,13 @@ Display all available masques that can be donned.
    - `attributes.tagline` or `attributes.philosophy` - Brief description
    - `attributes.domain` - Domain area
 
-3. **Check current state** by reading `.claude/masques.local.md`:
-   - If file exists and has `active_masque` in frontmatter, note which masque is active
+3. **Check for active masque:**
+   - Test if symlink exists: `test -L .claude/active.masque`
+   - If exists, read target: `readlink .claude/active.masque`
+   - Extract masque name from target path (basename, strip `.masque.yaml`)
+   - This determines which masque to mark as "(active)"
+
+   **Fallback:** If `.claude/active.masque` exists as a regular file, read the masque name from it
 
 4. **Format as a table:**
 
