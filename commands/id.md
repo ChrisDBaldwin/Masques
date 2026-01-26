@@ -10,56 +10,57 @@ Display the current masque identity status.
 
 ## Instructions
 
-1. **Check for active masque symlink:**
-   - Test if symlink exists: `test -L .claude/active.masque`
-   - If symlink exists, read target: `readlink .claude/active.masque`
+### Step 1: Read Session File
 
-2. **Read session file (if exists):**
-   - Check for `.claude/masque.session`
-   - Parse key=value pairs to get `donned_at`, `doffed_at`, `last_masque`
+Read `.claude/masque.session.yaml` to check current state.
 
-3. **If no symlink exists** (or readlink fails):
-   - Report: "No masque active. You are operating as baseline Claude."
-   - If session file has `last_masque` and `doffed_at`:
-     - Show: "Last worn: [last_masque] (doffed [doffed_at])"
-   - Suggest: "Use `/list` to see available masques, `/don <name>` to adopt one."
+If file doesn't exist, report: "No masque state found. Use `/don <name>` to adopt a masque."
 
-4. **If symlink exists:**
-   - Read the symlink target path: `readlink .claude/active.masque`
-   - The symlink may point to either:
-     - Private: `~/.masques/<name>.masque.yaml` (or `$MASQUES_HOME/...`)
-     - Shared: `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
-   - Extract masque name from symlink target (basename, strip `.masque.yaml`)
-   - Determine source from path (private if in `~/.masques` or `$MASQUES_HOME`, otherwise shared)
-   - Read the masque YAML file from the symlink target path
-   - Display:
-     - Masque name, version, and source indicator
-     - Trust ring
-     - Donned timestamp (from session file, with relative time if possible)
-     - Key attributes (domain, stack, philosophy)
+### Step 2: Check State
 
-   Format:
-   ```
-   Active Masque: [name] v[version] [private]
-   Ring: [ring]
-   Donned: [donned_at]
+Parse the session file as YAML with structure:
+- `active.path` - Path to active masque YAML (null if none active)
+- `active.name` - Display name of active masque
+- `active.donned_at` - When current masque was donned
+- `previous.name` - Name of last worn masque
+- `previous.path` - Path to last worn masque
+- `previous.doffed_at` - When last masque was doffed
 
-   Domain: [domain]
-   Stack: [stack]
-   Philosophy: [philosophy]
-   ```
+**If `active.path` is null (no active masque):**
+- Report: "No masque active. You are operating as baseline Claude."
+- If `previous.name` is set:
+  - Show: "Last worn: [previous.name] (doffed [previous.doffed_at])"
+- Suggest: "Use `/list` to see available masques, `/don <name>` to adopt one."
+- Stop here.
 
-   Note: Show `[private]` indicator if the symlink points to the private masques directory.
+**If `active.path` has a value (masque is active):**
+- Read the masque YAML from `active.path`
+- Determine source from path (private if contains `/.masques/` or `$MASQUES_HOME`, otherwise shared)
 
-5. **Suggest next actions:**
-   - "Use `/inspect` to see full masque details"
-   - "Use `/don <name>` to switch to a different masque"
-   - "Use `/doff` to remove the masque and return to baseline"
+### Step 3: Display Active Masque
 
-## Fallback Handling
+Extract details from the masque YAML and display:
 
-If `readlink` fails but `.claude/active.masque` exists as a regular file:
-- Read the masque name from the file: `cat .claude/active.masque`
-- Look up the masque in this order (first match wins):
-  1. `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
-  2. `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+```
+Active Masque: [name] v[version] [private]
+Ring: [ring]
+Donned: [donned_at]
+
+Domain: [domain]
+Stack: [stack]
+Philosophy: [philosophy]
+```
+
+Note: Show `[private]` indicator if the path points to the private masques directory.
+
+### Step 4: Suggest Next Actions
+
+- "Use `/inspect` to see full masque details"
+- "Use `/don <name>` to switch to a different masque"
+- "Use `/doff` to remove the masque and return to baseline"
+
+## Tool Calls Summary
+
+This command requires:
+- 1 tool call if no masque is active
+- 2 tool calls if a masque is active (read session YAML + read masque YAML)

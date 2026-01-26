@@ -111,6 +111,22 @@ properties:
         type: string
         description: Token lifetime (session or ISO 8601 duration)
         pattern: "^(session|PT?\\d+[HMS]?)$"
+      credentials:
+        type: array
+        description: Credential sources for this masque
+        items:
+          type: object
+          properties:
+            source:
+              type: string
+              description: Credential source (e.g., aws-secrets-manager, vault)
+            scope:
+              type: string
+              description: Access scope (e.g., read-only, read-write)
+      capabilities:
+        type: object
+        description: Specific capabilities granted to this masque
+        additionalProperties: true
 
   # === MCP Server Bundling ===
   mcp:
