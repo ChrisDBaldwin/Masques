@@ -18,20 +18,16 @@ Display the complete details of a masque — all components plus attributes.
    - If a name is provided → inspect that masque directly
 
 2. **If inspecting self (no arg or "self"):**
-   - Check if symlink exists: `test -L .claude/active.masque`
-   - If symlink exists, read target: `readlink .claude/active.masque`
-   - Extract masque name from target path (basename, strip `.masque.yaml`)
-   - If no symlink exists: report "No masque active. Use `/don <name>` to adopt one."
-   - Otherwise, use that name to find the YAML file
+   - Read `.claude/masque.session.yaml` to check current state
+   - If `active.path` has a value, use that path to read the masque YAML
+   - If `active.path` is null or file doesn't exist: report "No masque active. Use `/don <name>` to adopt one."
 
-   **Fallback:** If `.claude/active.masque` exists as a regular file, read the masque name from it
-
-3. **Read the masque file:**
-   - If inspecting self: use the symlink target directly (it already points to the correct location)
-   - If inspecting by name: look up in this order (first match wins):
+3. **If inspecting by name:**
+   - Read BOTH paths in parallel (single message with two Read calls):
      1. `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
      2. `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
-   - If not found in either location, report: "Masque '<name>' not found." and list available masques from both paths
+   - Use whichever path succeeds (private takes precedence if both exist)
+   - If not found in either location, report: "Masque '<name>' not found." and list available masques
 
 4. **Display the full masque:**
 

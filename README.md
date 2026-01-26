@@ -76,9 +76,11 @@ See [Schema Reference](docs/schema.md) for the full specification.
 
 | Guide | Description |
 |-------|-------------|
+| [Getting Started](docs/getting-started.md) | Create your first masque in 5 minutes |
 | [Vision](docs/vision.md) | The theater metaphor and why masques exist |
 | [Concepts](docs/concepts.md) | The five components explained |
 | [Schema](docs/schema.md) | Full YAML specification |
+| [Evaluations](evals/README.md) | Testing masque behavioral fidelity |
 
 ## Contributing
 

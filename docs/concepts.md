@@ -55,6 +55,8 @@ knowledge:
   - mcp://homelab-history      # what's been done
 ```
 
+> **Note:** Knowledge URIs are currently declarative — they document where knowledge *would* come from when MCP servers are available. Until those servers are deployed, the agent should prompt the user for context directly. This design allows masques to evolve from "documentation of intent" to "functional integration" as infrastructure matures.
+
 ### Access — The How
 
 **Credentials scoped to the task.**

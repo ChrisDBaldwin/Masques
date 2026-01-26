@@ -57,7 +57,25 @@ masques/                         # Plugin repo
 /sync-manifest [scope]    # Regenerate manifest files for fast listing
 ```
 
-State is persisted in `.claude/masques.local.md`.
+State is persisted in `.claude/masque.session.yaml`.
+
+## Session State
+
+Active masque state is stored in `.claude/masque.session.yaml` (YAML format):
+
+```yaml
+# Auto-managed by masques plugin
+active:
+  path: /path/to/masque.yaml  # null if no masque active
+  name: Codesmith
+  donned_at: 2026-01-26T12:00:00Z
+previous:
+  name: Firekeeper
+  path: /path/to/firekeeper.masque.yaml
+  doffed_at: 2026-01-26T11:00:00Z
+```
+
+When doffed, active fields become null and previous fields populate with the doffed masque's info.
 
 ## Manifests
 

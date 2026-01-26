@@ -33,16 +33,16 @@ Run /list to see available masques.
 ```
 Do not proceed to subsequent steps.
 
-### Step 2: Read the Masque YAML
+### Step 2: Read Both Masque Paths in Parallel
 
-Look for the masque in this order (first match wins):
+**IMPORTANT:** Issue BOTH Read tool calls in a single message to check paths simultaneously:
 
 1. **Private path:** `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
 2. **Shared path:** `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
 
-Track which path the masque was found at — you'll need this for the symlink in Step 5.
+Use whichever path succeeds (private takes precedence if both exist).
 
-If the file doesn't exist in either location, list available masques from both paths and report which ones are available.
+If neither file exists, list available masques from both paths and report which ones are available.
 
 ### Step 3: Parse the YAML
 
@@ -92,41 +92,27 @@ Output a `<masque-active>` block that will shape your behavior:
 </masque-active>
 ```
 
-### Step 5: Create State Symlink
+### Step 5: Write Session File
 
-Create a symlink to track the active masque, using the actual path where the masque was found:
+Write the session state using the Write tool to `.claude/masque.session.yaml`:
 
-```bash
-# Use the path from Step 2 (private or shared)
-ln -sf "<actual-masque-path>" .claude/active.masque
+```yaml
+# Auto-managed by masques plugin
+active:
+  path: <absolute-path-to-masque-yaml>
+  name: <name>
+  donned_at: <current-UTC-timestamp>
+previous:
+  name: null
+  path: null
+  doffed_at: null
 ```
 
-For example:
-- Private masque: `ln -sf ~/.masques/nash.masque.yaml .claude/active.masque`
-- Shared masque: `ln -sf "${CLAUDE_PLUGIN_ROOT}/personas/codesmith.masque.yaml" .claude/active.masque`
-
-- The `-f` flag handles replacing an existing symlink (if switching masques)
-- Ensure `.claude/` directory exists first
-- The symlink points to the absolute path of the masque YAML (wherever it was found)
-
-**Fallback (rare):** If symlinks fail, write the masque name as plain text:
-```bash
-echo "<name>" > .claude/active.masque
-```
-
-### Step 5b: Write Session File
-
-Write the session file with timestamp:
-
-```bash
-cat > .claude/masque.session << EOF
-donned_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-doffed_at=
-masque=<name>
-EOF
-```
-
-This tracks when the masque was donned for display in `/id`.
+Where:
+- `active.path` is the full path where the masque was found (private or shared)
+- `active.name` is the display name from the YAML
+- `active.donned_at` is the current UTC timestamp in ISO format (e.g., `2026-01-26T12:00:00Z`)
+- `previous` fields preserve the last worn masque (null if this is the first)
 
 ### Step 6: Handle MCP Servers (if defined)
 

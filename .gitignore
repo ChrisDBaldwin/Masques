@@ -1,6 +1,5 @@
 # Claude session state
-.claude/masques.local.md
-.claude/masque.session
+.claude/masque.session.yaml
 .claude/active.masque
 .claude/settings.local.json
 
