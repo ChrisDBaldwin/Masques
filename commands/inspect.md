@@ -18,9 +18,13 @@ Display the complete details of a masque — all components plus attributes.
    - If a name is provided → inspect that masque directly
 
 2. **If inspecting self (no arg or "self"):**
-   - Read `.claude/masques.local.md` to get the active masque name from frontmatter
-   - If no masque is active: report "No masque active. Use `/don <name>` to adopt one."
+   - Check if symlink exists: `test -L .claude/active.masque`
+   - If symlink exists, read target: `readlink .claude/active.masque`
+   - Extract masque name from target path (basename, strip `.masque.yaml`)
+   - If no symlink exists: report "No masque active. Use `/don <name>` to adopt one."
    - Otherwise, use that name to find the YAML file
+
+   **Fallback:** If `.claude/active.masque` exists as a regular file, read the masque name from it
 
 3. **Read the masque file:**
    - Load `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`

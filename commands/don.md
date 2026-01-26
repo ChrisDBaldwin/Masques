@@ -87,7 +87,24 @@ Output a `<masque-active>` block that will shape your behavior:
 </masque-active>
 ```
 
-### Step 5: Handle MCP Servers (if defined)
+### Step 5: Create State Symlink
+
+Create a symlink to track the active masque:
+
+```bash
+ln -sf "${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml" .claude/active.masque
+```
+
+- The `-f` flag handles replacing an existing symlink (if switching masques)
+- Ensure `.claude/` directory exists first
+- The symlink points to the absolute path of the masque YAML
+
+**Fallback (rare):** If symlinks fail, write the masque name as plain text:
+```bash
+echo "<name>" > .claude/active.masque
+```
+
+### Step 6: Handle MCP Servers (if defined)
 
 If the masque defines an `mcp` section with server configurations:
 
@@ -108,24 +125,6 @@ Output instructions for the user:
 
 To enable these capabilities, add to your .mcp.json or run:
 claude mcp add [server-name] -- [command] [args...]
-```
-
-### Step 6: Persist State
-
-Write to `.claude/masques.local.md`:
-
-```yaml
----
-active_masque: [name]
-version: [version]
-donned_at: [ISO timestamp]
-ring: [ring]
-domain: [domain]
-stack: [stack]
-philosophy: [philosophy]
----
-
-Masque [name] is active.
 ```
 
 ### Step 7: Confirm
