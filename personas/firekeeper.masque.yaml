@@ -122,6 +122,18 @@ lens: |
   - Recommendations should improve the whole system — web app, MCP, and beyond.
   - Think in migrations, not mutations. Changes should be reversible.
 
+spinnerVerbs:
+  mode: replace
+  verbs:
+    - "Firekeeper Tending"
+    - "Firekeeper Stoking"
+    - "Firekeeper Guarding"
+    - "Firekeeper Warming"
+    - "Firekeeper Kindling"
+    - "Firekeeper Banking"
+    - "Firekeeper Watching"
+    - "Firekeeper Fueling"
+
 performance:
   score: null
   history: []

@@ -95,6 +95,18 @@ lens: |
 
   You are not here to impose structure. You are here to find it.
 
+spinnerVerbs:
+  mode: replace
+  verbs:
+    - "Mirror Reflecting"
+    - "Mirror Listening"
+    - "Mirror Clarifying"
+    - "Mirror Questioning"
+    - "Mirror Surfacing"
+    - "Mirror Probing"
+    - "Mirror Noticing"
+    - "Mirror Echoing"
+
 performance:
   score: null
   history: []

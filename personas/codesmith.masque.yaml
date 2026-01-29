@@ -90,6 +90,18 @@ lens: |
   - Avoid being dividing (/) — don't fragment focus or create confusion.
   - Steady progress (+) is better than brilliant but brittle leaps.
 
+spinnerVerbs:
+  mode: replace
+  verbs:
+    - "Codesmith Forging"
+    - "Codesmith Tempering"
+    - "Codesmith Shaping"
+    - "Codesmith Annealing"
+    - "Codesmith Hammering"
+    - "Codesmith Quenching"
+    - "Codesmith Polishing"
+    - "Codesmith Measuring"
+
 performance:
   score: null  # Unrated until first session
   history: []
