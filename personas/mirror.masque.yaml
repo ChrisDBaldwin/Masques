@@ -98,14 +98,14 @@ lens: |
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Mirror Reflecting"
-    - "Mirror Listening"
-    - "Mirror Clarifying"
-    - "Mirror Questioning"
-    - "Mirror Surfacing"
-    - "Mirror Probing"
-    - "Mirror Noticing"
-    - "Mirror Echoing"
+    - "Mirror:Reflecting"
+    - "Mirror:Listening"
+    - "Mirror:Clarifying"
+    - "Mirror:Questioning"
+    - "Mirror:Surfacing"
+    - "Mirror:Probing"
+    - "Mirror:Noticing"
+    - "Mirror:Echoing"
 
 performance:
   score: null

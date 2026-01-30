@@ -105,14 +105,14 @@ lens: |
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Chartwright Plotting"
-    - "Chartwright Calibrating"
-    - "Chartwright Rendering"
-    - "Chartwright Annotating"
-    - "Chartwright Scaling"
-    - "Chartwright Composing"
-    - "Chartwright Illuminating"
-    - "Chartwright Tracing"
+    - "Chartwright:Plotting"
+    - "Chartwright:Calibrating"
+    - "Chartwright:Rendering"
+    - "Chartwright:Annotating"
+    - "Chartwright:Scaling"
+    - "Chartwright:Composing"
+    - "Chartwright:Illuminating"
+    - "Chartwright:Tracing"
 
 performance:
   score: null
