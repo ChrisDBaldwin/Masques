@@ -43,14 +43,26 @@ Where:
 - `previous.name` preserves the name of the masque being doffed
 - `previous.path` preserves the path for potential re-donning
 
+### Step 2b: Clear Spinner Verbs
+
+If `.claude/settings.local.json` exists and contains a `spinnerVerbs` field:
+
+1. **Read** the existing settings
+2. **Remove** the `spinnerVerbs` key
+3. **Write** the updated JSON (or delete file if now empty/only has empty objects)
+
+This returns the spinner to Claude Code defaults.
+
 ### Step 3: Confirm
 
 Report: `✓ Doffed [name]. Back to baseline.`
 
 ## Tool Calls Summary
 
-This command requires exactly 2 tool calls:
+This command requires:
 1. Read `.claude/masque.session.yaml`
 2. Write `.claude/masque.session.yaml` (if masque was active)
+3. Read `.claude/settings.local.json` (if exists)
+4. Write `.claude/settings.local.json` (to remove spinnerVerbs)
 
-Or 1 tool call if no masque is active.
+Or fewer calls if no masque is active or no settings file exists.

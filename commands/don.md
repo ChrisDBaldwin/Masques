@@ -58,6 +58,7 @@ Extract these fields from the YAML:
 - `skills` - Array of skill URIs with levels
 - `lens` - The cognitive framing and working style
 - `mcp` - (Optional) MCP server definitions for bundled tools
+- `spinnerVerbs` - (Optional) Custom spinner verbs for this masque
 
 ### Step 4: Inject the Masque Context
 
@@ -113,6 +114,37 @@ Where:
 - `active.name` is the display name from the YAML
 - `active.donned_at` is the current UTC timestamp in ISO format (e.g., `2026-01-26T12:00:00Z`)
 - `previous` fields preserve the last worn masque (null if this is the first)
+
+### Step 5b: Apply Spinner Verbs (if defined)
+
+If the masque defines a `spinnerVerbs` section:
+
+```yaml
+spinnerVerbs:
+  mode: replace
+  verbs:
+    - "Codesmith Forging"
+    - "Codesmith Tempering"
+```
+
+Write or update `.claude/settings.local.json` to include the spinner verbs:
+
+1. **Read existing settings** (if file exists) to preserve other fields like `permissions`
+2. **Merge** the `spinnerVerbs` field from the masque
+3. **Write** the updated JSON
+
+Example result in `.claude/settings.local.json`:
+```json
+{
+  "permissions": { ... },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": ["Codesmith Forging", "Codesmith Tempering", ...]
+  }
+}
+```
+
+If the masque has no `spinnerVerbs` field, leave existing settings unchanged.
 
 ### Step 6: Handle MCP Servers (if defined)
 
