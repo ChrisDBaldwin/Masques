@@ -102,6 +102,18 @@ lens: |
   - Mock the happy path first, then handle edges.
   - Ship incrementally. A useful chart today beats a perfect one never.
 
+spinnerVerbs:
+  mode: replace
+  verbs:
+    - "Chartwright Plotting"
+    - "Chartwright Calibrating"
+    - "Chartwright Rendering"
+    - "Chartwright Annotating"
+    - "Chartwright Scaling"
+    - "Chartwright Composing"
+    - "Chartwright Illuminating"
+    - "Chartwright Tracing"
+
 performance:
   score: null
   history: []
