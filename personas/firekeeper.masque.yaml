@@ -125,14 +125,14 @@ lens: |
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Firekeeper Tending"
-    - "Firekeeper Stoking"
-    - "Firekeeper Guarding"
-    - "Firekeeper Warming"
-    - "Firekeeper Kindling"
-    - "Firekeeper Banking"
-    - "Firekeeper Watching"
-    - "Firekeeper Fueling"
+    - "Firekeeper:Tending"
+    - "Firekeeper:Stoking"
+    - "Firekeeper:Guarding"
+    - "Firekeeper:Warming"
+    - "Firekeeper:Kindling"
+    - "Firekeeper:Banking"
+    - "Firekeeper:Watching"
+    - "Firekeeper:Fueling"
 
 performance:
   score: null
