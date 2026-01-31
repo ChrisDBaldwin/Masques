@@ -15,6 +15,11 @@ ring: player        # Required. admin|player|guest|outsider
 attributes:         # Optional. Flexible metadata
   key: value
 
+spinnerVerbs:       # Optional. Custom spinner display
+  mode: replace     # replace|append|prepend
+  verbs:
+    - "Masque:Verb..."
+
 skills:             # Optional. External skill references
   - uri: skill://domain/name
     level: competent
@@ -32,6 +37,12 @@ knowledge:          # Optional. MCP pointers
 access:             # Optional. Credential config
   vault_role: role-name
   ttl: session
+  credentials:
+    - source: aws-secrets-manager
+      scope: read-only
+  capabilities:
+    database: read
+    writes: file-output-only
 
 lens: |             # Required. Cognitive framing
   System prompt fragment.
@@ -96,6 +107,29 @@ skills:
 
 Skills are **claims** rated against actual performance.
 
+## Spinner Verbs
+
+Custom spinner text shown during agent activity:
+
+```yaml
+spinnerVerbs:
+  mode: replace
+  verbs:
+    - "Codesmith:Forging..."
+    - "Codesmith:Tempering..."
+    - "Codesmith:Shaping..."
+```
+
+### Mode
+
+| Mode | Behavior |
+|------|----------|
+| `replace` | Use only these verbs, replacing defaults |
+| `append` | Add these verbs after the defaults |
+| `prepend` | Add these verbs before the defaults |
+
+Verbs use `Masque:Verb...` format (e.g., "Firekeeper:Tending...").
+
 ## The Five Components
 
 ### 1. Intent
@@ -140,16 +174,41 @@ knowledge:
 
 ### 4. Access
 
-Credential configuration:
+Credential and capability configuration:
 
 ```yaml
 access:
   vault_role: homelab-operator
   ttl: session
+  credentials:
+    - source: aws-secrets-manager
+      scope: read-only
+  capabilities:
+    database: read
+    writes: file-output-only
 ```
 
-- `vault_role`: Role to assume for credential minting
-- `ttl`: `session` (expires when masque is doffed) or ISO 8601 duration
+#### Properties
+
+| Property | Description |
+|----------|-------------|
+| `vault_role` | Role to assume for credential minting |
+| `ttl` | `session` (expires when masque is doffed) or ISO 8601 duration |
+| `credentials` | Array of credential sources |
+| `capabilities` | Object defining granted capabilities |
+
+#### Credentials
+
+Each credential entry specifies:
+- `source`: Where credentials come from (e.g., `aws-secrets-manager`, `vault`)
+- `scope`: Access level (e.g., `read-only`, `read-write`)
+
+#### Capabilities
+
+Freeform object declaring what the masque can do. Common patterns:
+- `database: read` — read-only database access
+- `writes: file-output-only` — can only write to files, not execute
+- `logs: [ecs, ec2]` — access to specific log sources
 
 ### 5. Lens
 

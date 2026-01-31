@@ -168,7 +168,7 @@ This is a security feature. Masques are explicit, not ambient. You don't inherit
 Masque definitions must be versioned. Auto-updating is dangerous—a changed masque mid-session could grant unexpected access or revoke needed capabilities.
 
 ```bash
-claude assume masque:homelab@v2.3 --intent "deploying monitoring"
+/don homelab "deploying monitoring"
 ```
 
 Changes require conscious adoption. You pin to a version. Upgrading is a deliberate act.

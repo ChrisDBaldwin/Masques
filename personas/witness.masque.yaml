@@ -106,14 +106,14 @@ lens: |
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Witness:Observing"
-    - "Witness:Weighing"
-    - "Witness:Considering"
-    - "Witness:Assessing"
-    - "Witness:Recording"
-    - "Witness:Reflecting"
-    - "Witness:Measuring"
-    - "Witness:Noting"
+    - "Witness:Observing..."
+    - "Witness:Weighing..."
+    - "Witness:Considering..."
+    - "Witness:Assessing..."
+    - "Witness:Recording..."
+    - "Witness:Reflecting..."
+    - "Witness:Measuring..."
+    - "Witness:Noting..."
 
 performance:
   score: null

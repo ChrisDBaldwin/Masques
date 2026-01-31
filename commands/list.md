@@ -1,5 +1,5 @@
 ---
-name: masques:list
+name: list
 description: List all available masques
 arguments: []
 ---
