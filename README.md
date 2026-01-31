@@ -23,9 +23,11 @@ claude plugins add github:ChrisDBaldwin/masques
 
 ```bash
 /don <masque> [intent]    # Assume a masque identity
+/doff                     # Return to baseline Claude
 /id                       # Show active masque info
 /list                     # List available masques
 /inspect [masque]         # View full masque details
+/sync-manifest [scope]    # Regenerate manifest files
 ```
 
 ## Schema
