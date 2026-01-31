@@ -66,16 +66,18 @@ Active masque state is stored in `.claude/masque.session.yaml` (YAML format):
 ```yaml
 # Auto-managed by masques plugin
 active:
-  path: /path/to/masque.yaml  # null if no masque active
-  name: Codesmith
+  name: Codesmith              # null if no masque active
+  source: shared               # "private" or "shared"
   donned_at: 2026-01-26T12:00:00Z
 previous:
   name: Firekeeper
-  path: /path/to/firekeeper.masque.yaml
+  source: private
   doffed_at: 2026-01-26T11:00:00Z
 ```
 
 When doffed, active fields become null and previous fields populate with the doffed masque's info.
+
+**Note:** We store `source` (private/shared) instead of absolute paths to avoid breakage when plugin versions change. The actual path is reconstructed at runtime from name + source.
 
 ## Manifests
 

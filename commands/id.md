@@ -19,23 +19,25 @@ If file doesn't exist, report: "No masque state found. Use `/don <name>` to adop
 ### Step 2: Check State
 
 Parse the session file as YAML with structure:
-- `active.path` - Path to active masque YAML (null if none active)
-- `active.name` - Display name of active masque
+- `active.name` - Display name of active masque (null if none active)
+- `active.source` - Where masque was found: `private` or `shared`
 - `active.donned_at` - When current masque was donned
 - `previous.name` - Name of last worn masque
-- `previous.path` - Path to last worn masque
+- `previous.source` - Source of last worn masque
 - `previous.doffed_at` - When last masque was doffed
 
-**If `active.path` is null (no active masque):**
+**If `active.name` is null (no active masque):**
 - Report: "No masque active. You are operating as baseline Claude."
 - If `previous.name` is set:
   - Show: "Last worn: [previous.name] (doffed [previous.doffed_at])"
 - Suggest: "Use `/list` to see available masques, `/don <name>` to adopt one."
 - Stop here.
 
-**If `active.path` has a value (masque is active):**
-- Read the masque YAML from `active.path`
-- Determine source from path (private if contains `/.masques/` or `$MASQUES_HOME`, otherwise shared)
+**If `active.name` has a value (masque is active):**
+- Construct path based on source:
+  - If `source` is `private`: `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
+  - If `source` is `shared`: `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+- Read the masque YAML from the constructed path
 
 ### Step 3: Display Active Masque
 
@@ -51,7 +53,7 @@ Stack: [stack]
 Philosophy: [philosophy]
 ```
 
-Note: Show `[private]` indicator if the path points to the private masques directory.
+Note: Show `[private]` indicator if the source is `private`.
 
 ### Step 4: Suggest Next Actions
 
