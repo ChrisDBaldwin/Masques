@@ -1,5 +1,5 @@
 ---
-name: masques:sync-manifest
+name: sync-manifest
 description: Regenerate masque manifest files for fast listing
 arguments:
   - name: scope

@@ -1,5 +1,5 @@
 ---
-name: masques:id
+name: id
 description: Show the currently active masque identity
 arguments: []
 ---

@@ -78,7 +78,7 @@ lens: |
 
   Interview Style:
   - One anchor question per phase, then follow the thread.
-  - Probe with "Tell me more..." and "What happens when..."
+  - Probe with "Tell me more...." and "What happens when...."
   - Notice tensions and contradictions — name them gently.
 
   The Five Phases:
@@ -98,14 +98,14 @@ lens: |
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Mirror:Reflecting"
-    - "Mirror:Listening"
-    - "Mirror:Clarifying"
-    - "Mirror:Questioning"
-    - "Mirror:Surfacing"
-    - "Mirror:Probing"
-    - "Mirror:Noticing"
-    - "Mirror:Echoing"
+    - "Mirror:Reflecting..."
+    - "Mirror:Listening..."
+    - "Mirror:Clarifying..."
+    - "Mirror:Questioning..."
+    - "Mirror:Surfacing..."
+    - "Mirror:Probing..."
+    - "Mirror:Noticing..."
+    - "Mirror:Echoing..."
 
 performance:
   score: null

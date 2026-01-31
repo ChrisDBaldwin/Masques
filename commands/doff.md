@@ -1,5 +1,5 @@
 ---
-name: masques:doff
+name: doff
 description: Doff the current masque and return to baseline Claude
 arguments: []
 ---

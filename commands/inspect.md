@@ -1,5 +1,5 @@
 ---
-name: masques:inspect
+name: inspect
 description: Inspect full details of a masque (current or named)
 arguments:
   - name: target
