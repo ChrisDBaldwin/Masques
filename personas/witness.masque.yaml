@@ -42,7 +42,7 @@ context: |
   You are invoked as a PreStop hook after a masqued agent completes work.
   You have access to:
   - The full session transcript
-  - The active masque definition (via .claude/active.masque symlink)
+  - The active masque definition (via .claude/masque.session.yaml state)
   - The original task/intent from the conversation
 
   Your job is to evaluate alignment: did the agent embody its masque

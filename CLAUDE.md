@@ -51,6 +51,7 @@ masques/                         # Plugin repo
 
 ```bash
 /don <masque> [intent]    # Adopt a masque identity
+/doff                     # Return to baseline Claude
 /id                       # Show current identity state
 /list                     # List available masques (reads from manifests)
 /inspect [masque]         # Detailed masque introspection
@@ -134,6 +135,8 @@ If a masque name exists in both locations, the private version takes precedence.
 
 ## Masque Schema (Quick Reference)
 
+### Core Identity (Masques Owns)
+
 ```yaml
 name: string        # Human-readable name
 index: integer      # Unique numeric ID
@@ -151,23 +154,60 @@ intent:             # What this masque can do
 context: |          # Situational framing
   Who you're helping, what they value.
 
-knowledge:          # MCP URIs for lookups
-  - mcp://server/resource
-
-access:             # Credential config
-  vault_role: role-name
-  ttl: session
-
 lens: |             # Cognitive framing
   System prompt fragment.
 
-mcp:                # Optional: bundled MCP servers
+spinnerVerbs:       # Custom activity indicators
+  mode: replace     # replace|append|prepend
+  verbs:
+    - "Masque:Verbing..."
+```
+
+### Integration Points (Ecosystem Declarations)
+
+These fields declare needs that ecosystem tools fulfill:
+
+```yaml
+knowledge:          # Declares MCP URIs for ecosystem servers to query
+  - mcp://server/resource
+
+access:             # Declares credential needs for vault/credential tools
+  vault_role: role-name
+  ttl: session
+
+skills:             # Declares proficiency for Claude Code skills system
+  - uri: skill://domain/name
+    level: competent
+
+mcp:                # Suggests bundled servers for Claude Code MCP config
   servers:
     - name: server-name
       type: stdio
       command: npx
       args: ["-y", "@package/name"]
+
+performance:        # Declares self-evaluation context
+  score: "*"
+  history: []
 ```
+
+## Ecosystem Integration
+
+Masques is the **identity layer** in an agentic ecosystem. It doesn't duplicate what other tools do well—it integrates with them.
+
+| Need | Masques Role | Ecosystem Tool |
+|------|-------------|----------------|
+| Cognitive framing | Owns (lens, intent, context) | — |
+| Knowledge lookup | Declares URIs | MCP servers (Context7, etc.) |
+| Credentials | Declares needs | Vault, credential managers |
+| Skill proficiency | Declares level | Claude Code skills system |
+| Isolated workers | Provides identity | Git worktrees |
+| Tool bundles | Suggests servers | Claude Code MCP config |
+
+**Ecosystem Combinations:**
+- **Worktree + masque** = isolated, persistent worker identity
+- **MCP server + masque knowledge pointer** = live knowledge lookup
+- **Claude Code skill + masque skill declaration** = proficiency-aware behavior
 
 ## Design Principles
 

@@ -69,6 +69,8 @@ access:
   ttl: session  # expires when masque is doffed
 ```
 
+> **Note:** Access declarations are currently declarative — they document what credentials *would* be needed when vault/credential tools are available. Until that infrastructure exists, the agent should request credentials directly from the user. This allows masques to evolve from "documentation of intent" to "functional integration" as infrastructure matures.
+
 ### Lens — The Framing
 
 **How to think, not just what to do.**
@@ -172,6 +174,51 @@ Masque definitions must be versioned. Auto-updating is dangerous—a changed mas
 ```
 
 Changes require conscious adoption. You pin to a version. Upgrading is a deliberate act.
+
+## Ecosystem Integration
+
+Masques is the **identity layer** in a larger agentic ecosystem. The five components split into two categories:
+
+### What Masques Owns
+
+- **Intent** — defines goals and boundaries
+- **Context** — grounds in situation
+- **Lens** — shapes cognitive approach
+
+These are core identity. Masques fully controls them.
+
+### What Masques Declares (Ecosystem Fulfills)
+
+- **Knowledge** — points to MCP URIs; MCP servers query the actual data
+- **Access** — declares credential needs; vault/credential tools fulfill them
+
+This separation is intentional. Masques stays lightweight and focused on *who you are*. The ecosystem handles *what you can do*.
+
+### Practical Combinations
+
+**Worktree + Masque = Isolated Worker**
+
+Git worktrees provide code isolation. Masques provide cognitive isolation. Together, they create persistent, isolated worker identities that can operate independently:
+
+```bash
+# Create isolated workspace
+git worktree add ../feature-x feature-branch
+
+# Give it an identity
+cd ../feature-x && /don codesmith "implementing feature X"
+```
+
+**MCP Server + Knowledge Pointer = Live Lookup**
+
+Masques don't embed knowledge—they point to it. MCP servers provide fresh content on demand:
+
+```yaml
+knowledge:
+  - mcp://context7/react     # Live React docs
+  - mcp://project/runbooks   # Current team practices
+```
+
+The masque declares what's relevant; the ecosystem provides the content.
 
 ## Revocation
 
