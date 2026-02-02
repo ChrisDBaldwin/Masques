@@ -107,6 +107,8 @@ skills:
 
 Skills are **claims** rated against actual performance.
 
+> **Ecosystem Integration:** Skill declarations integrate with external skill systems (like Claude Code skills). The masque claims a proficiency level; the skill system can adjust behavior accordingly. For example, a masque claiming "expert" in a skill might receive less guidance than one claiming "novice."
+
 ## Spinner Verbs
 
 Custom spinner text shown during agent activity:
@@ -172,6 +174,8 @@ knowledge:
 
 **Pointers, not blobs.** Masques stay lightweight; knowledge is fresh at source.
 
+> **Ecosystem Integration:** Knowledge URIs are declarative — they document where knowledge *would* come from when MCP servers are available. The masque declares relevance; the ecosystem provides content. This allows masques to work today (prompting user for context) while evolving to full automation as infrastructure matures.
+
 ### 4. Access
 
 Credential and capability configuration:
@@ -209,6 +213,8 @@ Freeform object declaring what the masque can do. Common patterns:
 - `database: read` — read-only database access
 - `writes: file-output-only` — can only write to files, not execute
 - `logs: [ecs, ec2]` — access to specific log sources
+
+> **Ecosystem Integration:** Access declarations are currently declarative — they document what credentials *would* be needed when vault/credential infrastructure exists. The masque declares needs; vault/credential tools fulfill them. Until that infrastructure is deployed, the agent should request credentials directly from the user.
 
 ### 5. Lens
 
@@ -262,6 +268,8 @@ This masque bundles MCP servers:
 To enable: claude mcp add zig-docs -- npx -y @anthropic/mcp-zig-docs
 ```
 
+> **Ecosystem Integration:** MCP server declarations are suggestions for the Claude Code MCP configuration. The masque suggests what servers would be useful; Claude Code's MCP system handles the actual server lifecycle. This keeps masques declarative while leveraging the ecosystem for execution.
+
 ## Performance Scoring
 
 Masques are evaluated on their contribution to the community:
@@ -289,6 +297,8 @@ performance:
 
 Scores compare **claimed skills** against **observed performance**.
 History accumulates over sessions, building a track record.
+
+> **Ecosystem Integration:** Performance scoring provides context for external evaluation systems. The masque tracks self-assessment; evaluation frameworks can use this data for calibration and trust decisions. The history field enables longitudinal analysis across sessions.
 
 ## File Convention
 

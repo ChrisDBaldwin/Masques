@@ -56,6 +56,67 @@ A masque bundles everything an agent needs to become someone:
 
 **Lens** shapes approach. How to think about problems. What to prioritize. What heuristics to apply. The cognitive style.
 
+## Ecosystem Position
+
+Masques is the **identity layer** in an agentic ecosystem. It doesn't try to do everything—it does identity well and integrates with specialized tools for the rest.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         AGENTIC ECOSYSTEM                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│    ┌─────────────────────────────────────────────────────────┐     │
+│    │                  MASQUES (Identity Layer)               │     │
+│    │                                                         │     │
+│    │   Owns: Intent • Context • Lens • Attributes            │     │
+│    │                                                         │     │
+│    └─────────────────────────────────────────────────────────┘     │
+│                              │                                      │
+│           ┌──────────────────┼──────────────────┐                  │
+│           ▼                  ▼                  ▼                  │
+│    ┌────────────┐     ┌────────────┐     ┌────────────┐           │
+│    │    MCP     │     │   Vault    │     │  Claude    │           │
+│    │  Servers   │     │  /Creds    │     │   Code     │           │
+│    ├────────────┤     ├────────────┤     ├────────────┤           │
+│    │ Knowledge  │     │  Access    │     │  Skills    │           │
+│    │  Lookup    │     │ Fulfillment│     │ Execution  │           │
+│    └────────────┘     └────────────┘     └────────────┘           │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### What Masques Owns
+
+| Component | Purpose | Why Identity |
+|-----------|---------|--------------|
+| **Intent** | Goals and boundaries | Defines what the identity *does* |
+| **Context** | Situational grounding | Defines who the identity *serves* |
+| **Lens** | Cognitive framing | Defines how the identity *thinks* |
+| **Attributes** | Metadata | Describes the identity |
+| **spinnerVerbs** | Visual presence | Shows the identity at work |
+
+### What Masques Declares (Ecosystem Fulfills)
+
+| Declaration | Masques Role | Ecosystem Tool |
+|-------------|--------------|----------------|
+| `knowledge` | Points to URIs | MCP servers query the data |
+| `access` | Declares credential needs | Vault/credential managers fulfill |
+| `skills` | Claims proficiency level | Claude Code skills system |
+| `mcp` | Suggests bundled servers | Claude Code MCP config |
+| `performance` | Tracks evaluation context | External evaluation systems |
+
+This separation matters: masques stays focused on cognitive identity while leveraging the ecosystem for capabilities. A masque *declares* it needs database credentials—a vault *provides* them. A masque *points to* documentation—an MCP server *queries* it.
+
+### Ecosystem Combinations
+
+The real power emerges from combining masques with other tools:
+
+- **Git worktree + masque** = Isolated worker with persistent identity. The worktree provides code isolation; the masque provides cognitive isolation.
+
+- **MCP server + masque knowledge pointer** = Live documentation lookup. The masque declares what knowledge is relevant; the MCP server provides fresh content.
+
+- **Claude Code skill + masque skill declaration** = Proficiency-aware behavior. The masque claims a skill level; the skill system adjusts complexity accordingly.
+
 ## The Theater Model
 
 Think of agents like actors in a production:

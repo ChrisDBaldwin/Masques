@@ -16,32 +16,32 @@ Read `.claude/masque.session.yaml` to check current state.
 
 ### Step 2: Check State and Update
 
-**If file doesn't exist or `active.path` is null:**
+**If file doesn't exist or `active.name` is null:**
 - Report: "No masque is currently active."
 - If `previous.name` is set, show: "Last worn: [previous.name]"
 - Suggest: "Use `/don <name>` to adopt a masque."
 - Stop here.
 
-**If `active.path` has a value (masque is active):**
+**If `active.name` has a value (masque is active):**
 
 Write updated session file using the Write tool to `.claude/masque.session.yaml`:
 
 ```yaml
 # Auto-managed by masques plugin
 active:
-  path: null
   name: null
+  source: null
   donned_at: null
 previous:
   name: <previous-active-name>
-  path: <previous-active-path>
+  source: <previous-active-source>
   doffed_at: <current-UTC-timestamp>
 ```
 
 Where:
 - `previous.doffed_at` is the current UTC timestamp in ISO format
 - `previous.name` preserves the name of the masque being doffed
-- `previous.path` preserves the path for potential re-donning
+- `previous.source` preserves the source for potential re-donning
 
 ### Step 2b: Clear Spinner Verbs
 
