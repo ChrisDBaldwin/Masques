@@ -77,6 +77,11 @@ mcp:                      # Suggests bundled servers for Claude Code
       type: stdio
       command: npx
       args: ["-y", "@package/name"]
+
+spinnerVerbs:             # Optional: custom activity indicators
+  mode: replace           # replace | append
+  verbs:
+    - "Masque:Verbing..."
 ```
 
 See [Schema Reference](docs/schema.md) for the full specification.
