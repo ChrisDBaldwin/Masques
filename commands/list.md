@@ -31,12 +31,10 @@ Display all available masques that can be donned.
    - If a masque name exists in both, the private version wins (skip the shared one)
 
 4. **Check for active masque:**
-   - Test if symlink exists: `test -L .claude/active.masque`
-   - If exists, read target: `readlink .claude/active.masque`
-   - Extract masque name from target path (basename, strip `.masque.yaml`)
+   - Read `.claude/masque.session.yaml` if it exists
+   - Extract `active.name` from the YAML
    - This determines which masque to mark as "(active)"
-
-   **Fallback:** If `.claude/active.masque` exists as a regular file, read the masque name from it
+   - If the file doesn't exist or `active.name` is null, no masque is active
 
 5. **Format as a table:**
 

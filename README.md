@@ -32,9 +32,10 @@ claude plugins add github:ChrisDBaldwin/masques
 
 ## Schema
 
-A masque bundles five components into a single YAML file:
+A masque bundles cognitive identity into a single YAML file:
 
 ```yaml
+# === Core Identity (Masques Owns) ===
 name: string              # Human-readable name
 index: integer            # Unique numeric ID
 version: "x.y.z"          # Semantic version
@@ -54,17 +55,23 @@ intent:                   # What this masque can and cannot do
 context: |                # Situational framing
   Who you're helping, what they value, operational environment.
 
-knowledge:                # MCP URIs for knowledge lookup
-  - mcp://server/resource
-
-access:                   # Credential configuration
-  vault_role: role-name
-  ttl: session
-
 lens: |                   # Cognitive framing (system prompt fragment)
   How to approach problems. What to prioritize. What to reject.
 
-mcp:                      # Optional: bundled MCP servers
+spinnerVerbs:             # Optional: custom activity indicators
+  mode: replace           # replace | append
+  verbs:
+    - "Masque:Verbing"
+
+# === Integration Points (Ecosystem Declarations) ===
+knowledge:                # Declares MCP URIs for ecosystem servers
+  - mcp://server/resource
+
+access:                   # Declares credential needs for vault tools
+  vault_role: role-name
+  ttl: session
+
+mcp:                      # Suggests bundled servers for Claude Code
   servers:
     - name: server-name
       type: stdio
@@ -78,6 +85,20 @@ spinnerVerbs:             # Optional: custom activity indicators
 ```
 
 See [Schema Reference](docs/schema.md) for the full specification.
+
+## Ecosystem
+
+Masques is the **identity layer** in an agentic ecosystem. It provides cognitive framing (lens, intent, context) while integrating with other tools:
+
+| Need | Masques declares... | Fulfilled by... |
+|------|---------------------|-----------------|
+| Knowledge | MCP URIs | MCP servers (Context7, etc.) |
+| Credentials | Vault role, TTL | Vault, credential managers |
+| Tools | Bundled servers | Claude Code MCP config |
+
+**Powerful combinations:**
+- **Git worktree + masque** = isolated worker with persistent identity
+- **MCP server + knowledge pointer** = live documentation lookup
 
 ## Documentation
 

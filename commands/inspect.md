@@ -19,8 +19,10 @@ Display the complete details of a masque — all components plus attributes.
 
 2. **If inspecting self (no arg or "self"):**
    - Read `.claude/masque.session.yaml` to check current state
-   - If `active.path` has a value, use that path to read the masque YAML
-   - If `active.path` is null or file doesn't exist: report "No masque active. Use `/don <name>` to adopt one."
+   - If `active.name` has a value, construct path from name + source:
+     - If `source` is `private`: `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
+     - If `source` is `shared`: `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+   - If `active.name` is null or file doesn't exist: report "No masque active. Use `/don <name>` to adopt one."
 
 3. **If inspecting by name:**
    - Read BOTH paths in parallel (single message with two Read calls):

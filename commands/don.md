@@ -100,20 +100,22 @@ Write the session state using the Write tool to `.claude/masque.session.yaml`:
 ```yaml
 # Auto-managed by masques plugin
 active:
-  path: <absolute-path-to-masque-yaml>
   name: <name>
+  source: <private|shared>
   donned_at: <current-UTC-timestamp>
 previous:
   name: null
-  path: null
+  source: null
   doffed_at: null
 ```
 
 Where:
-- `active.path` is the full path where the masque was found (private or shared)
 - `active.name` is the display name from the YAML
+- `active.source` is `private` if found in `~/.masques/`, or `shared` if found in plugin's `personas/`
 - `active.donned_at` is the current UTC timestamp in ISO format (e.g., `2026-01-26T12:00:00Z`)
 - `previous` fields preserve the last worn masque (null if this is the first)
+
+**Note:** Do NOT store absolute paths - they break when the plugin version changes. The path can be reconstructed at runtime from name + source.
 
 ### Step 5b: Apply Spinner Verbs (if defined)
 
