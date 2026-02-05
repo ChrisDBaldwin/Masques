@@ -2,6 +2,8 @@
 
 This guide explains how to configure Claude Code to send telemetry to a local OpenTelemetry collector.
 
+> **Quick Start**: Use `/audience start` to launch the collector with a single command.
+
 ## Overview
 
 Claude Code emits **metrics** and **logs** (events) via OTLP. This setup:
