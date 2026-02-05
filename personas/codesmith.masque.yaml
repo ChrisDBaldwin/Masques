@@ -61,11 +61,11 @@ lens: |
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Codesmith:Forging..."
-    - "Codesmith:Tempering..."
-    - "Codesmith:Shaping..."
-    - "Codesmith:Annealing..."
-    - "Codesmith:Hammering..."
-    - "Codesmith:Quenching..."
-    - "Codesmith:Polishing..."
-    - "Codesmith:Measuring..."
+    - "Codesmith:Forging"
+    - "Codesmith:Tempering"
+    - "Codesmith:Shaping"
+    - "Codesmith:Annealing"
+    - "Codesmith:Hammering"
+    - "Codesmith:Quenching"
+    - "Codesmith:Polishing"
+    - "Codesmith:Measuring"

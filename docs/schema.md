@@ -25,7 +25,7 @@ lens: |             # Required. Cognitive framing + intent guidance
 spinnerVerbs:       # Optional. Custom spinner display
   mode: replace     # replace|append|prepend
   verbs:
-    - "Masque:Verb..."
+    - "Masque:Verb"
 ```
 
 ## Identity Fields
@@ -58,9 +58,9 @@ Custom spinner text shown during agent activity:
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Codesmith:Forging..."
-    - "Codesmith:Tempering..."
-    - "Codesmith:Shaping..."
+    - "Codesmith:Forging"
+    - "Codesmith:Tempering"
+    - "Codesmith:Shaping"
 ```
 
 ### Mode
@@ -71,7 +71,7 @@ spinnerVerbs:
 | `append` | Add these verbs after the defaults |
 | `prepend` | Add these verbs before the defaults |
 
-Verbs use `Masque:Verb...` format (e.g., "Firekeeper:Tending...").
+Verbs use `Masque:Verb` format (e.g., "Firekeeper:Tending"). Claude Code adds the ellipsis automatically.
 
 ## Core Components
 

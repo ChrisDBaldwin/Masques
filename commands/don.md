@@ -106,8 +106,8 @@ If the masque defines a `spinnerVerbs` section:
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Codesmith:Forging..."
-    - "Codesmith:Tempering..."
+    - "Codesmith:Forging"
+    - "Codesmith:Tempering"
 ```
 
 Write or update `.claude/settings.local.json` to include the spinner verbs:
@@ -122,7 +122,7 @@ Example result in `.claude/settings.local.json`:
   "permissions": { ... },
   "spinnerVerbs": {
     "mode": "replace",
-    "verbs": ["Codesmith:Forging...", "Codesmith:Tempering...", ...]
+    "verbs": ["Codesmith:Forging", "Codesmith:Tempering", ...]
   }
 }
 ```

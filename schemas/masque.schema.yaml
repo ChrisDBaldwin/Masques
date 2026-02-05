@@ -45,7 +45,7 @@ properties:
         default: replace
       verbs:
         type: array
-        description: List of spinner verb phrases (e.g., "Codesmith:Forging...")
+        description: List of spinner verb phrases (e.g., "Codesmith:Forging")
         items:
           type: string
           minLength: 1
