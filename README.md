@@ -81,7 +81,7 @@ mcp:                      # Suggests bundled servers for Claude Code
 spinnerVerbs:             # Optional: custom activity indicators
   mode: replace           # replace | append
   verbs:
-    - "Masque:Verbing..."
+    - "Masque:Verbing"
 ```
 
 See [Schema Reference](docs/schema.md) for the full specification.

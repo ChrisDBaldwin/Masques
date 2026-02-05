@@ -153,7 +153,7 @@ lens: |             # Required. Cognitive framing + intent guidance
 spinnerVerbs:       # Optional. Custom activity indicators
   mode: replace     # replace|append|prepend
   verbs:
-    - "Masque:Verbing..."
+    - "Masque:Verbing"
 ```
 
 ## Design Principles
