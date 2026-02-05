@@ -22,10 +22,10 @@ Claude Code emits **metrics** and **logs** (events) via OTLP. This setup:
 cd services/collector
 
 # Build the image
-docker build -t masques-collector .
+docker build -t masques-audience .
 
 # Run in foreground (see telemetry output)
-docker run --rm -p 4317:4317 -p 4318:4318 -p 13133:13133 masques-collector
+docker run --rm -p 4317:4317 -p 4318:4318 -p 13133:13133 masques-audience
 ```
 
 Verify it's running:
@@ -99,7 +99,7 @@ You should see metrics and log events flowing through:
 
 Ensure the collector started successfully and ports are exposed:
 ```bash
-docker ps  # Should show masques-collector
+docker ps  # Should show masques-audience
 netstat -an | grep 4317  # Should show LISTEN
 ```
 
@@ -113,17 +113,17 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 
 ## Running in Background
 
-For persistent operation:
+For persistent operation, use `/audience start` or manually:
 ```bash
-docker run -d --name otel-collector \
+docker run -d --name masques-audience \
   -p 4317:4317 -p 4318:4318 -p 13133:13133 \
-  masques-collector
+  masques-audience
 
 # View logs
-docker logs -f otel-collector
+docker logs -f masques-audience
 
 # Stop
-docker stop otel-collector && docker rm otel-collector
+docker stop masques-audience && docker rm masques-audience
 ```
 
 ## What Gets Collected

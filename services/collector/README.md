@@ -6,10 +6,10 @@ Minimal OpenTelemetry collector for receiving Claude Code telemetry locally.
 
 ```bash
 # Build
-docker build -t masques-collector .
+docker build -t masques-audience .
 
 # Run (foreground, see telemetry in logs)
-docker run --rm -p 4317:4317 -p 4318:4318 -p 13133:13133 masques-collector
+docker run --rm -p 4317:4317 -p 4318:4318 -p 13133:13133 masques-audience
 
 # Health check
 curl http://localhost:13133/health
