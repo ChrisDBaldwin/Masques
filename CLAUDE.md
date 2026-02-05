@@ -30,10 +30,12 @@ masques/                         # Plugin repo
 │   └── plugin.json              # Plugin manifest
 ├── commands/                    # Plugin slash commands
 │   ├── don.md                   # /don <masque> - adopt identity
+│   ├── doff.md                  # /doff - return to baseline
 │   ├── id.md                    # /id - show current identity
 │   ├── list.md                  # /list - list masques
 │   ├── inspect.md               # /inspect - detailed view
-│   └── sync-manifest.md         # /sync-manifest - regenerate manifests
+│   ├── sync-manifest.md         # /sync-manifest - regenerate manifests
+│   └── audience.md              # /audience - manage telemetry observers
 ├── personas/                    # Shared masque definitions (YAML source)
 │   ├── manifest.yaml            # Auto-generated listing cache
 │   ├── codesmith.masque.yaml
@@ -55,6 +57,7 @@ masques/                         # Plugin repo
 /list                     # List available masques (reads from manifests)
 /inspect [masque]         # Detailed masque introspection
 /sync-manifest [scope]    # Regenerate manifest files for fast listing
+/audience [action]        # Manage telemetry observers (start/stop/status/config/logs)
 ```
 
 State is persisted in `.claude/masque.session.yaml`.
