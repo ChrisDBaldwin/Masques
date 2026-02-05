@@ -1,35 +1,43 @@
 # Concepts
 
-This document explains the five components of a masque—not just what they are, but why these five and how they form a coherent system.
+This document explains the components of a masque—not just what they are, but why they exist and how they form a coherent system.
 
-## Why Five Components?
+## What is a Masque?
 
 A masque answers one question: **"Who am I right now, and why?"**
 
 Traditional identity systems answer pieces of this:
-- IAM answers "what can I do?" (permissions)
 - Personas answer "how should I behave?" (prompts)
 - Config answers "where are my resources?" (endpoints)
 
-But these are fragments. A complete identity needs all five:
+But these are fragments. A complete identity needs:
 
-### Intent — The Why
+1. **Lens** — How to think and what to avoid
+2. **Context** — Who you're helping and what situation you're in
+3. **Attributes** — Metadata that describes this identity
 
-**Without intent, you're just collecting access.**
+## The Components
 
-Intent is first-class because it constrains everything else. A masque isn't just capabilities—it's capabilities *in service of something*. The intent declaration:
+### Lens — The Framing
 
-- States what goals this assumption serves
-- Defines allowed/denied action patterns
-- Provides audit trail for "why was this assumed?"
+**How to think, not just what to do.**
+
+The lens is cognitive framing—priorities, heuristics, things to prefer or avoid. It shapes *how* the agent approaches problems.
 
 ```yaml
-intent:
-  allowed: ["deploy *", "debug *"]
-  denied: ["delete production *"]
+lens: |
+  You are a careful operator. When uncertain, ask.
+  Prefer reversible changes. Document what you do.
+  Stability over novelty. Boring is good.
+
+  Boundaries:
+  - Never delete production data without approval.
+  - Never rush deployments.
 ```
 
-### Context — The Who
+The lens includes intent guidance as prose—what to do and what to avoid. This reads naturally and keeps everything about "how to behave" in one place.
+
+### Context — The Situation
 
 **Every masque operates in a situation.**
 
@@ -42,80 +50,47 @@ context: |
   Budget is constrained; prefer open source.
 ```
 
-### Knowledge — The What
+### Attributes — The Metadata
 
-**Pointers, not blobs.**
+**Flexible key-value pairs.**
 
-Masques don't contain knowledge—they know where to look. This keeps masques lightweight and knowledge fresh. MCP servers are the source of truth; the masque just holds URIs.
-
-```yaml
-knowledge:
-  - mcp://homelab-inventory    # what machines exist
-  - mcp://homelab-runbooks     # how to do things
-  - mcp://homelab-history      # what's been done
-```
-
-> **Note:** Knowledge URIs are currently declarative — they document where knowledge *would* come from when MCP servers are available. Until those servers are deployed, the agent should prompt the user for context directly. This design allows masques to evolve from "documentation of intent" to "functional integration" as infrastructure matures.
-
-### Access — The How
-
-**Credentials scoped to the task.**
-
-Access isn't just "what APIs can I call"—it's credentials minted for this specific session, scoped to what the intent requires, expired when done.
+Attributes describe the masque without affecting behavior directly. They're useful for display, filtering, and organization.
 
 ```yaml
-access:
-  vault_role: homelab-operator
-  ttl: session  # expires when masque is doffed
-```
-
-> **Note:** Access declarations are currently declarative — they document what credentials *would* be needed when vault/credential tools are available. Until that infrastructure exists, the agent should request credentials directly from the user. This allows masques to evolve from "documentation of intent" to "functional integration" as infrastructure matures.
-
-### Lens — The Framing
-
-**How to think, not just what to do.**
-
-The lens is cognitive framing—priorities, heuristics, things to prefer or avoid. It shapes *how* the agent approaches problems, not just what it can access.
-
-```yaml
-lens: |
-  You are a careful operator. When uncertain, ask.
-  Prefer reversible changes. Document what you do.
-  Stability over novelty. Boring is good.
+attributes:
+  domain: database-architecture
+  tagline: "graceful growth, efficient queries"
+  style: opinionated-collaborative
 ```
 
 ## How They Relate
 
-The five components aren't a checklist—they're a system:
+The components form a simple hierarchy:
 
 ```
-                    ┌─────────────────┐
-                    │     INTENT      │
-                    │   (the why)     │
-                    └────────┬────────┘
-                             │ constrains
-        ┌────────────────────┼────────────────────┐
-        │                    │                    │
-        ▼                    ▼                    ▼
-   ┌─────────┐         ┌──────────┐         ┌─────────┐
-   │ CONTEXT │         │ KNOWLEDGE│         │  ACCESS │
-   │(the who)│         │(the what)│         │(the how)│
-   └────┬────┘         └────┬─────┘         └────┬────┘
-        │                   │                    │
-        └───────────────────┼────────────────────┘
-                            │ shapes
-                            ▼
-                    ┌─────────────────┐
-                    │      LENS       │
-                    │ (the framing)   │
-                    └─────────────────┘
+        ┌─────────────────┐
+        │   ATTRIBUTES    │
+        │   (metadata)    │
+        └────────┬────────┘
+                 │ describes
+                 ▼
+        ┌─────────────────┐
+        │    CONTEXT      │
+        │  (situation)    │
+        └────────┬────────┘
+                 │ grounds
+                 ▼
+        ┌─────────────────┐
+        │      LENS       │
+        │   (framing)     │
+        └─────────────────┘
 ```
 
-**Intent sits at the top** because it constrains what's appropriate. You can't use knowledge or access that doesn't serve the intent.
+**Attributes describe** what this masque is about.
 
-**Context, Knowledge, and Access are peers** that provide the raw materials. They're what you have available.
+**Context grounds** the masque in a specific situation.
 
-**Lens synthesizes below** because it determines *how* you use what you have. It's shaped by everything above it.
+**Lens shapes** how the agent thinks and works.
 
 ## Session Lifecycle
 
@@ -124,50 +99,25 @@ A masque has three phases:
 ### Don
 
 The agent assumes the masque. This:
-1. Validates the agent qualifies (trust ring check)
-2. Validates the stated intent matches allowed patterns
-3. Mints session credentials
-4. Injects context and lens
-5. Registers knowledge sources
+1. Injects context and lens
+2. Updates session state
+3. Applies spinner verbs (if defined)
 
 ### Work
 
 The agent operates with full identity context. Every action is:
-- Constrained by intent
-- Informed by context and knowledge
-- Enabled by access
+- Informed by context
 - Shaped by lens
 
 ### Doff
 
 The session ends. This:
-1. Expires session credentials
-2. Logs session for reflection
-3. Preserves work product
-4. Releases masque for future assumption
-
-**Credentials expire, but work product remains.**
-
-## Session Boundaries
-
-Sessions operate at two levels:
-
-- **Global**: The masque is worn for the entire conversation/instance
-- **Local**: Temporary elevation or restriction for a specific operation
-
-This allows both persistent identity and momentary adjustments. A homelab operator might temporarily elevate to admin for a specific dangerous operation, then drop back.
-
-## Sub-Agent Inheritance
-
-**Sub-agents do not inherit masques by default.**
-
-When an agent spawns a sub-agent, the child starts fresh. No accidental masque leakage. If the sub-agent needs a masque, it must explicitly assume one—and qualify for it.
-
-This is a security feature. Masques are explicit, not ambient. You don't inherit someone else's identity just because they called you.
+1. Clears session state
+2. Restores default behavior
 
 ## Versioning
 
-Masque definitions must be versioned. Auto-updating is dangerous—a changed masque mid-session could grant unexpected access or revoke needed capabilities.
+Masque definitions must be versioned. Auto-updating is dangerous—a changed masque mid-session could alter behavior unexpectedly.
 
 ```bash
 /don homelab "deploying monitoring"
@@ -175,57 +125,15 @@ Masque definitions must be versioned. Auto-updating is dangerous—a changed mas
 
 Changes require conscious adoption. You pin to a version. Upgrading is a deliberate act.
 
-## Ecosystem Integration
+## What Masques Doesn't Do
 
-Masques is the **identity layer** in a larger agentic ecosystem. The five components split into two categories:
+Masques is intentionally limited. It provides identity, not infrastructure:
 
-### What Masques Owns
+| Need | Not Masques' Job |
+|------|------------------|
+| Knowledge lookup | Use MCP servers (Context7, etc.) |
+| Credentials | Use vault/credential managers |
+| Tool bundles | Use Claude Code MCP config |
+| Performance tracking | Use observability tools (OTEL) |
 
-- **Intent** — defines goals and boundaries
-- **Context** — grounds in situation
-- **Lens** — shapes cognitive approach
-
-These are core identity. Masques fully controls them.
-
-### What Masques Declares (Ecosystem Fulfills)
-
-- **Knowledge** — points to MCP URIs; MCP servers query the actual data
-- **Access** — declares credential needs; vault/credential tools fulfill them
-
-This separation is intentional. Masques stays lightweight and focused on *who you are*. The ecosystem handles *what you can do*.
-
-### Practical Combinations
-
-**Worktree + Masque = Isolated Worker**
-
-Git worktrees provide code isolation. Masques provide cognitive isolation. Together, they create persistent, isolated worker identities that can operate independently:
-
-```bash
-# Create isolated workspace
-git worktree add ../feature-x feature-branch
-
-# Give it an identity
-cd ../feature-x && /don codesmith "implementing feature X"
-```
-
-**MCP Server + Knowledge Pointer = Live Lookup**
-
-Masques don't embed knowledge—they point to it. MCP servers provide fresh content on demand:
-
-```yaml
-knowledge:
-  - mcp://context7/react     # Live React docs
-  - mcp://project/runbooks   # Current team practices
-```
-
-The masque declares what's relevant; the ecosystem provides the content.
-
-## Revocation
-
-Revocation must be graceful. Not a hard yank—the session should wind down with dignity:
-
-1. Agent is notified
-2. Given chance to checkpoint work
-3. Released cleanly
-
-Ungraceful revocation is for emergencies only.
+This keeps masques simple: **who you are**, not **what you can do**.

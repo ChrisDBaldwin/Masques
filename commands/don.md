@@ -1,6 +1,6 @@
 ---
 name: don
-description: Don a masque - adopt a temporary cognitive identity with bundled lens, context, and intent boundaries
+description: Don a masque - adopt a temporary cognitive identity with bundled lens and context
 arguments:
   - name: masque-name
     description: Name of the masque to don (e.g., codesmith, chartwright)
@@ -49,15 +49,9 @@ If neither file exists, list available masques from both paths and report which 
 Extract these fields from the YAML:
 - `name` - Display name
 - `version` - Version string
-- `ring` - Trust ring level (admin, player, guest, outsider)
 - `attributes` - Domain, stack, style, philosophy, tagline
-- `intent.allowed` - Array of allowed intent patterns
-- `intent.denied` - Array of denied intent patterns
 - `context` - Project/domain context
-- `knowledge` - Array of MCP URIs (mcp://...)
-- `skills` - Array of skill URIs with levels
 - `lens` - The cognitive framing and working style
-- `mcp` - (Optional) MCP server definitions for bundled tools
 - `spinnerVerbs` - (Optional) Custom spinner verbs for this masque
 
 ### Step 4: Inject the Masque Context
@@ -65,31 +59,18 @@ Extract these fields from the YAML:
 Output a `<masque-active>` block that will shape your behavior:
 
 ```
-<masque-active name="[name]" version="[version]" ring="[ring]">
+<masque-active name="[name]" version="[version]">
 ## Lens
 [Full lens content from YAML]
 
 ## Context
 [Full context content from YAML]
 
-## Intent Boundaries
-**Allowed:**
-[List each allowed pattern as bullet]
-
-**Denied:**
-[List each denied pattern as bullet]
-
 ## Attributes
 - Domain: [domain]
 - Stack: [stack]
 - Style: [style]
 - Philosophy: [philosophy]
-
-## Knowledge Sources
-[List each mcp:// URI]
-
-## Skills
-[List each skill URI with level]
 </masque-active>
 ```
 
@@ -125,8 +106,8 @@ If the masque defines a `spinnerVerbs` section:
 spinnerVerbs:
   mode: replace
   verbs:
-    - "Codesmith Forging"
-    - "Codesmith Tempering"
+    - "Codesmith:Forging..."
+    - "Codesmith:Tempering..."
 ```
 
 Write or update `.claude/settings.local.json` to include the spinner verbs:
@@ -141,41 +122,18 @@ Example result in `.claude/settings.local.json`:
   "permissions": { ... },
   "spinnerVerbs": {
     "mode": "replace",
-    "verbs": ["Codesmith Forging", "Codesmith Tempering", ...]
+    "verbs": ["Codesmith:Forging...", "Codesmith:Tempering...", ...]
   }
 }
 ```
 
 If the masque has no `spinnerVerbs` field, leave existing settings unchanged.
 
-### Step 6: Handle MCP Servers (if defined)
-
-If the masque defines an `mcp` section with server configurations:
-
-```yaml
-mcp:
-  servers:
-    - name: server-name
-      type: stdio
-      command: npx
-      args: ["-y", "@package/name"]
-```
-
-Output instructions for the user:
-```
-📡 This masque bundles MCP servers:
-
-• [server-name]: [command] [args...]
-
-To enable these capabilities, add to your .mcp.json or run:
-claude mcp add [server-name] -- [command] [args...]
-```
-
-### Step 7: Confirm
+### Step 6: Confirm
 
 Confirm with a brief message:
 ```
-✓ Donned [name] v[version] (ring: [ring])
+✓ Donned [name] v[version]
   [tagline or philosophy]
 ```
 

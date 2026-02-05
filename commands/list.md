@@ -21,7 +21,6 @@ Display all available masques that can be donned.
 2. **Parse each manifest** and extract the `masques` array. Each entry has:
    - `name` - Display name
    - `version` - Version string
-   - `ring` - Trust level
    - `domain` - Domain area
    - `tagline` - Brief description
 
@@ -41,12 +40,12 @@ Display all available masques that can be donned.
    ```
    Available Masques:
 
-   Name          Version   Ring     Domain                   Source
+   Name          Version   Domain                   Source
    ────────────────────────────────────────────────────────────────────
- ★ Mirror        0.1.0     player   masque-creation          shared     ← start here
-   Nash          0.1.0     player   architecture             [private]
-   Codesmith     0.1.0     player   systems-programming      shared     (active)
-   Chartwright   0.1.0     player   frontend-analytics       shared
+ ★ Mirror        0.1.0     masque-creation          shared     ← start here
+   Nash          0.1.0     architecture             [private]
+   Codesmith     0.1.0     systems-programming      shared     (active)
+   Chartwright   0.1.0     frontend-analytics       shared
    ```
 
    - Mark the active masque with `(active)` if one is donned
