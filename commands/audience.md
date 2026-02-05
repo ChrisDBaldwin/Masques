@@ -33,9 +33,9 @@ Extract the action from arguments (default: `status`):
 docker ps --filter "name=masques-audience" --format "{{.Names}}"
 ```
 
-2. If not present, build and start:
+2. If not present, start with docker compose:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker build -t masques-audience . && docker run -d --name masques-audience -p 4317:4317 -p 4318:4318 -p 13133:13133 masques-audience
+cd /Users/chris/git/masques/services/collector && docker compose up -d
 ```
 
 3. Wait for health check:
@@ -51,11 +51,13 @@ sleep 2 && curl -s http://localhost:13133/health
   Health: http://localhost:13133/health
 ```
 
+If health check fails, suggest: "Port forwarding may not be working. Try `colima restart` if using Colima."
+
 #### Action: `stop`
 
-1. Stop and remove the container:
+1. Stop with docker compose:
 ```bash
-docker stop masques-audience && docker rm masques-audience
+cd /Users/chris/git/masques/services/collector && docker compose down
 ```
 
 2. Report result:
@@ -129,7 +131,7 @@ See docs/otel-setup.md for full documentation.
 
 Show recent collector logs:
 ```bash
-docker logs --tail 50 masques-audience
+cd /Users/chris/git/masques/services/collector && docker compose logs --tail 50
 ```
 
 If container not running:
