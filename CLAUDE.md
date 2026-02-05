@@ -4,17 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Masques is an agent identity framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling five components: intent, context, knowledge, access, and lens.
+Masques is an agent identity framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling lens (cognitive framing), context (situational grounding), and attributes (metadata).
 
 **Delivery**: Claude Code plugin that reads YAML masque definitions and injects them into sessions.
 
 ## Key Concepts
 
-- **Masques**: Temporary identities with five components (intent, context, knowledge, access, lens). Session-scoped.
-- **MCP Server Bundling**: Masques can define MCP servers that provide domain-specific tools.
-- **Knowledge as Pointers**: Masques reference MCP URIs for knowledge lookups, not embedded content.
+- **Masques**: Temporary identities with lens, context, and attributes. Session-scoped.
+- **Lens**: Cognitive framing that shapes how the agent thinks and works, including boundaries.
+- **Context**: Situational grounding — who you're helping, what they value.
 - **Versioned Identities**: Masques are pinned to versions; upgrading is deliberate.
-- **Intent Boundaries**: Glob-style pattern matching for allowed/denied actions.
 
 ## Directory Structure
 
@@ -43,7 +42,7 @@ masques/                         # Plugin repo
 │   └── masque.schema.yaml       # JSON Schema for masques
 └── docs/
     ├── vision.md                # Theater metaphor and philosophy
-    ├── concepts.md              # The five components explained
+    ├── concepts.md              # Components explained
     └── schema.md                # Schema reference guide
 ```
 
@@ -95,7 +94,6 @@ generated_at: 2026-01-26T15:42:00Z
 masques:
   - name: Codesmith
     version: "0.1.0"
-    ring: player
     domain: systems-programming
     tagline: "every line should teach"
 ```
@@ -129,90 +127,38 @@ If a masque name exists in both locations, the private version takes precedence.
 
 **For shared masques** (project/team):
 1. Create `personas/<name>.masque.yaml`
-2. Define required fields: `name`, `index`, `version`, `ring`, `intent`, `lens`
-3. Add optional fields: `attributes`, `context`, `knowledge`, `access`, `skills`, `mcp`
+2. Define required fields: `name`, `version`, `lens`
+3. Add optional fields: `attributes`, `context`, `spinnerVerbs`
 4. Test with `/don <name>`
 
 ## Masque Schema (Quick Reference)
 
-### Core Identity (Masques Owns)
-
 ```yaml
-name: string        # Human-readable name
-index: integer      # Unique numeric ID
-version: "x.y.z"    # Semantic version
-ring: player        # admin|player|guest|outsider
+name: string        # Required. Human-readable name
+version: "x.y.z"    # Required. Semantic version
 
-attributes:         # Flexible metadata
+attributes:         # Optional. Flexible metadata
   domain: string
   tagline: string
+  style: string
+  philosophy: string
 
-intent:             # What this masque can do
-  allowed: ["implement *"]
-  denied: ["rush *"]
-
-context: |          # Situational framing
+context: |          # Optional. Situational framing
   Who you're helping, what they value.
 
-lens: |             # Cognitive framing
+lens: |             # Required. Cognitive framing + intent guidance
   System prompt fragment.
+  Include what to do, what to avoid, how to approach work.
 
-spinnerVerbs:       # Custom activity indicators
+spinnerVerbs:       # Optional. Custom activity indicators
   mode: replace     # replace|append|prepend
   verbs:
     - "Masque:Verbing..."
 ```
 
-### Integration Points (Ecosystem Declarations)
-
-These fields declare needs that ecosystem tools fulfill:
-
-```yaml
-knowledge:          # Declares MCP URIs for ecosystem servers to query
-  - mcp://server/resource
-
-access:             # Declares credential needs for vault/credential tools
-  vault_role: role-name
-  ttl: session
-
-skills:             # Declares proficiency for Claude Code skills system
-  - uri: skill://domain/name
-    level: competent
-
-mcp:                # Suggests bundled servers for Claude Code MCP config
-  servers:
-    - name: server-name
-      type: stdio
-      command: npx
-      args: ["-y", "@package/name"]
-
-performance:        # Declares self-evaluation context
-  score: "*"
-  history: []
-```
-
-## Ecosystem Integration
-
-Masques is the **identity layer** in an agentic ecosystem. It doesn't duplicate what other tools do well—it integrates with them.
-
-| Need | Masques Role | Ecosystem Tool |
-|------|-------------|----------------|
-| Cognitive framing | Owns (lens, intent, context) | — |
-| Knowledge lookup | Declares URIs | MCP servers (Context7, etc.) |
-| Credentials | Declares needs | Vault, credential managers |
-| Skill proficiency | Declares level | Claude Code skills system |
-| Isolated workers | Provides identity | Git worktrees |
-| Tool bundles | Suggests servers | Claude Code MCP config |
-
-**Ecosystem Combinations:**
-- **Worktree + masque** = isolated, persistent worker identity
-- **MCP server + masque knowledge pointer** = live knowledge lookup
-- **Claude Code skill + masque skill declaration** = proficiency-aware behavior
-
 ## Design Principles
 
-1. Intent-driven — every assumption states a goal
+1. Simple — lens, context, attributes. That's it.
 2. Session-scoped — masques are temporary
-3. Pointer-based — knowledge is looked up, not contained
-4. Versioned — pin to versions, upgrade deliberately
-5. Plugin-first — YAML source, Claude Code delivery
+3. Versioned — pin to versions, upgrade deliberately
+4. Plugin-first — YAML source, Claude Code delivery

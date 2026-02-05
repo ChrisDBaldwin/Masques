@@ -34,7 +34,6 @@ Manifests are pre-built YAML files containing the summary fields needed for list
    b. **For each masque file**, extract:
       - `name` - Display name
       - `version` - Version string
-      - `ring` - Trust level
       - `attributes.domain` - Domain area
       - `attributes.tagline` - Brief description (fallback to `attributes.philosophy` if no tagline)
 
@@ -48,12 +47,10 @@ Manifests are pre-built YAML files containing the summary fields needed for list
    masques:
      - name: Codesmith
        version: "0.1.0"
-       ring: player
        domain: systems-programming
        tagline: "every line should teach"
      - name: Mirror
        version: "0.1.0"
-       ring: player
        domain: masque-creation
        tagline: "who do you need to become?"
    ```

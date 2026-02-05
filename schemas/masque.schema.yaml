@@ -1,8 +1,8 @@
-# Masque Schema v0.1
-# Formal definition of the masque YAML structure
+# Masque Schema v0.2
+# Simplified schema for masque definitions
 #
-# A masque is a temporary cognitive identity bundling five components:
-# intent, context, knowledge, access, and lens.
+# A masque is a temporary cognitive identity bundling three components:
+# lens (cognitive framing), context (situational grounding), and attributes (metadata).
 
 $schema: "https://json-schema.org/draft/2020-12/schema"
 $id: "https://masques.ai/schemas/masque.schema.yaml"
@@ -12,10 +12,7 @@ description: A temporary cognitive identity for agents
 type: object
 required:
   - name
-  - index
   - version
-  - ring
-  - intent
   - lens
 
 properties:
@@ -25,25 +22,15 @@ properties:
     description: Human-readable name for this masque
     minLength: 1
 
-  index:
-    type: integer
-    description: Unique numeric identifier
-    minimum: 1
-
   version:
     type: string
     description: Semantic version (e.g., "0.1.0")
     pattern: "^\\d+\\.\\d+\\.\\d+$"
 
   # === Metadata ===
-  ring:
-    type: string
-    description: Trust ring required to assume this masque
-    enum: [admin, player, guest, outsider]
-
   attributes:
     type: object
-    description: Flexible key-value metadata
+    description: Flexible key-value metadata (domain, tagline, style, etc.)
     additionalProperties: true
 
   # === Presentation ===
@@ -58,51 +45,13 @@ properties:
         default: replace
       verbs:
         type: array
-        description: List of spinner verb phrases (e.g., "Codesmith Forging")
+        description: List of spinner verb phrases (e.g., "Codesmith:Forging...")
         items:
           type: string
           minLength: 1
         minItems: 1
 
-  # === Skills ===
-  skills:
-    type: array
-    description: References to external skill definitions
-    items:
-      type: object
-      required: [uri, level]
-      properties:
-        uri:
-          type: string
-          description: Skill URI (e.g., skill://programming/zig)
-          pattern: "^skill://[a-z0-9-]+/[a-z0-9-]+$"
-        level:
-          type: string
-          enum: [novice, competent, proficient, expert, master]
-          description: |
-            Claimed proficiency level:
-            - novice: Learning, needs guidance
-            - competent: Can do standard tasks independently
-            - proficient: Handles complex cases, teaches others
-            - expert: Deep mastery, defines best practices
-            - master: Shapes the field, creates new approaches
-
-  # === The Five Components ===
-
-  intent:
-    type: object
-    description: What this masque can and cannot do
-    properties:
-      allowed:
-        type: array
-        items:
-          type: string
-        description: Glob patterns for allowed intents
-      denied:
-        type: array
-        items:
-          type: string
-        description: Glob patterns for denied intents
+  # === Core Components ===
 
   context:
     type: string
@@ -111,110 +60,9 @@ properties:
       Who are you helping? What do they value?
       What's the operational environment?
 
-  knowledge:
-    type: array
-    description: MCP URIs for knowledge lookup
-    items:
-      type: string
-      pattern: "^mcp://[a-z0-9-]+/[a-z0-9-]+$"
-
-  access:
-    type: object
-    description: Credential and access configuration
-    properties:
-      vault_role:
-        type: string
-        description: Vault role to assume for credentials
-      ttl:
-        type: string
-        description: Token lifetime (session or ISO 8601 duration)
-        pattern: "^(session|PT?\\d+[HMS]?)$"
-      credentials:
-        type: array
-        description: Credential sources for this masque
-        items:
-          type: object
-          properties:
-            source:
-              type: string
-              description: Credential source (e.g., aws-secrets-manager, vault)
-            scope:
-              type: string
-              description: Access scope (e.g., read-only, read-write)
-      capabilities:
-        type: object
-        description: Specific capabilities granted to this masque
-        additionalProperties: true
-
-  # === MCP Server Bundling ===
-  mcp:
-    type: object
-    description: MCP servers bundled with this masque for tool access
-    properties:
-      servers:
-        type: array
-        description: List of MCP server configurations
-        items:
-          type: object
-          required: [name, type, command]
-          properties:
-            name:
-              type: string
-              description: Unique server name for reference
-              pattern: "^[a-z0-9-]+$"
-            type:
-              type: string
-              description: Server transport type
-              enum: [stdio, sse, http]
-            command:
-              type: string
-              description: Command to start the server
-            args:
-              type: array
-              description: Command arguments
-              items:
-                type: string
-            env:
-              type: object
-              description: Environment variables for the server
-              additionalProperties:
-                type: string
-
   lens:
     type: string
     description: |
       System prompt fragment defining cognitive framing.
       How to approach problems, what to prioritize, what to reject.
-
-  # === Performance Evaluation ===
-  performance:
-    type: object
-    description: Contribution evaluation for this masque
-    properties:
-      score:
-        type: string
-        description: |
-          Current contribution rating:
-          + additive (steady contribution)
-          - negative (detracts from goals)
-          / dividing (fragments effort)
-          * multiplicative (force multiplier)
-          e exponential (catalytic, transformative)
-        enum: ["+", "-", "/", "*", "e"]
-        nullable: true
-      history:
-        type: array
-        description: Historical performance records
-        items:
-          type: object
-          required: [date, score]
-          properties:
-            date:
-              type: string
-              format: date-time
-            score:
-              type: string
-              enum: ["+", "-", "/", "*", "e"]
-            notes:
-              type: string
-              description: Evaluator notes on this rating
+      Include intent guidance (what to do, what to avoid) as prose.

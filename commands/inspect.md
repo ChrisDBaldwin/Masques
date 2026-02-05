@@ -35,7 +35,7 @@ Display the complete details of a masque — all components plus attributes.
 
    ```
    ═══════════════════════════════════════════════════════════════
-   [Name] v[version]                                    ring: [ring]
+   [Name] v[version]
    ═══════════════════════════════════════════════════════════════
 
    [tagline]
@@ -46,34 +46,19 @@ Display the complete details of a masque — all components plus attributes.
    Style:      [style]
    Philosophy: [philosophy]
 
-   ── Intent ──────────────────────────────────────────────────────
-   Allowed:
-     • [pattern]
-     • [pattern]
-
-   Denied:
-     • [pattern]
-     • [pattern]
-
    ── Context ─────────────────────────────────────────────────────
    [context block - full content]
-
-   ── Knowledge ───────────────────────────────────────────────────
-     • [mcp://uri]
-     • [mcp://uri]
-
-   ── Skills ──────────────────────────────────────────────────────
-     • [skill://uri] ([level])
-     • [skill://uri] ([level])
 
    ── Lens ────────────────────────────────────────────────────────
    [full lens content]
    ```
 
-5. **If masque has MCP server definitions**, show them:
+5. **If masque has spinner verbs**, show them:
    ```
-   ── MCP Servers ─────────────────────────────────────────────────
-     • [name]: [command] [args...]
+   ── Spinner Verbs ───────────────────────────────────────────────
+   Mode: [mode]
+   • [verb]
+   • [verb]
    ```
 
-6. **Omit empty sections** — if a masque lacks knowledge, skills, or MCP servers, skip those headers.
+6. **Omit empty sections** — if a masque lacks context or spinner verbs, skip those headers.
