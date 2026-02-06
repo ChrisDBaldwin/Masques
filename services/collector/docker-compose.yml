@@ -3,6 +3,16 @@ services:
     build: .
     image: masques-audience
     container_name: masques-audience
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Defaults if .env is missing — collector starts but ClickHouse export
+      # retries silently until configured. See .env.example.
+      - CLICKHOUSE_ENDPOINT=${CLICKHOUSE_ENDPOINT:-http://localhost:8123}
+      - CLICKHOUSE_DATABASE=${CLICKHOUSE_DATABASE:-otel}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
     ports:
       - "0.0.0.0:4317:4317"   # gRPC
       - "0.0.0.0:4318:4318"   # HTTP

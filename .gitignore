@@ -5,5 +5,8 @@
 
 # Private masques (stored in ~/.masques/, not here)
 
+# Local environment config
+services/collector/.env
+
 # OS files
 .DS_Store

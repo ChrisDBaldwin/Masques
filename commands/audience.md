@@ -33,22 +33,43 @@ Extract the action from arguments (default: `status`):
 docker ps --filter "name=masques-audience" --format "{{.Names}}"
 ```
 
-2. If not present, start with docker compose:
+2. Check for ClickHouse configuration:
+```bash
+test -f /Users/chris/git/masques/services/collector/.env && echo "configured" || echo "not configured"
+```
+
+If `.env` is missing, warn: "No .env found — collector will start but ClickHouse export is not configured. Copy .env.example to .env and set your endpoint. See services/collector/.env.example."
+
+3. If container not present, start with docker compose:
 ```bash
 cd /Users/chris/git/masques/services/collector && docker compose up -d
 ```
 
-3. Wait for health check:
+4. Wait for health check:
 ```bash
 sleep 2 && curl -s http://localhost:13133/health
 ```
 
-4. Report result:
+5. Report result. If `.env` exists:
 ```
 ✓ Audience seated
   gRPC: localhost:4317
   HTTP: localhost:4318
+  ClickHouse: configured (see .env)
   Health: http://localhost:13133/health
+```
+
+If `.env` missing:
+```
+✓ Audience seated (local only — no ClickHouse export)
+  gRPC: localhost:4317
+  HTTP: localhost:4318
+  Health: http://localhost:13133/health
+
+  To enable ClickHouse export:
+    cp services/collector/.env.example services/collector/.env
+    # Edit .env with your ClickHouse endpoint
+    /audience stop && /audience start
 ```
 
 If health check fails, suggest: "Port forwarding may not be working. Try `colima restart` if using Colima."
@@ -82,12 +103,18 @@ docker ps --filter "name=masques-audience" --format "{{.Names}} {{.Status}}"
 curl -s http://localhost:13133/health
 ```
 
-3. Report status:
+3. Check ClickHouse configuration:
+```bash
+test -f /Users/chris/git/masques/services/collector/.env && echo "configured" || echo "not configured"
+```
+
+4. Report status:
 ```
 Audience Status
 ───────────────
 Container: watching (Up 5 minutes)
 Health: healthy
+ClickHouse: configured
 Endpoints:
   gRPC: localhost:4317
   HTTP: localhost:4318
@@ -98,6 +125,7 @@ Or if not running:
 Audience Status
 ───────────────
 Container: not present
+ClickHouse: not configured
 
 Run /audience start to invite observers.
 ```
@@ -146,3 +174,4 @@ Run /audience start to invite observers.
 - If Docker is not running: report "Docker is not running. Start Docker Desktop and try again."
 - If port already in use: report which port and suggest stopping conflicting service
 - If build fails: show build error output
+- If ClickHouse export fails at runtime: check `/audience logs` for connection errors — likely the endpoint in `.env` is unreachable
