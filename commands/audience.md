@@ -33,22 +33,43 @@ Extract the action from arguments (default: `status`):
 docker ps --filter "name=masques-audience" --format "{{.Names}}"
 ```
 
-2. If not present, start with docker compose:
+2. Check for ClickHouse configuration:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker compose up -d
+test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/.env && echo "configured" || echo "not configured"
 ```
 
-3. Wait for health check:
+If `.env` is missing, warn: "No .env found — collector will start but ClickHouse export is not configured. Copy .env.example to .env and set your endpoint. See services/collector/.env.example."
+
+3. If container not present, start with docker compose:
+```bash
+cd ${CLAUDE_PLUGIN_ROOT}/services/collector && docker compose up -d
+```
+
+4. Wait for health check:
 ```bash
 sleep 2 && curl -s http://localhost:13133/health
 ```
 
-4. Report result:
+5. Report result. If `.env` exists:
 ```
 ✓ Audience seated
   gRPC: localhost:4317
   HTTP: localhost:4318
+  ClickHouse: configured (see .env)
   Health: http://localhost:13133/health
+```
+
+If `.env` missing:
+```
+✓ Audience seated (local only — no ClickHouse export)
+  gRPC: localhost:4317
+  HTTP: localhost:4318
+  Health: http://localhost:13133/health
+
+  To enable ClickHouse export:
+    cp services/collector/.env.example services/collector/.env
+    # Edit .env with your ClickHouse endpoint
+    /audience stop && /audience start
 ```
 
 If health check fails, suggest: "Port forwarding may not be working. Try `colima restart` if using Colima."
@@ -57,7 +78,7 @@ If health check fails, suggest: "Port forwarding may not be working. Try `colima
 
 1. Stop with docker compose:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker compose down
+cd ${CLAUDE_PLUGIN_ROOT}/services/collector && docker compose down
 ```
 
 2. Report result:
@@ -82,12 +103,18 @@ docker ps --filter "name=masques-audience" --format "{{.Names}} {{.Status}}"
 curl -s http://localhost:13133/health
 ```
 
-3. Report status:
+3. Check ClickHouse configuration:
+```bash
+test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/.env && echo "configured" || echo "not configured"
+```
+
+4. Report status:
 ```
 Audience Status
 ───────────────
 Container: watching (Up 5 minutes)
 Health: healthy
+ClickHouse: configured
 Endpoints:
   gRPC: localhost:4317
   HTTP: localhost:4318
@@ -98,6 +125,7 @@ Or if not running:
 Audience Status
 ───────────────
 Container: not present
+ClickHouse: not configured
 
 Run /audience start to invite observers.
 ```
@@ -117,10 +145,14 @@ Add to ~/.claude/settings.json:
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
-    "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_LOG_TOOL_DETAILS": "1"
   }
 }
+
+Note: OTEL_LOG_TOOL_DETAILS=1 enables skill_name in tool events,
+required for /performance masque session detection.
 
 Or export as environment variables before running claude.
 
@@ -131,7 +163,7 @@ See docs/otel-setup.md for full documentation.
 
 Show recent collector logs:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker compose logs --tail 50
+cd ${CLAUDE_PLUGIN_ROOT}/services/collector && docker compose logs --tail 50
 ```
 
 If container not running:
@@ -146,3 +178,4 @@ Run /audience start to invite observers.
 - If Docker is not running: report "Docker is not running. Start Docker Desktop and try again."
 - If port already in use: report which port and suggest stopping conflicting service
 - If build fails: show build error output
+- If ClickHouse export fails at runtime: check `/audience logs` for connection errors — likely the endpoint in `.env` is unreachable
