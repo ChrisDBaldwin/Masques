@@ -14,7 +14,7 @@ Display telemetry-based performance scoring for the current masque session. Comp
 
 1. Verify the judge script exists:
 ```bash
-test -f /Users/chris/git/masques/services/judge/judge.sh && echo "ok" || echo "missing"
+test -f ${CLAUDE_PLUGIN_ROOT}/services/judge/judge.sh && echo "ok" || echo "missing"
 ```
 
 2. Check for DuckDB:
@@ -30,7 +30,7 @@ Install: brew install duckdb
 
 3. Check for telemetry data:
 ```bash
-test -f /Users/chris/git/masques/services/collector/data/logs.jsonl && echo "ok" || echo "no data"
+test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/data/logs.jsonl && echo "ok" || echo "no data"
 ```
 
 If no data, report:
@@ -53,7 +53,7 @@ Read `.claude/masque.session.yaml` to get the active masque name and donned_at t
 
 Execute the scoring script:
 ```bash
-/Users/chris/git/masques/services/judge/judge.sh
+${CLAUDE_PLUGIN_ROOT}/services/judge/judge.sh
 ```
 
 The script outputs YAML with:

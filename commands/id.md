@@ -45,12 +45,11 @@ Extract details from the masque YAML and display:
 
 ```
 Active Masque: [name] v[version] [private]
-Ring: [ring]
 Donned: [donned_at]
 
-Domain: [domain]
-Stack: [stack]
-Philosophy: [philosophy]
+Domain: [attributes.domain]
+Tagline: [attributes.tagline]
+Philosophy: [attributes.philosophy]
 ```
 
 Note: Show `[private]` indicator if the source is `private`.

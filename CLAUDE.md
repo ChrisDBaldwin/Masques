@@ -20,7 +20,7 @@ Masques is an agent identity and payment framework — "AssumeRole for Agents." 
 
 Three databases, each doing what it's best at:
 
-- **TigerBeetle** — Ledger of record. Account balances, two-phase transfers (pending on don, posted on doff). Source of truth for all money movement.
+- **TigerBeetle** — Ledger of record (designed, not yet integrated). Account balances, two-phase transfers (pending on don, posted on doff). Source of truth for all money movement.
 - **ClickHouse** — Analytics. Telemetry (OTEL metrics/logs), metering (`api_requests`), reputation scoring, balance snapshots synced from TigerBeetle. Remote, columnar, cost-efficient at scale.
 - **DuckDB** — Local performance scoring. Reads OTEL JSONL exports from the collector, scores masque sessions across 5 dimensions. Zero-infrastructure, ephemeral. Evolving toward real-session evals.
 

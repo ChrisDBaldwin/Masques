@@ -35,14 +35,14 @@ docker ps --filter "name=masques-audience" --format "{{.Names}}"
 
 2. Check for ClickHouse configuration:
 ```bash
-test -f /Users/chris/git/masques/services/collector/.env && echo "configured" || echo "not configured"
+test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/.env && echo "configured" || echo "not configured"
 ```
 
 If `.env` is missing, warn: "No .env found — collector will start but ClickHouse export is not configured. Copy .env.example to .env and set your endpoint. See services/collector/.env.example."
 
 3. If container not present, start with docker compose:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker compose up -d
+cd ${CLAUDE_PLUGIN_ROOT}/services/collector && docker compose up -d
 ```
 
 4. Wait for health check:
@@ -78,7 +78,7 @@ If health check fails, suggest: "Port forwarding may not be working. Try `colima
 
 1. Stop with docker compose:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker compose down
+cd ${CLAUDE_PLUGIN_ROOT}/services/collector && docker compose down
 ```
 
 2. Report result:
@@ -105,7 +105,7 @@ curl -s http://localhost:13133/health
 
 3. Check ClickHouse configuration:
 ```bash
-test -f /Users/chris/git/masques/services/collector/.env && echo "configured" || echo "not configured"
+test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/.env && echo "configured" || echo "not configured"
 ```
 
 4. Report status:
@@ -163,7 +163,7 @@ See docs/otel-setup.md for full documentation.
 
 Show recent collector logs:
 ```bash
-cd /Users/chris/git/masques/services/collector && docker compose logs --tail 50
+cd ${CLAUDE_PLUGIN_ROOT}/services/collector && docker compose logs --tail 50
 ```
 
 If container not running:
