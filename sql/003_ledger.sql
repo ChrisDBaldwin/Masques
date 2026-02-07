@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS masques.accounts (
     credits_pending Decimal128(18),
     debits_pending Decimal128(18),
 
-    -- Derived
-    balance Decimal128(18),  -- credits_posted - debits_posted
+    balance Decimal128(18) MATERIALIZED credits_posted - debits_posted,
 
     -- Account metadata
     currency LowCardinality(String) DEFAULT 'USD',

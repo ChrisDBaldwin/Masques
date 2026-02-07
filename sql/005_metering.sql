@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS masques.api_requests (
     duration_ms UInt32,
 
     -- Pricing
-    price_usd Decimal64(12),  -- Price charged
+    price_usd Decimal64(6),  -- Price charged
     transaction_id Nullable(UUID),  -- Link to payment
 
     -- Outcome

@@ -5,7 +5,7 @@
 # extracts masque session boundaries, and scores performance
 # across 5 dimensions. Outputs YAML to stdout.
 #
-# Usage: ./judge.sh [logs_path] [metrics_path]
+# Usage: ./judge.sh [logs_path] [session_file]
 #
 # Requires: duckdb (brew install duckdb)
 
@@ -15,8 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COLLECTOR_DIR="$(dirname "$SCRIPT_DIR")/collector"
 
 LOGS_PATH="${1:-$COLLECTOR_DIR/data/logs.jsonl}"
-METRICS_PATH="${2:-$COLLECTOR_DIR/data/metrics.jsonl}"
-SESSION_FILE="${3:-.claude/masque.session.yaml}"
+SESSION_FILE="${2:-.claude/masque.session.yaml}"
 
 # --- Preflight checks ---
 
@@ -32,16 +31,21 @@ if [[ ! -f "$LOGS_PATH" ]]; then
   exit 1
 fi
 
+# --- Extract masque name from session YAML ---
+
+MASQUE_NAME="unknown"
+if [[ -f "$SESSION_FILE" ]]; then
+  MASQUE_NAME=$(grep '^ *name:' "$SESSION_FILE" | head -1 | sed 's/^ *name: *//')
+fi
+
 # --- Run scoring ---
 
-# sessions.sql extracts masque session boundaries
+# sessions.sql flattens OTLP hierarchy and builds session windows
 # score.sql computes dimensions and composite score
-# Both scripts reference $logs_path and $metrics_path via DuckDB variables
 
 duckdb -noheader -csv :memory: <<SQL
--- Set paths as DuckDB variables
 SET VARIABLE logs_path = '${LOGS_PATH}';
-SET VARIABLE metrics_path = '${METRICS_PATH}';
+SET VARIABLE masque_name = '${MASQUE_NAME}';
 
 .read ${SCRIPT_DIR}/sessions.sql
 .read ${SCRIPT_DIR}/score.sql
