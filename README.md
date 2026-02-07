@@ -4,38 +4,36 @@
 
 # Masques
 
-**AssumeRole for Agents.** A masque is a temporary cognitive identity—bundling intent, context, knowledge, access, and lens into a single assumable primitive. Authors get paid when their masques are used.
+**AssumeRole for Agents.** A masque is a temporary cognitive identity—bundling lens (how to think), context (who you're helping), and attributes (metadata) into a single assumable primitive.
 
 ## What Is This?
 
-Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation—and builds a payment layer so masque authors earn income from their work.
+Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
 
-When you don a masque, you get everything: goals, context, knowledge pointers, credentials, and cognitive framing. The platform meters usage, scores performance, and settles payments to authors.
+When you don a masque, you get cognitive framing, situational context, and performance scoring via OTEL telemetry. The [roadmap](#roadmap) extends this to bundled knowledge, credentials, tools, and author payments.
 
 ## Architecture
 
 ```
 Agent dons masque
-  → session created, pending transfer in TigerBeetle
-  → OTEL metrics/logs flow through collector → ClickHouse
+  → session created
+  → OTEL metrics/logs flow through collector → ClickHouse + JSONL
 
 Agent works with masque
-  → api_requests metered, reputation signals collected
+  → api_requests metered, tool usage tracked
   → DuckDB scores session performance locally
 
 Agent doffs masque
-  → TigerBeetle finalizes transfer based on usage
-  → ClickHouse gets analytical copy
-  → Author's balance increases
+  → session closed, performance scored
 ```
 
-Three databases, each doing what it's best at:
+Two databases today, a third planned:
 
 | Engine | Role | Data |
 |--------|------|------|
-| **TigerBeetle** | Ledger of record | Account balances, transfers, two-phase payments |
-| **ClickHouse** | Analytics | Telemetry, metering, reputation, balance snapshots |
+| **ClickHouse** | Analytics | Telemetry, metering, reputation |
 | **DuckDB** | Local scoring | Session performance from OTEL JSONL exports |
+| **TigerBeetle** | *(Planned)* Ledger of record | Account balances, transfers, two-phase payments |
 
 ## Quick Start
 
@@ -62,45 +60,23 @@ claude plugins add github:ChrisDBaldwin/masques
 A masque bundles cognitive identity into a single YAML file:
 
 ```yaml
-# === Core Identity ===
-name: string              # Human-readable name
-index: integer            # Unique numeric ID
-version: "x.y.z"          # Semantic version
-ring: player              # Trust level: admin | player | guest | outsider
+name: string              # Required. Human-readable name
+version: "x.y.z"          # Required. Semantic version
 
-attributes:               # Flexible metadata
+attributes:               # Optional. Flexible metadata
   domain: string
   tagline: string
+  style: string
+  philosophy: string
 
-intent:                   # What this masque can and cannot do
-  allowed:
-    - "implement *"       # Glob patterns for allowed actions
-  denied:
-    - "rush *"            # Hard boundaries
-
-context: |                # Situational framing
+context: |                # Optional. Situational framing
   Who you're helping, what they value, operational environment.
 
-lens: |                   # Cognitive framing (system prompt fragment)
+lens: |                   # Required. Cognitive framing (system prompt fragment)
   How to approach problems. What to prioritize. What to reject.
 
-# === Integration Points ===
-knowledge:                # MCP URIs for ecosystem servers
-  - mcp://server/resource
-
-access:                   # Credential declarations for vault tools
-  vault_role: role-name
-  ttl: session
-
-mcp:                      # Bundled MCP servers for Claude Code
-  servers:
-    - name: server-name
-      type: stdio
-      command: npx
-      args: ["-y", "@package/name"]
-
-spinnerVerbs:             # Custom activity indicators
-  mode: replace           # replace | append
+spinnerVerbs:             # Optional. Custom activity indicators
+  mode: replace           # replace | append | prepend
   verbs:
     - "Masque:Verbing"
 ```
@@ -135,19 +111,19 @@ services/judge/judge.sh   # Outputs YAML score to stdout
 
 ### ClickHouse Schema
 
-Payment infrastructure tables for identity, ledger analytics, settlements, metering, and reputation. See [sql/README.md](sql/README.md) for the full schema and migration instructions.
+Analytics and payment infrastructure schema — identity, metering, reputation, ledger mirrors, and settlements. See [sql/README.md](sql/README.md) for the full schema and migration instructions.
 
-## Ecosystem
+## Roadmap
 
-Masques is the **identity layer** in an agentic ecosystem. It provides cognitive framing (lens, intent, context) while integrating with other tools:
+Masques is the **identity layer** in an agentic ecosystem. Today it provides cognitive framing (lens, context, attributes) and telemetry-based scoring. The vision extends to full ecosystem integration:
 
-| Need | Masques declares... | Fulfilled by... |
-|------|---------------------|-----------------|
-| Knowledge | MCP URIs | MCP servers (Context7, etc.) |
-| Credentials | Vault role, TTL | Vault, credential managers |
-| Tools | Bundled servers | Claude Code MCP config |
-| Payments | 402-gated access | TigerBeetle + settlement rails |
-| Telemetry | OTEL export | Collector → ClickHouse + DuckDB |
+| Need | Status | Why | Approach |
+|------|--------|-----|----------|
+| Telemetry | **Working** | Measure what masques actually do | OTEL → Collector → ClickHouse + DuckDB |
+| Knowledge | Planned | Masques should bring their own context | MCP URIs bundled per masque |
+| Credentials | Planned | Identity implies access | Vault role + TTL declarations |
+| Tools | Planned | Masques should bring their own capabilities | Bundled MCP servers per masque |
+| Payments | Planned | Authors should earn income from their work | TigerBeetle ledger, 402-gated access, author settlement |
 
 ## Documentation
 
@@ -158,6 +134,7 @@ Masques is the **identity layer** in an agentic ecosystem. It provides cognitive
 | [Concepts](docs/concepts.md) | The five components explained |
 | [Schema](docs/schema.md) | Full YAML specification |
 | [OTEL Setup](docs/otel-setup.md) | Configuring the telemetry pipeline |
+| [Evaluation & Reputation](docs/evaluation.md) | DuckDB session scoring and ClickHouse reputation |
 | [ClickHouse Schema](sql/README.md) | Payment infrastructure tables |
 | [Evaluations](evals/README.md) | Testing masque behavioral fidelity |
 
@@ -177,10 +154,10 @@ This is a personal project maintained in spare time. For bugs, please [open an i
 
 ## Status
 
-Claude Code plugin with OTEL telemetry, ClickHouse analytics, DuckDB performance scoring, and payment infrastructure (TigerBeetle integration in progress).
+Claude Code plugin with OTEL telemetry, ClickHouse analytics, and DuckDB performance scoring. Payment infrastructure (TigerBeetle) is designed but not yet integrated.
 
 ---
 
 <p align="center">
-  <em>Temporary identities. Coherent work. Authors get paid.</em>
+  <em>Temporary identities. Coherent work. Measured performance.</em>
 </p>
