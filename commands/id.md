@@ -58,6 +58,7 @@ Note: Show `[private]` indicator if the source is `private`.
 ### Step 4: Suggest Next Actions
 
 - "Use `/inspect` to see full masque details"
+- "Use `/performance` for telemetry metrics"
 - "Use `/don <name>` to switch to a different masque"
 - "Use `/doff` to remove the masque and return to baseline"
 

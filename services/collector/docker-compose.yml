@@ -13,6 +13,8 @@ services:
       - CLICKHOUSE_DATABASE=${CLICKHOUSE_DATABASE:-otel}
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+    volumes:
+      - ./data:/data
     ports:
       - "0.0.0.0:4317:4317"   # gRPC
       - "0.0.0.0:4318:4318"   # HTTP

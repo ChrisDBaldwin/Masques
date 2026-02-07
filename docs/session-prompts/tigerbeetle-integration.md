@@ -11,7 +11,7 @@ The repo is at `~/git/masques` on branch `feat/payment-clickhouse-schema`.
 - **ClickHouse schema** on ironwood (`sql/001-006`): identity tables, ledger tables (TigerBeetle mirrors), settlements, API request metering, reputation scoring. See `sql/README.md` for the full architecture diagram.
 - **OTEL collector** running locally, shipping metrics and logs to ironwood's ClickHouse (`otel` database). Config in `services/collector/`. Uses `.env` for connection details (gitignored).
 - **Masque plugin** for Claude Code: `/don`, `/doff`, `/id`, `/list` commands. Session state in `.claude/masque.session.yaml`.
-- **No traces/spans yet** — Claude Code only emits metrics and logs. We're building on that intentionally to document the gaps for an OTEL span classification proposal (see `docs/span-classification-spec.md`).
+- **No traces/spans yet** — Claude Code only emits metrics and logs. We use local JSONL + DuckDB for performance scoring (see `services/judge/`).
 
 ### What needs to be built
 
@@ -55,7 +55,7 @@ Author requests settlement
 - ClickHouse schema: `sql/` directory in the repo
 - Masque session state: `.claude/masque.session.yaml`
 - Collector config: `services/collector/config.yaml`
-- Span classification spec: `docs/span-classification-spec.md`
+- Performance judge: `services/judge/` (DuckDB scoring from JSONL telemetry)
 - Beads issue tracker: `bd show masques-2e9` (OTEL→ClickHouse task, in progress)
 
 ### Constraints

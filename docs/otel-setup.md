@@ -44,8 +44,9 @@ Set these before running `claude`:
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+export OTEL_LOG_TOOL_DETAILS=1
 ```
 
 Or add to your shell profile (`~/.zshrc`, `~/.bashrc`):
@@ -55,8 +56,9 @@ Or add to your shell profile (`~/.zshrc`, `~/.bashrc`):
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+export OTEL_LOG_TOOL_DETAILS=1
 ```
 
 ### Option B: Claude Code Settings
@@ -69,11 +71,14 @@ Add to `~/.claude/settings.json`:
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
-    "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_LOG_TOOL_DETAILS": "1"
   }
 }
 ```
+
+> **`OTEL_LOG_TOOL_DETAILS=1`** enables `skill_name` in tool events, which is required for `/performance` to detect masque don/doff session boundaries in the telemetry stream.
 
 ## Step 3: Verify
 
@@ -103,12 +108,12 @@ docker ps  # Should show masques-audience
 netstat -an | grep 4317  # Should show LISTEN
 ```
 
-### Using HTTP instead of gRPC
+### Using gRPC instead of HTTP
 
-If gRPC doesn't work, try HTTP:
+If HTTP/protobuf doesn't work, try gRPC:
 ```bash
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 ```
 
 ## Running in Background
@@ -134,9 +139,29 @@ Claude Code emits:
 
 Note: Claude Code does **not** emit traces (spans). The collector config handles metrics and logs pipelines.
 
+## Performance Scoring
+
+The collector writes JSONL files to `services/collector/data/` alongside shipping to ClickHouse. The DuckDB judge (`services/judge/`) reads this local data to score masque sessions.
+
+```bash
+# Run performance scoring directly
+./services/judge/judge.sh
+
+# Or use the plugin command
+/performance
+```
+
+The judge scores 5 dimensions — Quality, Autonomy, Productivity, Token Efficiency, Cost Efficiency — and produces a composite score with a keep/review/doff recommendation.
+
+Requires:
+- DuckDB installed (`brew install duckdb`)
+- `OTEL_LOG_TOOL_DETAILS=1` for masque session detection
+- Telemetry data in `services/collector/data/logs.jsonl`
+
 ## Next Steps
 
 Once you've verified data flows, you can:
+- Run `/performance` to score your masque sessions
 - Add persistent storage (ClickHouse, PostgreSQL)
 - Export to visualization tools (Grafana)
 - Add alerting based on metrics

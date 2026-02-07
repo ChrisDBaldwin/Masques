@@ -18,6 +18,25 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
+  # Local JSONL files for DuckDB performance scoring
+  file/logs:
+    path: /data/logs.jsonl
+    format: json
+    flush_interval: 2s
+    rotation:
+      max_megabytes: 50
+      max_days: 7
+      max_backups: 3
+
+  file/metrics:
+    path: /data/metrics.jsonl
+    format: json
+    flush_interval: 5s
+    rotation:
+      max_megabytes: 50
+      max_days: 7
+      max_backups: 3
+
   # Ship to remote ClickHouse instance
   # Configure via .env file — see .env.example
   clickhouse:
@@ -44,8 +63,8 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, clickhouse]
+      exporters: [debug, clickhouse, file/metrics]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, clickhouse]
+      exporters: [debug, clickhouse, file/logs]
