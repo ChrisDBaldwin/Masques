@@ -5,5 +5,11 @@
 
 # Private masques (stored in ~/.masques/, not here)
 
+# Local environment config
+services/collector/.env
+
+# Collector JSONL data (local telemetry for DuckDB scoring)
+services/collector/data/
+
 # OS files
 .DS_Store

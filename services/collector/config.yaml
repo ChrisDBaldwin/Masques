@@ -12,11 +12,45 @@ processors:
     send_batch_size: 256
 
 exporters:
-  # Start with logging - see data in collector output
-  logging:
+  # Console output for local debugging
+  debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
+
+  # Local JSONL files for DuckDB performance scoring
+  file/logs:
+    path: /data/logs.jsonl
+    format: json
+    flush_interval: 2s
+    rotation:
+      max_megabytes: 50
+      max_days: 7
+      max_backups: 3
+
+  file/metrics:
+    path: /data/metrics.jsonl
+    format: json
+    flush_interval: 5s
+    rotation:
+      max_megabytes: 50
+      max_days: 7
+      max_backups: 3
+
+  # Ship to remote ClickHouse instance
+  # Configure via .env file — see .env.example
+  clickhouse:
+    endpoint: ${env:CLICKHOUSE_ENDPOINT}
+    username: ${env:CLICKHOUSE_USER}
+    password: ${env:CLICKHOUSE_PASSWORD}
+    database: ${env:CLICKHOUSE_DATABASE}
+    create_schema: true
+    timeout: 5s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 
 extensions:
   health_check:
@@ -29,8 +63,8 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [logging]
+      exporters: [debug, clickhouse, file/metrics]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [logging]
+      exporters: [debug, clickhouse, file/logs]

@@ -45,12 +45,11 @@ Extract details from the masque YAML and display:
 
 ```
 Active Masque: [name] v[version] [private]
-Ring: [ring]
 Donned: [donned_at]
 
-Domain: [domain]
-Stack: [stack]
-Philosophy: [philosophy]
+Domain: [attributes.domain]
+Tagline: [attributes.tagline]
+Philosophy: [attributes.philosophy]
 ```
 
 Note: Show `[private]` indicator if the source is `private`.
@@ -58,6 +57,7 @@ Note: Show `[private]` indicator if the source is `private`.
 ### Step 4: Suggest Next Actions
 
 - "Use `/inspect` to see full masque details"
+- "Use `/performance` for telemetry metrics"
 - "Use `/don <name>` to switch to a different masque"
 - "Use `/doff` to remove the masque and return to baseline"
 

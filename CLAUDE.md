@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Masques is an agent identity framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling lens (cognitive framing), context (situational grounding), and attributes (metadata).
+Masques is an agent identity and payment framework — "AssumeRole for Agents." A masque is a temporary cognitive identity an agent can don, bundling lens (cognitive framing), context (situational grounding), and attributes (metadata). Masque authors get paid when their masques are used.
 
-**Delivery**: Claude Code plugin that reads YAML masque definitions and injects them into sessions.
+**Delivery**: Claude Code plugin for identity, with a three-database backend for payments, analytics, and performance scoring.
 
 ## Key Concepts
 
@@ -14,6 +14,26 @@ Masques is an agent identity framework — "AssumeRole for Agents." A masque is 
 - **Lens**: Cognitive framing that shapes how the agent thinks and works, including boundaries.
 - **Context**: Situational grounding — who you're helping, what they value.
 - **Versioned Identities**: Masques are pinned to versions; upgrading is deliberate.
+- **Author Payments**: Masque authors earn income when agents use their masques. Metered usage, 402-gated access.
+
+## Architecture
+
+Three databases, each doing what it's best at:
+
+- **TigerBeetle** — Ledger of record (designed, not yet integrated). Account balances, two-phase transfers (pending on don, posted on doff). Source of truth for all money movement.
+- **ClickHouse** — Analytics. Telemetry (OTEL metrics/logs), metering (`api_requests`), reputation scoring, balance snapshots synced from TigerBeetle. Remote, columnar, cost-efficient at scale.
+- **DuckDB** — Local performance scoring. Reads OTEL JSONL exports from the collector, scores masque sessions across 5 dimensions. Zero-infrastructure, ephemeral. Evolving toward real-session evals.
+
+Data flow:
+```
+Agent dons masque → session + pending TigerBeetle transfer
+  ↓
+OTEL metrics/logs → Collector → ClickHouse (remote) + JSONL (local)
+  ↓
+Agent doffs masque → TigerBeetle posts transfer → ClickHouse gets analytical copy
+  ↓
+DuckDB reads JSONL → scores session → /performance outputs YAML
+```
 
 ## Directory Structure
 
@@ -24,7 +44,7 @@ Masques is an agent identity framework — "AssumeRole for Agents." A masque is 
 └── ...
 
 masques/                         # Plugin repo
-├── README.md                    # Project overview and quick start
+├── README.md                    # Project overview and architecture
 ├── CLAUDE.md                    # This file
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest
@@ -35,17 +55,45 @@ masques/                         # Plugin repo
 │   ├── list.md                  # /list - list masques
 │   ├── inspect.md               # /inspect - detailed view
 │   ├── sync-manifest.md         # /sync-manifest - regenerate manifests
-│   └── audience.md              # /audience - manage telemetry observers
+│   ├── audience.md              # /audience - manage telemetry observers
+│   └── performance.md           # /performance - telemetry performance scoring
 ├── personas/                    # Shared masque definitions (YAML source)
 │   ├── manifest.yaml            # Auto-generated listing cache
 │   ├── codesmith.masque.yaml
-│   └── chartwright.masque.yaml
+│   ├── chartwright.masque.yaml
+│   ├── firekeeper.masque.yaml
+│   ├── mirror.masque.yaml
+│   └── witness.masque.yaml
 ├── schemas/
 │   └── masque.schema.yaml       # JSON Schema for masques
+├── sql/                         # ClickHouse payment infrastructure
+│   ├── README.md                # Schema docs + architecture diagram
+│   ├── 001_create_database.sql  # masques database
+│   ├── 002_identities.sql       # Identities + masque sessions
+│   ├── 003_ledger.sql           # TigerBeetle account/transaction mirrors
+│   ├── 004_settlements.sql      # On-chain/Lightning settlement records
+│   ├── 005_metering.sql         # 402-gated API request metering
+│   └── 006_reputation.sql       # Reputation events, scores, + MV
+├── services/
+│   ├── collector/               # OTEL collector (Docker)
+│   │   ├── config.yaml          # Dual export: ClickHouse + JSONL
+│   │   └── docker-compose.yml   # Container definition
+│   └── judge/                   # DuckDB performance scoring
+│       ├── judge.sh             # Entry point — runs DuckDB, outputs YAML
+│       ├── sessions.sql         # Extract masque session boundaries from JSONL
+│       └── score.sql            # 5-dimension scoring + composite
+├── evals/                       # Promptfoo behavioral fidelity tests
+│   ├── codesmith/
+│   ├── chartwright/
+│   ├── firekeeper/
+│   └── mirror/
 └── docs/
     ├── vision.md                # Theater metaphor and philosophy
     ├── concepts.md              # Components explained
-    └── schema.md                # Schema reference guide
+    ├── schema.md                # Schema reference guide
+    ├── otel-setup.md            # Telemetry pipeline setup
+    └── session-prompts/         # Design session context docs
+        └── tigerbeetle-integration.md
 ```
 
 ## Plugin Commands
@@ -58,6 +106,7 @@ masques/                         # Plugin repo
 /inspect [masque]         # Detailed masque introspection
 /sync-manifest [scope]    # Regenerate manifest files for fast listing
 /audience [action]        # Manage telemetry observers (start/stop/status/config/logs)
+/performance             # Show masque performance scoring from telemetry data
 ```
 
 State is persisted in `.claude/masque.session.yaml`.
@@ -159,9 +208,19 @@ spinnerVerbs:       # Optional. Custom activity indicators
     - "Masque:Verbing"
 ```
 
+## Database Conventions
+
+- **TigerBeetle is the ledger of record.** ClickHouse is analytics. Never reverse this.
+- **ClickHouse schema lives in `sql/`**, numbered migrations executed in order.
+- **DuckDB is ephemeral.** No persistent state. Reads JSONL, scores in-memory, outputs YAML.
+- **No hardcoded credentials.** Use `.env` patterns with `.env.example` templates.
+- **Writes to files, not databases.** DDL and DML are output for human review, not executed directly.
+
 ## Design Principles
 
 1. Simple — lens, context, attributes. That's it.
-2. Session-scoped — masques are temporary
-3. Versioned — pin to versions, upgrade deliberately
-4. Plugin-first — YAML source, Claude Code delivery
+2. Session-scoped — masques are temporary.
+3. Versioned — pin to versions, upgrade deliberately.
+4. Plugin-first — YAML source, Claude Code delivery.
+5. Authors get paid — metered usage, 402-gated, real settlement rails.
+6. Three databases — TigerBeetle (money), ClickHouse (analytics), DuckDB (local scoring). Each does what it's best at.
