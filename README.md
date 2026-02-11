@@ -113,6 +113,22 @@ services/judge/judge.sh   # Outputs YAML score to stdout
 
 Analytics and payment infrastructure schema — identity, metering, reputation, ledger mirrors, and settlements. See [sql/README.md](sql/README.md) for the full schema and migration instructions.
 
+## TUI — Masque Draft
+
+Terminal UI for browsing masques and drafting teams. Built with Zig + [libvaxis](https://github.com/rockorager/libvaxis).
+
+```bash
+cd tui && zig build
+./zig-out/bin/masque-draft    # Run from repo root
+```
+
+- Animated portraits with domain-specific patterns (forge, cybernetic, art, etc.)
+- Theatrical mask silhouettes per category — sovereign (executive), cerebral (cognitive), classic (specialist), theatrical (art), geometric (meta)
+- Full lens text, attributes, and metadata in the detail panel
+- Team drafting with role assignment and YAML export
+
+Navigate with arrow keys, `Enter` to add to team, `Tab` to switch focus, `1`–`6` for category tabs, `q` to quit.
+
 ## Roadmap
 
 Masques is the **identity layer** in an agentic ecosystem. Today it provides cognitive framing (lens, context, attributes) and telemetry-based scoring. The vision extends to full ecosystem integration:
@@ -137,6 +153,7 @@ Masques is the **identity layer** in an agentic ecosystem. Today it provides cog
 | [Evaluation & Reputation](docs/evaluation.md) | DuckDB session scoring and ClickHouse reputation |
 | [ClickHouse Schema](sql/README.md) | Payment infrastructure tables |
 | [Evaluations](evals/README.md) | Testing masque behavioral fidelity |
+| [TUI](tui/) | Masque Draft — terminal UI for browsing and team drafting |
 
 ## Contributing
 
