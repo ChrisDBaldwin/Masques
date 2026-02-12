@@ -168,9 +168,10 @@ pub fn main() !void {
                     app.notification = null;
                 }
 
-                // Update portrait animations only on draft screen
-                if (app.screen == .draft) {
-                    updatePortraits(&app);
+                // Update portrait animations
+                switch (app.screen) {
+                    .draft => updatePortraits(&app),
+                    .lobby => updateLobbyPortraits(&app),
                 }
             },
             .focus_in => {},
@@ -215,19 +216,21 @@ fn handleKey(app: *state_mod.AppState, key: vaxis.Key, alloc: std.mem.Allocator)
     if (key.matches('6', .{})) { app.active_tab = .meta; app.grid_cursor = 0; }
 
     if (key.matches('a', .{}) or key.matches('A', .{})) app.awareness = !app.awareness;
-    if (key.matches('t', .{}) or key.matches('T', .{})) cycleRole(app);
-    if (key.matches('n', .{}) or key.matches('N', .{})) {
-        app.focus = .name_input;
-        app.name_input_len = 0;
-    }
-    if (key.matches('w', .{}) or key.matches('W', .{})) writeTeam(app, alloc);
+    if (!app.browse_mode) {
+        if (key.matches('t', .{}) or key.matches('T', .{})) cycleRole(app);
+        if (key.matches('n', .{}) or key.matches('N', .{})) {
+            app.focus = .name_input;
+            app.name_input_len = 0;
+        }
+        if (key.matches('w', .{}) or key.matches('W', .{})) writeTeam(app, alloc);
 
-    if (key.matches(vaxis.Key.enter, .{})) {
-        if (app.focus == .grid) addToTeam(app, alloc);
-    }
-    if (key.matches(vaxis.Key.backspace, .{})) removeFromTeam(app);
-    if (key.matches(vaxis.Key.tab, .{})) {
-        app.focus = if (app.focus == .grid) .roster else .grid;
+        if (key.matches(vaxis.Key.enter, .{})) {
+            if (app.focus == .grid) addToTeam(app, alloc);
+        }
+        if (key.matches(vaxis.Key.backspace, .{})) removeFromTeam(app);
+        if (key.matches(vaxis.Key.tab, .{})) {
+            app.focus = if (app.focus == .grid) .roster else .grid;
+        }
     }
     if (key.matches(vaxis.Key.escape, .{})) {
         if (app.focus != .grid) {
@@ -413,6 +416,22 @@ fn updatePortraits(app: *state_mod.AppState) void {
     }
 }
 
+fn updateLobbyPortraits(app: *state_mod.AppState) void {
+    if (app.lobby_entries.len == 0 or app.lobby_cursor >= app.lobby_entries.len) return;
+
+    const entry = app.lobby_entries[app.lobby_cursor];
+    const show_count = @min(entry.members.len, 4);
+
+    for (entry.members[0..show_count]) |member| {
+        for (app.masques, 0..) |m, mi| {
+            if (std.mem.eql(u8, m.name, member.name) and mi < app.portraits.len) {
+                app.portraits[mi].update();
+                break;
+            }
+        }
+    }
+}
+
 fn isOnTeamByIndex(app: *const state_mod.AppState, masque_idx: usize) bool {
     if (masque_idx >= app.masques.len) return false;
     const name = app.masques[masque_idx].name;
@@ -440,10 +459,93 @@ fn handleLobbyKey(app: *state_mod.AppState, key: vaxis.Key, alloc: std.mem.Alloc
             handleLobbyIntentInput(app, key, alloc);
             return false;
         },
-        .list => {},
+        .masque_name_input => {
+            handleMasqueInput(app, key, &app.masque_name_len, 63, .masque_domain_input, .menu);
+            return false;
+        },
+        .masque_domain_input => {
+            handleMasqueInput(app, key, &app.masque_domain_len, 63, .masque_who_input, .masque_name_input);
+            return false;
+        },
+        .masque_who_input => {
+            handleMasqueInput(app, key, &app.masque_who_len, 255, .masque_what_input, .masque_domain_input);
+            return false;
+        },
+        .masque_what_input => {
+            handleMasqueInput(app, key, &app.masque_what_len, 255, .masque_how_input, .masque_who_input);
+            return false;
+        },
+        .masque_how_input => {
+            handleMasqueInput(app, key, &app.masque_how_len, 255, .masque_why_input, .masque_what_input);
+            return false;
+        },
+        .masque_why_input => {
+            handleMasqueWhyInput(app, key);
+            return false;
+        },
+        .menu => {
+            return handleMenuKey(app, key, alloc);
+        },
+        .team_list => {
+            return handleTeamListKey(app, key, alloc);
+        },
+    }
+    return false;
+}
+
+fn handleMenuKey(app: *state_mod.AppState, key: vaxis.Key, alloc: std.mem.Allocator) bool {
+    if (key.matches('q', .{}) or key.matches('c', .{ .ctrl = true })) return true;
+
+    if (key.matches(vaxis.Key.up, .{})) {
+        app.menu_cursor -|= 1;
+    }
+    if (key.matches(vaxis.Key.down, .{})) {
+        if (app.menu_cursor < 4) app.menu_cursor += 1;
     }
 
+    if (key.matches(vaxis.Key.enter, .{})) {
+        switch (app.menu_cursor) {
+            0 => { // New Masque
+                app.lobby_focus = .masque_name_input;
+                app.masque_name_len = 0;
+                app.masque_domain_len = 0;
+                app.masque_who_len = 0;
+                app.masque_what_len = 0;
+                app.masque_how_len = 0;
+                app.masque_why_len = 0;
+            },
+            1 => { // New Team
+                app.lobby_focus = .name_input;
+                app.lobby_name_len = 0;
+                app.lobby_size_len = 0;
+                app.lobby_intent_len = 0;
+            },
+            2 => { // Browse Masques
+                app.browse_mode = true;
+                app.screen = .draft;
+                app.focus = .grid;
+                app.grid_cursor = 0;
+            },
+            3 => { // Browse Teams
+                app.lobby_focus = .team_list;
+                app.lobby_cursor = 0;
+                refreshLobbyEntries(app, alloc);
+            },
+            4 => return true, // Quit
+            else => {},
+        }
+    }
+
+    return false;
+}
+
+fn handleTeamListKey(app: *state_mod.AppState, key: vaxis.Key, alloc: std.mem.Allocator) bool {
     if (key.matches('q', .{}) or key.matches('c', .{ .ctrl = true })) return true;
+
+    if (key.matches(vaxis.Key.escape, .{})) {
+        app.lobby_focus = .menu;
+        return false;
+    }
 
     if (key.matches('n', .{}) or key.matches('N', .{})) {
         app.lobby_focus = .name_input;
@@ -470,6 +572,66 @@ fn handleLobbyKey(app: *state_mod.AppState, key: vaxis.Key, alloc: std.mem.Alloc
     return false;
 }
 
+fn handleMasqueInput(
+    app: *state_mod.AppState,
+    key: vaxis.Key,
+    len: *usize,
+    max_len: usize,
+    next_focus: state_mod.LobbyFocus,
+    prev_focus: state_mod.LobbyFocus,
+) void {
+    if (key.matches(vaxis.Key.enter, .{})) {
+        if (len.* > 0) {
+            app.lobby_focus = next_focus;
+        }
+    } else if (key.matches(vaxis.Key.escape, .{})) {
+        app.lobby_focus = prev_focus;
+    } else if (key.matches(vaxis.Key.backspace, .{})) {
+        len.* -|= 1;
+    } else {
+        const cp = key.codepoint;
+        if (cp >= 32 and cp < 127 and len.* < max_len) {
+            writeMasqueBufChar(app, app.lobby_focus, len.*, @intCast(cp));
+            len.* += 1;
+        }
+    }
+}
+
+fn writeMasqueBufChar(app: *state_mod.AppState, focus: state_mod.LobbyFocus, pos: usize, ch: u8) void {
+    switch (focus) {
+        .masque_name_input => app.masque_name_buf[pos] = ch,
+        .masque_domain_input => app.masque_domain_buf[pos] = ch,
+        .masque_who_input => app.masque_who_buf[pos] = ch,
+        .masque_what_input => app.masque_what_buf[pos] = ch,
+        .masque_how_input => app.masque_how_buf[pos] = ch,
+        .masque_why_input => app.masque_why_buf[pos] = ch,
+        else => {},
+    }
+}
+
+fn handleMasqueWhyInput(app: *state_mod.AppState, key: vaxis.Key) void {
+    if (key.matches(vaxis.Key.enter, .{})) {
+        // Final step — write the masque file
+        if (writer_mod.writeMasqueYaml(app)) |_| {
+            app.setNotification("Masque created!");
+            app.lobby_focus = .menu;
+        } else |_| {
+            app.setNotification("Error writing masque file");
+            app.lobby_focus = .menu;
+        }
+    } else if (key.matches(vaxis.Key.escape, .{})) {
+        app.lobby_focus = .masque_how_input;
+    } else if (key.matches(vaxis.Key.backspace, .{})) {
+        app.masque_why_len -|= 1;
+    } else {
+        const cp = key.codepoint;
+        if (cp >= 32 and cp < 127 and app.masque_why_len < 255) {
+            app.masque_why_buf[app.masque_why_len] = @intCast(cp);
+            app.masque_why_len += 1;
+        }
+    }
+}
+
 fn handleLobbyNameInput(app: *state_mod.AppState, key: vaxis.Key) void {
     if (key.matches(vaxis.Key.enter, .{})) {
         if (app.lobby_name_len > 0) {
@@ -477,7 +639,7 @@ fn handleLobbyNameInput(app: *state_mod.AppState, key: vaxis.Key) void {
             app.lobby_focus = .size_input;
         }
     } else if (key.matches(vaxis.Key.escape, .{})) {
-        app.lobby_focus = .list;
+        app.lobby_focus = .menu;
     } else if (key.matches(vaxis.Key.backspace, .{})) {
         app.lobby_name_len -|= 1;
     } else {
@@ -561,7 +723,7 @@ fn createNewTeam(app: *state_mod.AppState, alloc: std.mem.Allocator, size: usize
 
     // Transition to draft
     app.screen = .draft;
-    app.lobby_focus = .list;
+    app.lobby_focus = .menu;
     app.focus = .grid;
     app.grid_cursor = 0;
 }
@@ -635,7 +797,8 @@ fn loadTeamIntoDraft(app: *state_mod.AppState, alloc: std.mem.Allocator) void {
 
 fn returnToLobby(app: *state_mod.AppState, alloc: std.mem.Allocator) void {
     app.screen = .lobby;
-    app.lobby_focus = .list;
+    app.lobby_focus = .menu;
+    app.browse_mode = false;
     app.focus = .grid;
     app.notification = null;
 
@@ -649,7 +812,15 @@ fn refreshLobbyEntries(app: *state_mod.AppState, alloc: std.mem.Allocator) void 
 }
 
 fn renderApp(win: vaxis.Window, app: *state_mod.AppState) void {
-    const lo = layout_mod.compute(win.width, win.height);
+    var lo = layout_mod.compute(win.width, win.height);
+
+    // In browse mode, reclaim roster space for grid/detail
+    if (app.browse_mode) {
+        const extra = lo.roster_h;
+        lo.grid_h += extra;
+        lo.detail_h += extra;
+        lo.roster_h = 0;
+    }
 
     // Sync layout-derived values back to app state for key handling
     app.grid_cols = lo.grid_cols;
@@ -730,8 +901,8 @@ fn renderApp(win: vaxis.Window, app: *state_mod.AppState) void {
         detail_mod.render(detail_win, app, &lo);
     }
 
-    // Roster (bottom)
-    {
+    // Roster (bottom) — hidden in browse mode
+    if (!app.browse_mode) {
         const roster_win = win.child(.{
             .x_off = 0,
             .y_off = @intCast(lo.roster_y),

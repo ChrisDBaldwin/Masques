@@ -303,6 +303,7 @@ pub fn loadDetail(allocator: std.mem.Allocator, masque: *Masque) !void {
                 if (std.mem.indexOfScalar(u8, after, '.')) |dot| {
                     const comp_name = std.mem.trim(u8, after[0..dot], " ");
                     if (comp_name.len > 0 and comp_name.len < 30) {
+                        allocator.free(masque.complement);
                         masque.complement = try allocator.dupe(u8, comp_name);
                     }
                 }

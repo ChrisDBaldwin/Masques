@@ -6,7 +6,19 @@ const portrait_mod = @import("portrait.zig");
 
 pub const Screen = enum { lobby, draft };
 pub const Focus = enum { grid, roster, name_input };
-pub const LobbyFocus = enum { list, name_input, size_input, intent_input };
+pub const LobbyFocus = enum {
+    menu,
+    team_list,
+    name_input,
+    size_input,
+    intent_input,
+    masque_name_input,
+    masque_domain_input,
+    masque_who_input,
+    masque_what_input,
+    masque_how_input,
+    masque_why_input,
+};
 
 pub const min_team_size: usize = 2;
 pub const default_team_size: usize = 5;
@@ -91,7 +103,23 @@ pub const AppState = struct {
     // Lobby state
     lobby_entries: []TeamEntry = &.{},
     lobby_cursor: usize = 0,
-    lobby_focus: LobbyFocus = .list,
+    lobby_focus: LobbyFocus = .menu,
+    menu_cursor: usize = 0,
+    browse_mode: bool = false,
+
+    // New Masque madlib buffers
+    masque_name_buf: [64]u8 = undefined,
+    masque_name_len: usize = 0,
+    masque_domain_buf: [64]u8 = undefined,
+    masque_domain_len: usize = 0,
+    masque_who_buf: [256]u8 = undefined,
+    masque_who_len: usize = 0,
+    masque_what_buf: [256]u8 = undefined,
+    masque_what_len: usize = 0,
+    masque_how_buf: [256]u8 = undefined,
+    masque_how_len: usize = 0,
+    masque_why_buf: [256]u8 = undefined,
+    masque_why_len: usize = 0,
     lobby_name_buf: [64]u8 = undefined,
     lobby_name_len: usize = 0,
     lobby_size_buf: [4]u8 = undefined,

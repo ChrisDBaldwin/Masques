@@ -4,6 +4,7 @@ const std = @import("std");
 const vaxis = @import("vaxis");
 const state_mod = @import("state.zig");
 const portrait_mod = @import("portrait.zig");
+const math = @import("math.zig");
 const Yaml = @import("yaml").Yaml;
 
 /// Scan ~/.masques/ for *.team.yaml files, parse each, return entries.
@@ -49,7 +50,12 @@ pub fn loadTeamEntries(alloc: std.mem.Allocator) ![]state_mod.TeamEntry {
         } else |_| {}
     }
 
-    return entries[0..ei];
+    // Shrink allocation to match actual count so free sees correct size
+    if (ei == 0) {
+        alloc.free(entries);
+        return try alloc.alloc(state_mod.TeamEntry, 0);
+    }
+    return try alloc.realloc(entries, ei);
 }
 
 fn parseTeamFile(
@@ -135,7 +141,11 @@ fn parseTeamFile(
                 };
                 mi += 1;
             }
-            members = mem_list[0..mi];
+            if (mi == 0) {
+                alloc.free(mem_list);
+            } else {
+                members = try alloc.realloc(mem_list, mi);
+            }
         }
     }
 
@@ -174,61 +184,164 @@ pub fn deinitTeamEntries(alloc: std.mem.Allocator, entries: []state_mod.TeamEntr
 // ─── Rendering ───────────────────────────────────────────────────────
 
 pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
-    // Gradient title: M A S Q U E S   L O B B Y
-    {
-        const title = "M A S Q U E S   L O B B Y";
-        const x: u16 = if (win.width > title.len) @intCast((win.width - title.len) / 2) else 0;
-
-        const char_table = comptime blk: {
-            var t: [128][1]u8 = undefined;
-            for (0..128) |i| {
-                t[i] = .{@intCast(i)};
+    switch (app.lobby_focus) {
+        .menu => renderMenu(win, app),
+        .team_list => renderTeamList(win, app),
+        .name_input, .size_input, .intent_input => {
+            renderMenu(win, app);
+            switch (app.lobby_focus) {
+                .name_input => renderInputOverlay(win, "Team Name:", app.lobby_name_buf[0..app.lobby_name_len]),
+                .size_input => renderInputOverlay(win, "Team Size (min 2):", app.lobby_size_buf[0..app.lobby_size_len]),
+                .intent_input => renderInputOverlay(win, "Team Intent:", app.lobby_intent_buf[0..app.lobby_intent_len]),
+                else => {},
             }
-            break :blk t;
+        },
+        .masque_name_input => {
+            renderMenu(win, app);
+            renderInputOverlay(win, "Masque Name:", app.masque_name_buf[0..app.masque_name_len]);
+        },
+        .masque_domain_input => {
+            renderMenu(win, app);
+            renderInputOverlay(win, "Domain (e.g. systems-programming):", app.masque_domain_buf[0..app.masque_domain_len]);
+        },
+        .masque_who_input => {
+            renderMenu(win, app);
+            renderInputOverlay(win, "Who are you helping?", app.masque_who_buf[0..app.masque_who_len]);
+        },
+        .masque_what_input => {
+            renderMenu(win, app);
+            renderInputOverlay(win, "What do you do?", app.masque_what_buf[0..app.masque_what_len]);
+        },
+        .masque_how_input => {
+            renderMenu(win, app);
+            renderInputOverlay(win, "How do you work?", app.masque_how_buf[0..app.masque_how_len]);
+        },
+        .masque_why_input => {
+            renderMenu(win, app);
+            renderInputOverlay(win, "Why does this matter?", app.masque_why_buf[0..app.masque_why_len]);
+        },
+    }
+
+    // Notification overlay (always on top)
+    if (app.notification) |notif| {
+        const notif_style: vaxis.Style = .{
+            .fg = .{ .rgb = .{ 255, 215, 0 } },
+            .bold = true,
         };
+        const seg: vaxis.Segment = .{ .text = notif, .style = notif_style };
+        const notif_row: u16 = @intCast(if (win.height > 2) win.height - 2 else 0);
+        _ = win.print(&.{seg}, .{ .row_offset = notif_row, .col_offset = 2 });
+    }
+}
 
-        for (title, 0..) |ch, i| {
-            const t: f32 = @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(@max(1, title.len - 1)));
-            const r: u8 = 255;
-            const g: u8 = @intFromFloat(107.0 + (215.0 - 107.0) * t);
-            const b: u8 = @intFromFloat(107.0 * (1.0 - t));
-            const bg_r: u8 = @intFromFloat(40.0 * (1.0 - t) + 30.0 * t);
-            const bg_g: u8 = @intFromFloat(15.0 * (1.0 - t) + 30.0 * t);
-            const bg_b: u8 = @intFromFloat(15.0 * (1.0 - t) + 5.0 * t);
-            const col_x: u16 = x +| @as(u16, @intCast(i));
-            if (col_x < win.width) {
-                const idx: usize = if (ch < 128) ch else ' ';
-                win.writeCell(col_x, 0, .{
-                    .char = .{ .grapheme = &char_table[idx], .width = 1 },
-                    .style = .{
-                        .fg = .{ .rgb = .{ r, g, b } },
-                        .bg = .{ .rgb = .{ bg_r, bg_g, bg_b } },
-                        .bold = true,
-                    },
-                });
-            }
+const char_table = blk: {
+    var t: [128][1]u8 = undefined;
+    for (0..128) |i| {
+        t[i] = .{@intCast(i)};
+    }
+    break :blk t;
+};
+
+fn renderGradientTitle(win: vaxis.Window, title: []const u8, row: u16) void {
+    const x: u16 = if (win.width > title.len) @intCast((win.width - title.len) / 2) else 0;
+    for (title, 0..) |ch, i| {
+        const t: f32 = @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(@max(1, title.len - 1)));
+        const r: u8 = 255;
+        const g: u8 = @intFromFloat(107.0 + (215.0 - 107.0) * t);
+        const b: u8 = @intFromFloat(107.0 * (1.0 - t));
+        const bg_r: u8 = @intFromFloat(40.0 * (1.0 - t) + 30.0 * t);
+        const bg_g: u8 = @intFromFloat(15.0 * (1.0 - t) + 30.0 * t);
+        const bg_b: u8 = @intFromFloat(15.0 * (1.0 - t) + 5.0 * t);
+        const col_x: u16 = x +| @as(u16, @intCast(i));
+        if (col_x < win.width) {
+            const idx: usize = if (ch < 128) ch else ' ';
+            win.writeCell(col_x, row, .{
+                .char = .{ .grapheme = &char_table[idx], .width = 1 },
+                .style = .{
+                    .fg = .{ .rgb = .{ r, g, b } },
+                    .bg = .{ .rgb = .{ bg_r, bg_g, bg_b } },
+                    .bold = true,
+                },
+            });
+        }
+    }
+}
+
+fn renderMenu(win: vaxis.Window, app: *state_mod.AppState) void {
+    // Title at ~25% height
+    const title_row: u16 = @intCast(win.height / 4);
+    renderGradientTitle(win, "M A S Q U E S", title_row);
+
+    // Separator line below title
+    const sep = "\u{2550}" ** 20; // ═ repeated
+    const sep_x: u16 = if (win.width > 40) @intCast((win.width - 40) / 2) else 0;
+    const sep_seg: vaxis.Segment = .{
+        .text = sep,
+        .style = .{ .fg = .{ .rgb = .{ 60, 60, 60 } } },
+    };
+    _ = win.print(&.{sep_seg}, .{ .row_offset = title_row + 2, .col_offset = sep_x });
+
+    // Menu items
+    const labels = [_][]const u8{
+        "New Masque",
+        "New Team",
+        "Browse Masques",
+        "Browse Teams",
+        "Quit",
+    };
+
+    const menu_start: u16 = title_row + 4;
+    const pulse = math.sinF(@truncate(app.current_tick *% 3));
+    const gold_g: u8 = @intFromFloat(180.0 + 75.0 * pulse);
+
+    for (labels, 0..) |label, i| {
+        const row: u16 = menu_start + @as(u16, @intCast(i)) * 2;
+        if (row >= win.height -| 2) break;
+
+        const is_selected = (i == app.menu_cursor);
+
+        if (is_selected) {
+            const cursor_seg: vaxis.Segment = .{
+                .text = "\u{25b8} ",
+                .style = .{ .fg = .{ .rgb = .{ 255, gold_g, 0 } }, .bold = true },
+            };
+            const label_seg: vaxis.Segment = .{
+                .text = label,
+                .style = .{ .fg = .{ .rgb = .{ 255, gold_g, 0 } }, .bold = true },
+            };
+            const cx: u16 = if (win.width > label.len + 2) @intCast((win.width - label.len - 2) / 2) else 0;
+            _ = win.print(&.{ cursor_seg, label_seg }, .{ .row_offset = row, .col_offset = cx });
+        } else {
+            const label_seg: vaxis.Segment = .{
+                .text = label,
+                .style = .{ .fg = .{ .rgb = .{ 120, 120, 120 } } },
+            };
+            const cx: u16 = if (win.width > label.len) @intCast((win.width - label.len) / 2) else 0;
+            _ = win.print(&.{label_seg}, .{ .row_offset = row, .col_offset = cx });
         }
     }
 
-    // Subtitle
-    {
-        const sub = "Select a team or create a new one";
-        const sx: u16 = if (win.width > sub.len) @intCast((win.width - sub.len) / 2) else 0;
-        const seg: vaxis.Segment = .{
-            .text = sub,
-            .style = .{ .fg = .{ .rgb = .{ 120, 120, 120 } } },
-        };
-        _ = win.print(&.{seg}, .{ .row_offset = 2, .col_offset = sx });
-    }
+    // Help bar
+    const help = " [Up/Down] Select  [Enter] Choose  [Q] Quit";
+    const help_seg: vaxis.Segment = .{
+        .text = help,
+        .style = .{ .fg = .{ .rgb = .{ 100, 100, 100 } } },
+    };
+    const help_row: u16 = @intCast(if (win.height > 1) win.height - 1 else 0);
+    _ = win.print(&.{help_seg}, .{ .row_offset = help_row, .col_offset = 0 });
+}
 
-    const list_start_row: u16 = 4;
+fn renderTeamList(win: vaxis.Window, app: *state_mod.AppState) void {
+    // Sub-title
+    renderGradientTitle(win, "S A V E D   T E A M S", 0);
 
-    // Determine portrait panel dimensions
+    const list_start_row: u16 = 3;
+
+    // Portrait panel
     const show_portraits = win.width > 60 and app.lobby_entries.len > 0;
     const portrait_panel_w: u16 = if (show_portraits) 20 else 0;
 
     if (app.lobby_entries.len == 0) {
-        // Empty state
         const empty = "No saved teams \u{2014} press [N] to create one";
         const ex: u16 = if (win.width > empty.len) @intCast((win.width - empty.len) / 2) else 0;
         const seg: vaxis.Segment = .{
@@ -237,23 +350,17 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
         };
         _ = win.print(&.{seg}, .{ .row_offset = list_start_row + 2, .col_offset = ex });
     } else {
-        // Team list (constrained to avoid portrait panel overlap)
-        const list_max_w: u16 = if (portrait_panel_w > 0) win.width -| (portrait_panel_w + 2) else win.width;
-        _ = list_max_w;
-
         for (app.lobby_entries, 0..) |entry, i| {
             const row: u16 = list_start_row + @as(u16, @intCast(i * 2));
             if (row >= win.height -| 3) break;
 
-            const is_cursor = (app.lobby_focus == .list and i == app.lobby_cursor);
+            const is_cursor = (i == app.lobby_cursor);
 
-            // Cursor indicator
             const indicator: vaxis.Segment = .{
-                .text = if (is_cursor) " > " else "   ",
+                .text = if (is_cursor) " \u{25b8} " else "   ",
                 .style = .{ .fg = .{ .rgb = .{ 255, 215, 0 } }, .bold = true },
             };
 
-            // Team name
             const name_seg: vaxis.Segment = .{
                 .text = entry.name,
                 .style = .{
@@ -262,7 +369,6 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
                 },
             };
 
-            // Size
             const size_str = state_mod.AppState.digitStr(entry.size);
             const size_seg: vaxis.Segment = .{
                 .text = size_str,
@@ -274,11 +380,9 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
 
             _ = win.print(&.{ indicator, name_seg, paren_l, size_seg, paren_m }, .{ .row_offset = row, .col_offset = 1 });
 
-            // Member names on next line
             if (entry.members.len > 0) {
                 const indent: vaxis.Segment = .{ .text = "     ", .style = .{} };
-                // Build a comma-separated display using segments
-                var segs: [21]vaxis.Segment = undefined; // max 10 members with commas + indent
+                var segs: [21]vaxis.Segment = undefined;
                 segs[0] = indent;
                 var si: usize = 1;
                 for (entry.members, 0..) |member, mi| {
@@ -298,14 +402,14 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
         }
     }
 
-    // Portrait strip for selected team's roster
+    // Portrait strip
     if (show_portraits and app.lobby_cursor < app.lobby_entries.len) {
         const entry = app.lobby_entries[app.lobby_cursor];
         if (entry.members.len > 0) {
             const portrait_x: u16 = win.width -| portrait_panel_w;
             const thumb_h: u16 = @intCast(portrait_mod.thumb_h);
             const thumb_w: u16 = @intCast(portrait_mod.thumb_w);
-            const slot_h: u16 = thumb_h + 2; // portrait + name + gap
+            const slot_h: u16 = thumb_h + 2;
             const max_portraits: usize = @intCast((win.height -| (list_start_row + 2)) / slot_h);
             const show_count = @min(entry.members.len, @min(max_portraits, 4));
 
@@ -313,7 +417,6 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
                 const py: u16 = list_start_row + @as(u16, @intCast(pi)) * slot_h;
                 if (py + thumb_h >= win.height -| 2) break;
 
-                // Look up masque index for this member
                 var found_idx: ?usize = null;
                 for (app.masques, 0..) |m, mi| {
                     if (std.mem.eql(u8, m.name, member.name)) {
@@ -334,7 +437,6 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
                     }
                 }
 
-                // Member name below portrait
                 const name_x: u16 = portrait_x + 3;
                 const name_seg: vaxis.Segment = .{
                     .text = member.name,
@@ -346,41 +448,13 @@ pub fn render(win: vaxis.Window, app: *state_mod.AppState) void {
     }
 
     // Help bar
-    {
-        const help = " [Enter] Load  [N] New Team  [Q] Quit";
-        const seg: vaxis.Segment = .{
-            .text = help,
-            .style = .{ .fg = .{ .rgb = .{ 100, 100, 100 } } },
-        };
-        const help_row: u16 = @intCast(if (win.height > 1) win.height - 1 else 0);
-        _ = win.print(&.{seg}, .{ .row_offset = help_row, .col_offset = 0 });
-    }
-
-    // Notification overlay
-    if (app.notification) |notif| {
-        const notif_style: vaxis.Style = .{
-            .fg = .{ .rgb = .{ 255, 215, 0 } },
-            .bold = true,
-        };
-        const seg: vaxis.Segment = .{ .text = notif, .style = notif_style };
-        const notif_row: u16 = @intCast(if (win.height > 2) win.height - 2 else 0);
-        _ = win.print(&.{seg}, .{ .row_offset = notif_row, .col_offset = 2 });
-    }
-
-    // Name input overlay
-    if (app.lobby_focus == .name_input) {
-        renderInputOverlay(win, "Team Name:", app.lobby_name_buf[0..app.lobby_name_len]);
-    }
-
-    // Size input overlay
-    if (app.lobby_focus == .size_input) {
-        renderInputOverlay(win, "Team Size (min 2):", app.lobby_size_buf[0..app.lobby_size_len]);
-    }
-
-    // Intent input overlay
-    if (app.lobby_focus == .intent_input) {
-        renderInputOverlay(win, "Team Intent:", app.lobby_intent_buf[0..app.lobby_intent_len]);
-    }
+    const help = " [Enter] Load  [N] New Team  [Esc] Back  [Q] Quit";
+    const help_seg: vaxis.Segment = .{
+        .text = help,
+        .style = .{ .fg = .{ .rgb = .{ 100, 100, 100 } } },
+    };
+    const help_row: u16 = @intCast(if (win.height > 1) win.height - 1 else 0);
+    _ = win.print(&.{help_seg}, .{ .row_offset = help_row, .col_offset = 0 });
 }
 
 fn renderInputOverlay(win: vaxis.Window, label: []const u8, input_text: []const u8) void {
