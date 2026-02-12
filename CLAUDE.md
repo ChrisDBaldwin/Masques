@@ -121,7 +121,7 @@ previous:
   doffed_at: 2026-01-26T11:00:00Z
 ```
 
-### 2. TUI — `masque-draft`
+### 2. TUI — `masque`
 
 A Zig terminal application for visually composing masque teams. Lives in `tui/`.
 
@@ -196,7 +196,7 @@ DuckDB reads JSONL → scores session → /performance outputs YAML
 ~/.masques/                      # Private masques (user's home)
 ├── manifest.yaml                # Auto-generated listing cache
 ├── *.masque.yaml                # Private masque definitions
-└── *.team.yaml                  # Saved team compositions (from masque-draft)
+└── *.team.yaml                  # Saved team compositions (from masque TUI)
 
 masques/                         # Plugin repo root
 ├── CLAUDE.md                    # This file
@@ -237,7 +237,7 @@ masques/                         # Plugin repo root
 │       ├── judge.sh             # Entry point — runs DuckDB, outputs YAML
 │       ├── sessions.sql         # Extract session boundaries from JSONL
 │       └── score.sql            # 5-dimension scoring + composite
-├── tui/                         # Terminal UI — masque-draft
+├── tui/                         # Terminal UI — masque
 │   ├── build.zig                # Zig build config (v0.15.0+)
 │   ├── build.zig.zon            # Dependency manifest (vaxis, zig-yaml)
 │   └── src/                     # Source (see TUI Source Map above)
@@ -279,7 +279,7 @@ bd sync                                     # Sync with git remote
 
 ```bash
 # TUI
-cd tui && zig build          # Compile masque-draft
+cd tui && zig build          # Compile masque TUI
 cd tui && zig build run      # Run the TUI
 
 # Evals

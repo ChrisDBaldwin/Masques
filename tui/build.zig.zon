@@ -1,7 +1,7 @@
 .{
-    .name = .masque_draft,
+    .name = .masque,
     .version = "0.2.0",
-    .fingerprint = 0xe66c2c61a9b5c12e,
+    .fingerprint = 0xe2d3f6aba67537b1,
     .minimum_zig_version = "0.15.0",
     .paths = .{
         "build.zig",

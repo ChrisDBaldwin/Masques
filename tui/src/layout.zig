@@ -39,8 +39,8 @@ pub const Layout = struct {
 };
 
 pub fn compute(term_w: usize, term_h: usize) Layout {
-    // Reserve rows: title(1) + tabs(1) + roster(6) + help(1) = 9
-    const reserved_h: usize = 9;
+    // Reserve rows: title(1) + tabs(1) + roster(8) + help(1) = 11
+    const reserved_h: usize = 11;
     const middle_h = if (term_h > reserved_h) term_h - reserved_h else 4;
 
     // Detail panel: ~35% of width, minimum 28
@@ -76,8 +76,8 @@ pub fn compute(term_w: usize, term_h: usize) Layout {
         .detail_w = detail_w,
         .detail_h = middle_h,
 
-        .roster_y = if (term_h > 6) term_h - 6 else term_h -| 1,
-        .roster_h = @min(6, term_h),
+        .roster_y = if (term_h > 8) term_h - 8 else term_h -| 1,
+        .roster_h = @min(8, term_h),
         .roster_w = term_w,
     };
 }
