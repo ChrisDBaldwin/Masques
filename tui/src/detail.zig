@@ -37,22 +37,10 @@ pub fn render(
     const m = &app.masques[masque_idx];
     const colors = color_mod.domainColors(m.domain);
 
-    // Fill entire detail panel with very subtle domain tint
-    {
-        const panel_bg = color_mod.dimColor(colors.primary, 0.04);
-        const panel_bg_color: vaxis.Color = .{ .rgb = panel_bg };
-        for (0..win.height) |py| {
-            for (0..win.width) |px| {
-                win.writeCell(@intCast(px), @intCast(py), .{
-                    .char = .{ .grapheme = " ", .width = 1 },
-                    .style = .{ .bg = panel_bg_color },
-                });
-            }
-        }
-    }
+    // No explicit background fill — let the terminal's native background show through
 
     // Large portrait area at top — mask-composited
-    const portrait_h: usize = @min(portrait_mod.large_h, @as(usize, win.height) / 2);
+    const portrait_h: usize = @min(portrait_mod.large_h, @as(usize, win.height) / 3);
     const portrait_w: usize = @min(portrait_mod.large_w, @as(usize, win.width) -| 2);
 
     if (masque_idx < app.portraits.len and portrait_h >= 3 and portrait_w >= 3) {
@@ -133,9 +121,6 @@ pub fn render(
                 .specialist, .all => .classic,
             };
 
-            // Panel bg for outside zones
-            const panel_bg = color_mod.dimColor(colors.primary, 0.04);
-
             // Composite through mask zones into the bordered child window
             for (0..inner_h) |y| {
                 for (0..inner_w) |x| {
@@ -178,10 +163,7 @@ pub fn render(
                             });
                         },
                         .outside => {
-                            portrait_win.writeCell(@intCast(x), @intCast(y), .{
-                                .char = .{ .grapheme = " ", .width = 1 },
-                                .style = .{ .bg = .{ .rgb = panel_bg } },
-                            });
+                            // Default bg — let the terminal background show through
                         },
                     }
                 }
@@ -210,7 +192,7 @@ pub fn render(
         row +|= 1;
     }
 
-    // Domain + category badge
+    // Domain + category badge + source badge
     {
         const domain_seg: vaxis.Segment = .{
             .text = m.domain,
@@ -224,7 +206,17 @@ pub fn render(
             .text = m.category.label(),
             .style = .{ .fg = .{ .rgb = .{ 120, 120, 120 } }, .italic = true },
         };
-        _ = win.print(&.{ domain_seg, sep_seg, cat_seg }, .{ .row_offset = row, .col_offset = 1 });
+        const source_sep: vaxis.Segment = .{
+            .text = "  ",
+            .style = .{},
+        };
+        const source_color: [3]u8 = if (m.source == .private) .{ 180, 130, 255 } else .{ 100, 100, 100 };
+        const source_text: []const u8 = if (m.source == .private) "[private]" else "[shared]";
+        const source_seg: vaxis.Segment = .{
+            .text = source_text,
+            .style = .{ .fg = .{ .rgb = source_color }, .italic = true },
+        };
+        _ = win.print(&.{ domain_seg, sep_seg, cat_seg, source_sep, source_seg }, .{ .row_offset = row, .col_offset = 1 });
         row +|= 1;
     }
 
@@ -246,7 +238,64 @@ pub fn render(
         row +|= 1;
     }
 
-    // Full lens text (word-wrapped)
+    // Style + Philosophy combined on one row
+    {
+        const has_style = m.style.len > 0;
+        const has_phil = m.philosophy.len > 0;
+        const body_color: [3]u8 = .{ 200, 200, 200 };
+        if ((has_style or has_phil) and row < win.height) {
+            if (has_style and has_phil) {
+                const label_style: vaxis.Style = .{ .fg = .{ .rgb = .{ 180, 180, 180 } }, .bold = true };
+                const val_style: vaxis.Style = .{ .fg = .{ .rgb = body_color } };
+                const max_style = @min(m.style.len, @as(usize, win.width) / 2 -| 10);
+                const max_phil = @min(m.philosophy.len, @as(usize, win.width) / 2 -| 14);
+                const segs = [_]vaxis.Segment{
+                    .{ .text = "Style: ", .style = label_style },
+                    .{ .text = m.style[0..max_style], .style = val_style },
+                    .{ .text = "  \u{2502}  ", .style = .{ .fg = .{ .rgb = .{ 100, 100, 100 } } } },
+                    .{ .text = "Philosophy: ", .style = label_style },
+                    .{ .text = m.philosophy[0..max_phil], .style = val_style },
+                };
+                _ = win.print(&segs, .{ .row_offset = row, .col_offset = 1 });
+            } else if (has_style) {
+                printLabelValue(win, row, "Style: ", m.style, body_color);
+            } else {
+                printLabelValue(win, row, "Philosophy: ", m.philosophy, body_color);
+            }
+            row +|= 1;
+        }
+    }
+
+    // Separator before lens/context
+    if (row < win.height and (m.lens.len > 0 or m.context.len > 0)) {
+        const sep_style2: vaxis.Style = .{ .fg = .{ .rgb = color_mod.dimColor(colors.primary, 0.3) } };
+        const sep_seg2: vaxis.Segment = .{ .text = "\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}", .style = sep_style2 };
+        _ = win.print(&.{sep_seg2}, .{ .row_offset = row, .col_offset = 1 });
+        row +|= 1;
+    }
+
+    // Context (word-wrapped)
+    if (m.context.len > 0 and row < win.height) {
+        const ctx_label: vaxis.Segment = .{
+            .text = "Context",
+            .style = .{ .fg = .{ .rgb = .{ 180, 180, 180 } }, .bold = true },
+        };
+        _ = win.print(&.{ctx_label}, .{ .row_offset = row, .col_offset = 1 });
+        row +|= 1;
+
+        const avail_w_ctx: usize = @as(usize, win.width) -| 3;
+        // Give context a fair share of remaining space, but reserve room for lens
+        const remaining: usize = @as(usize, win.height) -| row;
+        const ctx_max_rows: usize = if (m.lens.len > 0)
+            remaining / 2
+        else
+            remaining -| 1;
+        const ctx_style: vaxis.Style = .{ .fg = .{ .rgb = .{ 200, 200, 200 } } };
+        row +|= renderWrappedText(win, row, 2, avail_w_ctx, ctx_max_rows, m.context, ctx_style);
+        row +|= 1;
+    }
+
+    // Lens (word-wrapped)
     if (m.lens.len > 0 and row < win.height) {
         const label_seg: vaxis.Segment = .{
             .text = "Lens",
@@ -256,10 +305,9 @@ pub fn render(
         row +|= 1;
 
         const avail_w: usize = @as(usize, win.width) -| 3;
-        const max_rows: usize = @as(usize, win.height) -| row -| 6; // Reserve space for attributes
-        const lens_style: vaxis.Style = .{ .fg = .{ .rgb = colors.bright } };
+        const max_rows: usize = @as(usize, win.height) -| row;
+        const lens_style: vaxis.Style = .{ .fg = .{ .rgb = .{ 220, 220, 220 } } };
         row +|= renderWrappedText(win, row, 2, avail_w, max_rows, m.lens, lens_style);
-        row +|= 1; // blank line after lens
     } else if (m.lens_summary.len > 0 and row < win.height) {
         // Fallback to summary if full lens not loaded
         const label_seg: vaxis.Segment = .{
@@ -269,45 +317,7 @@ pub fn render(
         const max_val = @min(m.lens_summary.len, @as(usize, win.width) -| 8);
         const val_seg: vaxis.Segment = .{
             .text = m.lens_summary[0..max_val],
-            .style = .{ .fg = .{ .rgb = colors.bright } },
-        };
-        _ = win.print(&.{ label_seg, val_seg }, .{ .row_offset = row, .col_offset = 1 });
-        const total_len = 6 + m.lens_summary.len;
-        const avail_w: usize = @as(usize, win.width) -| 3;
-        const lines: u16 = @intCast(@min(4, total_len / @max(1, avail_w) +| 1));
-        row +|= lines;
-    }
-
-    // Style
-    if (m.style.len > 0 and row < win.height) {
-        printLabelValue(win, row, "Style: ", m.style, colors.primary);
-        row +|= 1;
-    }
-
-    // Philosophy
-    if (m.philosophy.len > 0 and row < win.height) {
-        printLabelValue(win, row, "Philosophy: ", m.philosophy, colors.primary);
-        const w: usize = @as(usize, win.width) -| 14;
-        const lines: u16 = @intCast(@min(3, m.philosophy.len / @max(1, w) +| 1));
-        row +|= lines;
-    }
-
-    // Complement
-    if (m.complement.len > 0 and row < win.height) {
-        printLabelValue(win, row, "Complement: ", m.complement, .{ 255, 215, 0 });
-        row +|= 1;
-    }
-
-    // Shadow
-    if (m.shadow.len > 0 and m.shadow.len < 200 and row < win.height) {
-        const label_seg: vaxis.Segment = .{
-            .text = "Shadow: ",
-            .style = .{ .fg = .{ .rgb = .{ 120, 120, 120 } }, .bold = true },
-        };
-        const max_shadow = @min(m.shadow.len, @as(usize, win.width) -| 10);
-        const val_seg: vaxis.Segment = .{
-            .text = m.shadow[0..max_shadow],
-            .style = .{ .fg = .{ .rgb = .{ 150, 150, 150 } }, .italic = true },
+            .style = .{ .fg = .{ .rgb = .{ 220, 220, 220 } } },
         };
         _ = win.print(&.{ label_seg, val_seg }, .{ .row_offset = row, .col_offset = 1 });
     }
