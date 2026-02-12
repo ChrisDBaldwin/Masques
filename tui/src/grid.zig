@@ -120,7 +120,7 @@ pub fn render(
             .col_offset = @intCast(name_x),
         });
 
-        // Team indicator
+        // Team indicator (gold *) and private indicator (lavender ~)
         if (is_on_team) {
             const indicator_style: vaxis.Style = .{
                 .fg = .{ .rgb = .{ 255, 215, 0 } },
@@ -128,6 +128,16 @@ pub fn render(
             };
             const ind: vaxis.Segment = .{ .text = "*", .style = indicator_style };
             _ = card.print(&.{ind}, .{
+                .row_offset = 0,
+                .col_offset = @intCast(if (card.width > 1) card.width - 1 else 0),
+            });
+        } else if (m.source == .private) {
+            const priv_style: vaxis.Style = .{
+                .fg = .{ .rgb = .{ 180, 130, 255 } },
+                .bold = true,
+            };
+            const priv_ind: vaxis.Segment = .{ .text = "~", .style = priv_style };
+            _ = card.print(&.{priv_ind}, .{
                 .row_offset = 0,
                 .col_offset = @intCast(if (card.width > 1) card.width - 1 else 0),
             });

@@ -8,8 +8,7 @@ const state_mod = @import("state.zig");
 const color_mod = @import("color.zig");
 const masque_mod = @import("masque.zig");
 
-/// Static digit strings for small numbers — avoids bufPrint for counts.
-const digits = [_][]const u8{ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+const digitStr = state_mod.AppState.digitStr;
 
 pub fn render(
     win: vaxis.Window,
@@ -22,9 +21,9 @@ pub fn render(
             .{ .text = " Team: ", .style = hdr_style },
             .{ .text = app.teamName(), .style = hdr_style },
             .{ .text = "    Size: ", .style = hdr_style },
-            .{ .text = if (app.team_count < digits.len) digits[app.team_count] else "?", .style = hdr_style },
+            .{ .text = digitStr(app.team_count), .style = hdr_style },
             .{ .text = "/", .style = hdr_style },
-            .{ .text = if (state_mod.max_team_size < digits.len) digits[state_mod.max_team_size] else "?", .style = hdr_style },
+            .{ .text = digitStr(app.max_team_size), .style = hdr_style },
             .{ .text = "    Awareness: [", .style = hdr_style },
             .{ .text = if (app.awareness) "ON" else "OFF", .style = .{
                 .fg = .{ .rgb = if (app.awareness) [3]u8{ 100, 255, 100 } else [3]u8{ 255, 100, 100 } },
@@ -36,8 +35,8 @@ pub fn render(
     }
 
     // Team slots
-    const slot_w: usize = @max(12, win.width / state_mod.max_team_size);
-    for (0..state_mod.max_team_size) |i| {
+    const slot_w: usize = @max(10, win.width / @max(1, app.max_team_size));
+    for (0..app.max_team_size) |i| {
         const slot_x = i * slot_w;
         const is_cursor = (app.focus == .roster and i == app.roster_cursor);
 
@@ -66,7 +65,7 @@ pub fn render(
                                     .{ .text = " + ", .style = syn_style },
                                     .{ .text = comp, .style = syn_style },
                                 };
-                                _ = win.print(&segs, .{ .row_offset = 3, .col_offset = synergy_col });
+                                _ = win.print(&segs, .{ .row_offset = 4, .col_offset = synergy_col });
                                 synergy_col +|= @intCast(4 + a.name.len + 3 + comp.len);
                             }
                         }
@@ -106,7 +105,7 @@ fn renderFilledSlot(
         .x_off = @intCast(slot_x),
         .y_off = 1,
         .width = @intCast(slot_w),
-        .height = @intCast(2),
+        .height = @intCast(3),
         .border = .{
             .where = .all,
             .style = .{ .fg = .{ .rgb = border_color } },
@@ -146,6 +145,16 @@ fn renderFilledSlot(
         };
         _ = slot.print(&segs, .{ .row_offset = 1, .col_offset = 0 });
     }
+
+    // Domain on third row
+    if (member.domain.len > 0) {
+        const domain_max = @min(member.domain.len, slot.width);
+        const domain_seg: vaxis.Segment = .{
+            .text = member.domain[0..domain_max],
+            .style = .{ .fg = .{ .rgb = .{ 120, 120, 120 } } },
+        };
+        _ = slot.print(&.{domain_seg}, .{ .row_offset = 2, .col_offset = 0 });
+    }
 }
 
 fn renderEmptySlot(
@@ -160,7 +169,7 @@ fn renderEmptySlot(
         .x_off = @intCast(slot_x),
         .y_off = 1,
         .width = @intCast(slot_w),
-        .height = @intCast(2),
+        .height = @intCast(3),
         .border = .{
             .where = .all,
             .style = .{ .fg = .{ .rgb = border_color } },
