@@ -317,3 +317,18 @@ Work is NOT complete until `git push` succeeds. See `AGENTS.md` for the full che
 5. **Authors get paid** — metered usage, 402-gated, real settlement rails.
 6. **Three databases** — TigerBeetle (money), ClickHouse (analytics), DuckDB (local scoring). Each does what it's best at.
 7. **Separation of concerns** — masques own identity. MCP owns knowledge. Vaults own credentials. Observability owns metrics.
+
+## Version Management
+
+Plugin version must be updated in **two files** that must stay in sync:
+
+| File | Field | Purpose |
+|------|-------|---------|
+| `.claude-plugin/plugin.json` | `version` | Plugin manifest (Claude Code reads this) |
+| `.claude-plugin/marketplace.json` | `plugins[0].version` | Marketplace listing |
+
+**Bump checklist** (when releasing a new version):
+1. Update `plugin.json` version
+2. Update `marketplace.json` version (must match)
+3. Add CHANGELOG.md entry
+4. Commit with message: "Bump to vX.Y.Z"
