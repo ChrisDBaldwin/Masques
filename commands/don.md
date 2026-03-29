@@ -42,17 +42,46 @@ Do not proceed to subsequent steps.
 
 Use whichever path succeeds (private takes precedence if both exist).
 
-If neither file exists, list available masques from both paths and report which ones are available.
+**If neither file exists**, report an error and list available masques from the manifests:
+```
+✗ Masque "<name>" not found
 
-### Step 3: Parse the YAML
+Checked:
+  Private: ~/.masques/<name>.masque.yaml — not found
+  Shared:  personas/<name>.masque.yaml — not found
+
+Available masques (run /list for full details):
+  [Read personas/manifest.yaml and ~/.masques/manifest.yaml, list names]
+```
+Do not proceed to subsequent steps.
+
+### Step 3: Parse and Validate the YAML
+
+Parse the masque YAML file. **If the YAML is malformed** (syntax errors, invalid structure), report the error and stop:
+```
+✗ Failed to parse <name>.masque.yaml
+
+Error: [describe the parse error, with line number if available]
+
+The masque file may be corrupted. Try opening it directly to inspect.
+```
+Do not proceed to subsequent steps.
 
 Extract these fields from the YAML:
-- `name` - Display name
-- `version` - Version string
-- `attributes` - Domain, stack, style, philosophy, tagline
-- `context` - Project/domain context
-- `lens` - The cognitive framing and working style
-- `spinnerVerbs` - (Optional) Custom spinner verbs for this masque
+- `name` - Display name **(required)**
+- `version` - Version string **(required)**
+- `lens` - The cognitive framing and working style **(required)**
+- `attributes` - Domain, stack, style, philosophy, tagline (optional)
+- `context` - Project/domain context (optional)
+- `spinnerVerbs` - Custom spinner verbs for this masque (optional)
+
+**If any required field (`name`, `version`, `lens`) is missing**, report the error and stop:
+```
+✗ Masque "<name>" is missing required fields: [list missing fields]
+
+Required fields: name, version, lens
+```
+Do not proceed to subsequent steps.
 
 ### Step 4: Inject the Masque Context
 
@@ -76,7 +105,23 @@ Output a `<masque-active>` block that will shape your behavior:
 
 ### Step 5: Write Session File
 
-Write the session state using the Write tool to `.claude/masque.session.yaml`:
+**First**, read the existing session file `.claude/masque.session.yaml` (if it exists) to check whether a masque is currently active.
+
+**If a masque is already active** (the existing session file has `active.name` set to a non-null value), the current active masque becomes `previous`:
+
+```yaml
+# Auto-managed by masques plugin
+active:
+  name: <new-masque-name>
+  source: <new-masque-source>
+  donned_at: <current-UTC-timestamp>
+previous:
+  name: <old-active-name>
+  source: <old-active-source>
+  doffed_at: <current-UTC-timestamp>
+```
+
+**If no masque is currently active** (no session file, or `active.name` is null), write with null previous:
 
 ```yaml
 # Auto-managed by masques plugin
@@ -94,7 +139,10 @@ Where:
 - `active.name` is the display name from the YAML
 - `active.source` is `private` if found in `~/.masques/`, or `shared` if found in plugin's `personas/`
 - `active.donned_at` is the current UTC timestamp in ISO format (e.g., `2026-01-26T12:00:00Z`)
-- `previous` fields preserve the last worn masque (null if this is the first)
+- `previous.name` / `previous.source` come from the old `active` block (if there was one)
+- `previous.doffed_at` is the current UTC timestamp (the moment the old masque was implicitly doffed)
+
+Write the session state using the Write tool to `.claude/masque.session.yaml`.
 
 **Note:** Do NOT store absolute paths - they break when the plugin version changes. The path can be reconstructed at runtime from name + source.
 
@@ -137,8 +185,14 @@ Confirm with a brief message:
   [tagline or philosophy]
 ```
 
-## Error Handling
+## Error Handling Summary
 
-- If masque file not found: list available masques from both `~/.masques/` and `personas/`
-- If YAML is malformed: report the parse error with line number if possible
-- If required fields are missing: report which fields are missing
+Each error case is handled inline at the step where it occurs. All errors stop execution:
+
+| Error | Step | Action |
+|-------|------|--------|
+| No arguments provided | Step 1 | Show usage, suggest `/list` |
+| Masque not found in either path | Step 2 | Show checked paths, list available masques from manifests |
+| Malformed YAML | Step 3 | Report parse error with details |
+| Missing required fields (name, version, lens) | Step 3 | List which required fields are missing |
+| Masque found in both paths | Step 2 | Private wins (not an error) |
