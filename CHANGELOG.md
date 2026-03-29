@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-03-28
+
+### Changed
+- Core loop hardened: manifest sync, command spec robustness, eval verification
+- Shared manifest now lists all 35 masques (was 30 — 5 missing since Feb add)
+- Private manifest now lists all 4 private masques (was 2)
+- `/don` spec handles all edge cases: no args, not found, both paths, malformed YAML, missing fields
+- `/don` preserves previous session state when re-donning over active masque
+- `/doff` spec explicitly handles spinner verb cleanup edge cases
+- `/id` path reconstruction made unambiguous with lowercase+hyphen filename rule
+- `/list` handles all manifest presence/absence combinations
+- Session state format verified consistent across all 4 core commands
+- All 4 eval prompts (codesmith, chartwright, firekeeper, mirror) rewritten to match `<masque-active>` block format
+- `docs/getting-started.md` purged of 7 stale schema fields (index, ring, intent, knowledge, access, skills, mcp)
+
 ## [0.4.2] - 2026-02-12
 
 ### Fixed
