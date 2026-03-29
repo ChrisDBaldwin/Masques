@@ -34,10 +34,13 @@ Parse the session file as YAML with structure:
 - Stop here.
 
 **If `active.name` has a value (masque is active):**
-- Construct path based on source:
-  - If `source` is `private`: `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
-  - If `source` is `shared`: `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+- Construct path based on source (lowercase the name for the filename, replace spaces with hyphens):
+  - If `source` is `private`: `${MASQUES_HOME:-~/.masques}/<lowercase-name>.masque.yaml`
+  - If `source` is `shared`: `${CLAUDE_PLUGIN_ROOT}/personas/<lowercase-name>.masque.yaml`
+  - Example: name "Codesmith" + source "shared" → `personas/codesmith.masque.yaml`
+  - Example: name "Shy Guy" + source "private" → `~/.masques/shy-guy.masque.yaml`
 - Read the masque YAML from the constructed path
+- If the file does not exist at the constructed path, report a warning: "Session references [name] but the masque file was not found at [path]. It may have been moved or deleted. Use `/don <name>` to re-don or `/doff` to clear."
 
 ### Step 3: Display Active Masque
 

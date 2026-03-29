@@ -61,15 +61,20 @@ Display all available masques that can be donned.
 
 7. **Handle missing manifests:**
 
-   If no manifests found at all:
+   **If no manifests found at all:**
    ```
-   No manifest found. Run /sync-manifest to generate.
+   No masque manifests found.
+
+   Run /sync-manifest to generate manifest files from your masque YAML files.
    ```
 
-   If only one manifest exists, use it and note the missing one:
-   ```
-   Note: Private manifest not found. Run /sync-manifest to include private masques.
-   ```
+   **If only the shared manifest exists** (private manifest missing or `~/.masques/` directory missing):
+   - List shared masques normally
+   - Append note: `Note: No private manifest found at ~/.masques/manifest.yaml. Run /sync-manifest to include private masques.`
+
+   **If only the private manifest exists** (shared manifest missing):
+   - List private masques normally
+   - Append note: `Note: No shared manifest found at personas/manifest.yaml. Run /sync-manifest to regenerate.`
 
 ## Usage Hint
 

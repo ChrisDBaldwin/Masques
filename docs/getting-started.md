@@ -15,20 +15,11 @@ Create `~/.masques/my-first.masque.yaml`:
 
 ```yaml
 name: MyFirst
-index: 100
 version: "0.1.0"
-ring: player
 
 attributes:
   domain: general
   tagline: "my first masque"
-
-intent:
-  allowed:
-    - "help *"
-    - "explain *"
-  denied:
-    - "rush *"
 
 context: |
   You are helping me learn about masques.
@@ -36,8 +27,11 @@ context: |
 
 lens: |
   You are a friendly guide. Explain concepts simply.
-  When asked to do something outside your intent, politely decline
-  and explain what you can help with instead.
+  Prioritize clarity over cleverness. When uncertain, ask.
+
+  Boundaries:
+  - Never rush through explanations.
+  - Never skip examples when they would help.
 ```
 
 ### 2. Sync the Manifest
@@ -56,7 +50,7 @@ This updates `~/.masques/manifest.yaml` so `/list` can find your masque.
 
 You should see:
 ```
-✓ Donned MyFirst v0.1.0 (ring: player)
+✓ Donned MyFirst v0.1.0
   my first masque
 ```
 
@@ -78,7 +72,7 @@ Returns you to baseline Claude.
 
 ## Next Steps
 
-- Read [Concepts](concepts.md) to understand the five components
+- Read [Concepts](concepts.md) to understand the masque components
 - Explore the [Schema Reference](schema.md) for all available fields
 - Look at `personas/*.masque.yaml` for more complex examples
 
@@ -88,24 +82,27 @@ Copy this minimal template to get started:
 
 ```yaml
 name: YourMasqueName
-index: 101  # Pick a unique number
 version: "0.1.0"
-ring: player
 
-intent:
-  allowed:
-    - "your allowed patterns *"
-  denied:
-    - "patterns to deny *"
+attributes:
+  domain: your-domain
+  tagline: "one-line promise"
+
+context: |
+  Who you're helping and what they value.
+  The operational environment and constraints.
 
 lens: |
   Your cognitive framing goes here.
   How should the agent think? What should it prioritize?
+
+  Boundaries:
+  - What should the agent refuse to do?
 ```
 
-Required fields: `name`, `index`, `version`, `ring`, `intent`, `lens`
+Required fields: `name`, `version`, `lens`
 
-Optional fields: `attributes`, `context`, `knowledge`, `access`, `skills`, `mcp`
+Optional fields: `attributes`, `context`, `spinnerVerbs`
 
 ## Troubleshooting
 
@@ -119,6 +116,7 @@ Optional fields: `attributes`, `context`, `knowledge`, `access`, `skills`, `mcp`
 - Ensure all strings with special characters are quoted
 - Validate against `schemas/masque.schema.yaml`
 
-**Intent patterns not matching:**
-- Patterns use glob syntax (`*` matches anything)
-- Both `allowed` and `denied` are checked; denied takes precedence
+**Masque doesn't change behavior:**
+- Ensure the `lens` field has specific, actionable guidance
+- Include boundaries (what to refuse) in the lens
+- Check that `context` grounds the identity in a real situation
