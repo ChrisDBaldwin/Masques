@@ -43,13 +43,16 @@ Where:
 - `previous.name` preserves the name of the masque being doffed
 - `previous.source` preserves the source for potential re-donning
 
-### Step 2b: Clear Spinner Verbs
+### Step 2b: Clear Spinner Verbs (if applicable)
 
-If `.claude/settings.local.json` exists and contains a `spinnerVerbs` field:
-
-1. **Read** the existing settings
-2. **Remove** the `spinnerVerbs` key
-3. **Write** the updated JSON (or delete file if now empty/only has empty objects)
+Check if `.claude/settings.local.json` exists:
+- **If the file does not exist**, skip this step — there are no spinner verbs to clean up.
+- **If the file exists but has no `spinnerVerbs` field**, skip this step.
+- **If the file exists and contains a `spinnerVerbs` field**:
+  1. **Read** the existing settings
+  2. **Remove** the `spinnerVerbs` key
+  3. **Write** the updated JSON (preserving other fields like `permissions`)
+  4. If the file would be empty or contain only `{}` after removal, delete it
 
 This returns the spinner to Claude Code defaults.
 
