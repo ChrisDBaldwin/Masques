@@ -12,7 +12,7 @@
         "repo": "ChrisDBaldwin/masques"
       },
       "description": "Agent identity framework - AssumeRole for Agents",
-      "version": "1.0.0"
+      "version": "0.5.0"
     }
   ]
 }
