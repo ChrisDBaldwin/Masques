@@ -41,10 +41,6 @@ masques:
     version: "0.1.0"
     domain: creative-encouragement
     tagline: "let's build a happy little function right here"
-  - name: Familiar
-    version: "0.1.0"
-    domain: orchestration
-    tagline: "your will, their hands, my coordination"
   - name: Firekeeper
     version: "0.1.0"
     domain: database-architecture
