@@ -21,6 +21,10 @@ masques:
     version: "0.1.0"
     domain: revenue
     tagline: "pipeline is truth"
+  - name: Collie
+    version: "0.1.0"
+    domain: supervision
+    tagline: "herd workers, crack the whip, keep the flock moving"
   - name: Codesmith
     version: "0.1.0"
     domain: systems-programming
