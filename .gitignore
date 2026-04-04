@@ -8,6 +8,9 @@
 # Local environment config
 services/collector/.env
 
+# Beads issue tracker (local project state)
+.beads/
+
 # Collector JSONL data (local telemetry for DuckDB scoring)
 services/collector/data/
 
