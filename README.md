@@ -10,29 +10,24 @@
 
 Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
 
-When you don a masque, you get cognitive framing, situational context, and performance scoring via OTEL telemetry. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge, credentials, and tools.
+It's a representation layer you slap on top of any agent: don a masque to adopt its lens and context, do the work, then doff to step backstage and return to baseline. The core needs **zero infrastructure** — a masque is just YAML, and identity lives in a session file. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge, credentials, and tools.
 
-## Architecture
+## How It Works
+
+The core loop needs no databases, no services, no credentials — just YAML and a session file:
 
 ```
-Agent dons masque
-  → session created
-  → OTEL metrics/logs flow through collector → ClickHouse + JSONL
-
-Agent works with masque
-  → api_requests metered, tool usage tracked
-  → DuckDB scores session performance locally
-
-Agent doffs masque
-  → session closed, performance scored
+Don   → read masque YAML, inject lens + context, write .claude/masque.session.yaml
+Work  → operate with the masque's framing
+Doff  → clear the session, return to baseline Claude
 ```
 
-Two databases, both for telemetry — neither required to use a masque:
+That's the whole product. **Optionally**, OTEL telemetry can score how a session went — entirely opt-in, with two databases, neither required to use a masque:
 
 | Engine | Role | Data |
 |--------|------|------|
 | **ClickHouse** | Analytics *(optional)* | Telemetry from OTEL collector |
-| **DuckDB** | Local scoring | Session performance from OTEL JSONL exports |
+| **DuckDB** | Local scoring *(optional)* | Session performance from OTEL JSONL exports |
 
 ## Quick Start
 
@@ -114,11 +109,11 @@ An optional remote analytics sink for OTEL data. The collector ships metrics and
 
 ## TUI — Masque
 
-Terminal UI for browsing masques and drafting teams. Built with Zig + [libvaxis](https://github.com/rockorager/libvaxis).
+Terminal UI for browsing masques and drafting teams. Built with Zig 0.16+ and [libvaxis](https://github.com/rockorager/libvaxis).
 
 ```bash
-cd tui && zig build
-./zig-out/bin/masque    # Run from repo root
+cd tui && zig build run   # build and launch
+# or: zig build && ./zig-out/bin/masques
 ```
 
 - Animated portraits with domain-specific patterns (forge, cybernetic, art, etc.)
@@ -171,7 +166,7 @@ This is a personal project maintained in spare time. For bugs, please [open an i
 
 ## Status
 
-Claude Code plugin with OTEL telemetry, optional ClickHouse analytics, and DuckDB performance scoring. Payment/marketplace infrastructure is deferred (see [`docs/future/`](docs/future/)).
+A Claude Code plugin for donning cognitive identities, a library of 35 masques, and a Zig TUI for team drafting. The core is infrastructure-free; telemetry (OTEL → optional ClickHouse + DuckDB scoring) is opt-in. Payment/marketplace infrastructure is deferred (see [`docs/future/`](docs/future/)).
 
 ---
 
