@@ -10,7 +10,7 @@
 
 Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
 
-When you don a masque, you get cognitive framing, situational context, and performance scoring via OTEL telemetry. The [roadmap](#roadmap) extends this to bundled knowledge, credentials, tools, and author payments.
+When you don a masque, you get cognitive framing, situational context, and performance scoring via OTEL telemetry. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge, credentials, and tools.
 
 ## Architecture
 
@@ -27,13 +27,12 @@ Agent doffs masque
   → session closed, performance scored
 ```
 
-Two databases today, a third planned:
+Two databases, both for telemetry — neither required to use a masque:
 
 | Engine | Role | Data |
 |--------|------|------|
-| **ClickHouse** | Analytics | Telemetry, metering, reputation |
+| **ClickHouse** | Analytics *(optional)* | Telemetry from OTEL collector |
 | **DuckDB** | Local scoring | Session performance from OTEL JSONL exports |
-| **TigerBeetle** | *(Planned)* Ledger of record | Account balances, transfers, two-phase payments |
 
 ## Quick Start
 
@@ -109,9 +108,9 @@ Scores masque sessions across 5 dimensions from local OTEL exports:
 services/judge/judge.sh   # Outputs YAML score to stdout
 ```
 
-### ClickHouse Schema
+### ClickHouse (optional)
 
-Analytics and payment infrastructure schema — identity, metering, reputation, ledger mirrors, and settlements. See [sql/README.md](sql/README.md) for the full schema and migration instructions.
+An optional remote analytics sink for OTEL data. The collector ships metrics and logs to ClickHouse and auto-creates its schema (`create_schema: true`) — no migrations to run. Configure via the collector's `.env`; leave it unset to keep everything local.
 
 ## TUI — Masque
 
@@ -131,7 +130,7 @@ Navigate with arrow keys, `Enter` to add to team, `Tab` to switch focus, `1`–`
 
 ## Roadmap
 
-Masques is the **identity layer** in an agentic ecosystem. Today it provides cognitive framing (lens, context, attributes) and telemetry-based scoring. The vision extends to full ecosystem integration:
+Masques is the **identity layer** for any agent. Today it provides cognitive framing (lens, context, attributes) and telemetry-based scoring. The minimal product stops there. Possible future integration:
 
 | Need | Status | Why | Approach |
 |------|--------|-----|----------|
@@ -139,7 +138,8 @@ Masques is the **identity layer** in an agentic ecosystem. Today it provides cog
 | Knowledge | Planned | Masques should bring their own context | MCP URIs bundled per masque |
 | Credentials | Planned | Identity implies access | Vault role + TTL declarations |
 | Tools | Planned | Masques should bring their own capabilities | Bundled MCP servers per masque |
-| Payments | Planned | Authors should earn income from their work | TigerBeetle ledger, 402-gated access, author settlement |
+
+The larger "agent marketplace" direction — spawning masques as paid workers with a reputation + payment gate — is deferred. See [`docs/future/`](docs/future/) for that vision.
 
 ## Documentation
 
@@ -150,9 +150,9 @@ Masques is the **identity layer** in an agentic ecosystem. Today it provides cog
 | [Concepts](docs/concepts.md) | The five components explained |
 | [Schema](docs/schema.md) | Full YAML specification |
 | [OTEL Setup](docs/otel-setup.md) | Configuring the telemetry pipeline |
-| [Evaluation & Reputation](docs/evaluation.md) | DuckDB session scoring and ClickHouse reputation |
-| [ClickHouse Schema](sql/README.md) | Payment infrastructure tables |
+| [Evaluation](docs/evaluation.md) | DuckDB session scoring |
 | [Evaluations](evals/README.md) | Testing masque behavioral fidelity |
+| [Future](docs/future/) | Deferred vision — agent marketplace, payments |
 | [TUI](tui/) | Masque — terminal UI for browsing and team drafting |
 
 ## Contributing
@@ -171,7 +171,7 @@ This is a personal project maintained in spare time. For bugs, please [open an i
 
 ## Status
 
-Claude Code plugin with OTEL telemetry, ClickHouse analytics, and DuckDB performance scoring. Payment infrastructure (TigerBeetle) is designed but not yet integrated.
+Claude Code plugin with OTEL telemetry, optional ClickHouse analytics, and DuckDB performance scoring. Payment/marketplace infrastructure is deferred (see [`docs/future/`](docs/future/)).
 
 ---
 

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-30
+
+### Changed
+- **Minified to a representation tool.** Masques now positions as a cognitive-identity layer that slaps on top of any agent — don, work, doff. The agent-marketplace direction (payments, reputation ledger, MCP agent-factory) is deferred, not deleted.
+- Trimmed payment/reputation framing from `README.md`, `CLAUDE.md`, and `docs/evaluation.md`; ClickHouse is now described as an optional analytics sink. Telemetry path is unchanged.
+
+### Removed
+- `sql/` — the entire ClickHouse payment/identity/ledger/settlement/metering/reputation schema (`001`–`006` + README). It was never wired into a working command, and the telemetry path auto-creates its own schema.
+
+### Deferred (moved, not removed)
+- `docs/roadmap.md` (agent-factory + payment pivot) and `docs/session-prompts/tigerbeetle-integration.md` moved to `docs/future/` with a deferred-vision README.
+
+### Retained
+- All 8 commands (incl. `/audience`, `/performance`), the OTEL collector + DuckDB judge, the TUI, all 35 personas, and the masque schema — unchanged.
+
+> Note: a `v1.0.0` git tag exists in history, but `plugin.json` tracked `0.5.0`; this release follows the file's lineage (`0.5.0` → `0.6.0`).
+
 ## [0.5.0] - 2026-03-28
 
 ### Changed
