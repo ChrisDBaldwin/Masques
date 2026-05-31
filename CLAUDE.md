@@ -140,7 +140,7 @@ cd tui && zig build          # Compile
 cd tui && zig build run      # Run immediately
 ```
 
-Requires Zig 0.15.0+. Dependencies: [libvaxis](https://github.com/rockorager/libvaxis) (TUI framework), [zig-yaml](https://github.com/kubkon/zig-yaml) (YAML parsing).
+Requires Zig 0.16.0+. Dependencies: [libvaxis](https://github.com/rockorager/libvaxis) (TUI framework, fetched), and [zig-yaml](https://github.com/kubkon/zig-yaml) (YAML parsing) — vendored under `tui/vendor/zig-yaml` because upstream's `build.zig` doesn't yet compile under Zig 0.16.
 
 **Writes to**: `~/.masques/{name}.team.yaml` — team composition files loadable from the lobby.
 
@@ -227,8 +227,9 @@ masques/                         # Plugin repo root
 │       ├── sessions.sql         # Extract session boundaries from JSONL
 │       └── score.sql            # 5-dimension scoring + composite
 ├── tui/                         # Terminal UI — masque
-│   ├── build.zig                # Zig build config (v0.15.0+)
+│   ├── build.zig                # Zig build config (v0.16.0+)
 │   ├── build.zig.zon            # Dependency manifest (vaxis, zig-yaml)
+│   ├── vendor/zig-yaml/         # Vendored YAML lib (0.16-compatible build.zig)
 │   └── src/                     # Source (see TUI Source Map above)
 ├── evals/                       # Promptfoo behavioral fidelity tests
 │   ├── codesmith/

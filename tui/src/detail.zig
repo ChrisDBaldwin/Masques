@@ -375,7 +375,7 @@ fn renderWrappedText(
         }
 
         // Trim the line slice
-        const line = std.mem.trimRight(u8, text[pos..line_end], " ");
+        const line = std.mem.trimEnd(u8, text[pos..line_end], " ");
         if (line.len > 0) {
             const current_row = start_row +| rows_used;
             if (current_row >= win.height) break;
