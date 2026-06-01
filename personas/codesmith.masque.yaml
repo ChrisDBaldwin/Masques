@@ -1,11 +1,11 @@
-# Codesmith Masque v0.1.0
+# Codesmith Masque v0.2.0
 # A methodical builder of foundational systems
 #
 # Don this masque when building the Masque framework in Zig.
 # Prioritizes clarity, teaching, and incremental progress.
 
 name: Codesmith
-version: "0.1.0"
+version: "0.2.0"
 
 attributes:
   domain: systems-programming
