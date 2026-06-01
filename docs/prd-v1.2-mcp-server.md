@@ -54,11 +54,19 @@ so it's config + entitlements, not net-new infrastructure.
   *host* keeps it in context. Masques are also exposed as MCP **prompts** (the
   native "select an identity" surface) where clients support them. We never
   promise "guaranteed persistent identity," because MCP can't.
-- **D6 — Reuse OpenGander's OAuth authorization server (Phase B).** OAuth 2.1 with
-  Dynamic Client Registration, JWKS, and RFC 8414 metadata already exists in
-  `apps/web`. Phase B either **shares** that IdP (fastest) or **clones the
-  pattern** onto a `masques.ai` authorization server (independent identity).
-  Phase A needs none of it.
+- **D6 — Clone OpenGander's OAuth authorization server onto masques.ai (Phase B).**
+  *(OQ1 resolved 2026-06-01.)* OAuth 2.1 with Dynamic Client Registration, JWKS,
+  and RFC 8414 metadata already exists in OpenGander's `apps/web`. Masques gets its
+  **own independent identity** by cloning that pattern onto `app.masques.ai` — not
+  sharing `app.opengander.io`. Keeps Masques' account model, branding, and the
+  Phase-C budget/escrow accounts decoupled from OpenGander. Phase A needs none of it.
+- **D7 — Postgres is the identity/auth store (Phase B), local-dev + prod.** User
+  management and auth scopes live in **Postgres** (local Postgres via docker-compose
+  for dev/test; prod Postgres in the masques.ai domain). This one store backs the
+  authz server (users, OAuth clients, grants, refresh tokens + revocation, scopes/
+  entitlements) and naturally also holds the per-user **reputation namespace**
+  (v1.1 D6) and Phase-C **subscription/entitlement** state — one database, not
+  three. Phase A uses no database.
 
 ## Architecture
 
@@ -147,13 +155,23 @@ Same FastMCP server, **HTTP transport + OAuth**, reusing OpenGander's auth.
 - Add `auth=JWTTokenVerifier()`, the RFC 9728 `/.well-known/oauth-protected-resource`
   endpoint, the WWW-Authenticate middleware, and the Starlette wrapper — **copied
   from `server.py`**, retargeted at `mcp.masques.ai` + the masques.ai authz server.
-- OAuth authorization server: **share** `app.opengander.io` (fastest, cross-product
-  SSO) **or clone** `apps/web/src/{app/oauth,lib/oauth,app/api/oauth}` +
-  `.well-known` + `jwks.json` to masques.ai (independent identity). Recommend
-  clone-the-pattern for a clean Masques identity; decide in OQ.
+- **OAuth authorization server (decided: clone, D6).** Clone
+  `apps/web/src/{app/oauth,lib/oauth,app/api/oauth}` + `.well-known/oauth-authorization-server`
+  + `api/.well-known/jwks.json` onto **`app.masques.ai`** — Masques' own IdP, not
+  shared with OpenGander. Keep DCR, RS256/JWKS, RFC 8414 metadata.
+- **Postgres identity/auth store (D7).** Back the authz server with Postgres
+  (local docker-compose for dev/test; prod in masques.ai). Sketch:
+  - `users` (id, email, created_at, status)
+  - `oauth_clients` (client_id, redirect_uris, grant_types — Dynamic Client Reg.)
+  - `auth_grants` (code/PKCE, client_id, user_id, scopes, expiry)
+  - `refresh_tokens` (token_hash, user_id, client_id, scopes, revoked_at) — revocation
+  - `scopes` / `user_entitlements` (user_id, scope, source: free|subscription)
+  - `reputation_*` (per-user namespace, v1.1 D6) — same DB, not a separate store
+  - Signing keys for RS256 (or a managed KMS) feed the JWKS endpoint.
 - OAuth identity = the per-user reputation namespace (v1.1 D6). Hosted exposes
   `reputation(...)`; **never `score`** (raw data stays local, D4).
-- Deploy: mirror the OG Dockerfile + ALB `/health` + `mcp.masques.ai` DNS.
+- Deploy: mirror the OG Dockerfile + ALB `/health`; DNS `mcp.masques.ai`
+  (resource) + `app.masques.ai` (authz); managed Postgres in the masques.ai domain.
 - Free tier (no payment yet).
 
 ## Phase C — Monetization (DESIGN ONLY), in two rungs
@@ -199,10 +217,9 @@ Solana / TigerBeetle on masques.ai; credit-card/wallet ↔ subscription budget
 
 ## Open Questions
 
-1. **OQ1 — Authz server: share vs clone.** Reuse `app.opengander.io` as the IdP
-   for Masques (cross-product SSO, fastest) vs clone the OAuth code onto a
-   masques.ai authz server (independent identity)? Affects branding, account model,
-   and the Phase-C budget account.
+1. **OQ1 — Authz server: share vs clone. RESOLVED (2026-06-01): clone.** Masques
+   gets its own IdP at `app.masques.ai` (independent identity), backed by Postgres
+   for users + scopes (D6/D7). Not sharing `app.opengander.io`.
 2. **OQ2 — Session/attribution under MCP.** No ambient `CLAUDE_CODE_SESSION_ID`.
    Does `don` mint+return a session id, accept one from the client, or write local
    state? Drives how `score` attributes a session.
