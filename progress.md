@@ -34,8 +34,8 @@ _(written at exit — see bottom of file until then)_
 - [ ] **C10** — Per-(masque, task-class) lift figure w/ sample count retrievable across sessions. (design + bead)
 
 ### Tier 4 — Privacy contract (cross-cutting)
-- [ ] **P1** — Nothing leaves the machine unless forwarding explicitly opted in. Verify: collector default pipeline is local-only; ClickHouse gated.
-- [ ] **P2** — Forwarded payload contains only the Tier-2 derived signal (no prompts/tool I/O/code). Verify: document the contract + strip path.
+- [x] **P1** — Nothing leaves the machine unless forwarding explicitly opted in. Verify: collector default pipeline is local-only; ClickHouse gated.
+- [x] **P2** — Forwarded payload contains only the Tier-2 derived signal (no prompts/tool I/O/code). Verify: document the contract + strip path.
 
 ### Tier 5 — Documentation reframe
 - [x] **P3** — `docs/vision.md`, `docs/evaluation.md`, `README` lead with measurable identity / persistent audience. Verify: close-read.
@@ -117,3 +117,7 @@ The core of the product. Rewrote the judge from a single-masque 5-proxy verdict 
 - **P4** — `docs/future/` retains `roadmap.md` (agent-factory pivot) + `tigerbeetle-integration.md` (payments) + a `README.md` that explicitly marks them deferred and distinct from the shipping product. No change needed; verified by ls + close-read. (Left intact per scope: do not revive.)
 
 **Judgment call (flagged for review):** the README/vision reframe pushes "observability is the core" to the top, which is a tonal shift from the very recent mvp commit `c7c2d7b` ("reframe around the minimal representation tool"). I kept the zero-infra don/doff truth intact and framed the audience as the *differentiated* half rather than replacing the representation framing — but this is the one place the PRD's thesis and the mvp positioning pull against each other. Worth a glance to confirm the balance is right.
+
+### Iteration 7 — Privacy contract P1/P2 (cross-cutting)
+- **P1 — nothing leaves unless opted in. VERIFIED.** Source `config.yaml` pipelines export only `[debug, file/*]` — no clickhouse. Running collector logs (filtering out the debug exporter's echo of my own session's tool text) show only local debug+file exporters, no clickhouse component, no connection errors. `docker exec masques-audience busybox netstat -tn` → **no outbound connections to :8123/:9000**. Forwarding requires explicitly uncommenting the clickhouse exporter (opt-in). Note: an earlier grep falsely "found remote attempts" — that was the debug exporter echoing my bash commands (which contained the strings "clickhouse"/"8123"), not real egress; disproved by netstat + the precise log filter.
+- **P2 — forwarded payload is only the derived signal. VERIFIED at contract level.** The only candidate payload is the judge's YAML output; scanned it — keys are session/masque/attribution/task_class/duration + layer_a/b bands & numbers + supporting_signals (counts/cost) + tool_mix (counts). **No prompts, file paths, code, or tool I/O.** The local raw JSONL *does* contain rich content (confirmed: my session's `tool_parameters` capture full bash commands w/ paths) — and it is wired to NO remote, which is the guarantee. Caveat: an actual forwarder is not built (Phase 4 / bead ir8.12); the live end-to-end strip+forward verification belongs there. What is provable now — derived signal is content-free, raw content never leaves — holds.
