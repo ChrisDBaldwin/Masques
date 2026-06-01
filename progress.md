@@ -27,7 +27,7 @@ _(written at exit — see bottom of file until then)_
 - [ ] **C6** — Mid-stream masque switch flagged `attribution: mixed`, excluded from lift. Verify: SQL over a synthesized mixed session.
 - [ ] **C7** — `/performance` emits Layer-A 7-point reaction for every scored session, from session one, no baseline required. Verify: run score.sql over real data, paste band.
 - [ ] **C8** — When a task-class has sufficient baseline sessions, `/performance` adds Layer-B lift as a delta vs baseline; below threshold shows only Layer A. Verify: SQL lift query + threshold gate.
-- [ ] **C8b** — Rubric-bearing masque → Layer-A band from rubric read; rubric-less → activity fallback. Verify: one rubric-bearing (codesmith) + one rubric-less masque; judge interface exercised.
+- [~] **C8b** — Rubric-bearing masque → Layer-A band from rubric read; rubric-less → activity fallback. **SCHEMA + example done (Iter 3)**; judge-interface wiring pending (score.sql rewrite).
 
 ### Tier 3 — Personal reputation (Phase 3) — DESIGN ONLY
 - [ ] **C9** — Scores persist across sessions in a personal reputation corpus. (design + bead)
@@ -72,3 +72,13 @@ _(written at exit — see bottom of file until then)_
   - `curl :13133/` → `200`.
   - `./services/judge/captured.sh` → `68`, exit 0 (68 sessions in the real corpus).
 - **Cross-command trace:** audience.md references only existing paths (`services/judge/captured.sh`, `services/collector/data/logs.jsonl`, `docs/otel-setup.md`). The OTEL env block matches the keys actually present in the captured telemetry.
+
+### Iteration 3 — `rubric` schema field + codesmith example (bead masques-ir8.4)
+- **`schemas/masque.schema.yaml`:** added optional `rubric` (string) property — the measurable shadow of the lens, prose-first like lens/context. Only schema addition per PRD scope (no other churn).
+- **`personas/codesmith.masque.yaml`:** added a `rubric` derived from codesmith's existing lens ("every line should teach"). **Pure addition** — `git diff` shows 16 insertions, 0 removals; lens/context untouched (honors the "don't modify persona content" constraint).
+- **Verification (real, venv `/tmp/mvenv` with jsonschema 4.26 + pyyaml):**
+  - `Draft202012Validator.check_schema` → schema valid after the addition.
+  - codesmith → VALID, rubric=True (rubric-bearing case).
+  - firekeeper, mirror → VALID, rubric=False (rubric-less controls).
+  - Full corpus: all **35** personas still valid — the optional field broke nothing.
+- C8b is partially met: the schema + worked example + a rubric-bearing/rubric-less pair exist and validate. The remaining half (a judge that actually emits a band from the rubric vs the activity fallback) is wired in the score.sql/judge iteration.
