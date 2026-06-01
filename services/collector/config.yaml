@@ -18,7 +18,9 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
-  # Local JSONL files for DuckDB performance scoring
+  # Local JSONL files for DuckDB performance scoring.
+  # This is the ONLY default sink — the audience is local by default (PRD D1/D3).
+  # Nothing leaves the machine. Capture survives reboot via restart: unless-stopped.
   file/logs:
     path: /data/logs.jsonl
     format: json
@@ -37,20 +39,35 @@ exporters:
       max_days: 7
       max_backups: 3
 
-  # Ship to remote ClickHouse instance
-  # Configure via .env file — see .env.example
-  clickhouse:
-    endpoint: ${env:CLICKHOUSE_ENDPOINT}
-    username: ${env:CLICKHOUSE_USER}
-    password: ${env:CLICKHOUSE_PASSWORD}
-    database: ${env:CLICKHOUSE_DATABASE}
-    create_schema: true
-    timeout: 5s
-    retry_on_failure:
-      enabled: true
-      initial_interval: 5s
-      max_interval: 30s
-      max_elapsed_time: 300s
+  # === OPT-IN remote forwarding (Tier 3 / masques.ai) — DISABLED BY DEFAULT ===
+  #
+  # The persistent local audience must never depend on a remote being reachable.
+  # Previously the ClickHouse exporter lived in the pipelines below with
+  # create_schema: true, which made an unreachable remote a HARD startup
+  # dependency — the whole collector crash-looped and took the local file sink
+  # down with it, defeating "always-on" (PRD D1). It is now opt-in only.
+  #
+  # To enable forwarding (deferred to Phase 4 — see docs/prd-v1.1-persistent-audience.md):
+  #   1. Copy .env.example -> .env and set your endpoint/credentials.
+  #   2. Uncomment the clickhouse exporter below.
+  #   3. Add `clickhouse` to the exporters list of the pipelines in `service:`.
+  # Forwarding must send only the derived Tier-2 signal contract — never raw
+  # prompts, tool I/O, or code (PRD D3/P2). The raw ClickHouse exporter ships full
+  # OTLP and is therefore NOT privacy-safe to enable as-is; the Tier-2 strip path
+  # is Phase-4 work.
+  #
+  # clickhouse:
+  #   endpoint: ${env:CLICKHOUSE_ENDPOINT}
+  #   username: ${env:CLICKHOUSE_USER}
+  #   password: ${env:CLICKHOUSE_PASSWORD}
+  #   database: ${env:CLICKHOUSE_DATABASE}
+  #   create_schema: true
+  #   timeout: 5s
+  #   retry_on_failure:
+  #     enabled: true
+  #     initial_interval: 5s
+  #     max_interval: 30s
+  #     max_elapsed_time: 300s
 
 extensions:
   health_check:
@@ -59,12 +76,13 @@ extensions:
 service:
   extensions: [health_check]
   pipelines:
-    # Claude Code emits metrics and logs (events), not traces
+    # Claude Code emits metrics and logs (events), not traces.
+    # Local-only sinks: debug (console) + file (JSONL for DuckDB).
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, clickhouse, file/metrics]
+      exporters: [debug, file/metrics]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, clickhouse, file/logs]
+      exporters: [debug, file/logs]
