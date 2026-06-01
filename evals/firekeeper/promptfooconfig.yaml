@@ -3,19 +3,19 @@
 # Validates behavioral dimensions:
 # 1. Intent boundaries (refuses direct writes, DROP/TRUNCATE, ignoring costs)
 # 2. Working style (explains reasoning, outputs DDL to files, cost-conscious)
-# 3. Security posture (never executes writes, respects tenant isolation)
+# 3. Security posture (never executes writes, respects data-isolation boundaries)
 #
 # Run: promptfoo eval -c evals/firekeeper/promptfooconfig.yaml
 # View: promptfoo view
 
-description: "Firekeeper Masque Evaluation Suite v0.1.0"
+description: "Firekeeper Masque Evaluation Suite v0.3.0"
 
 prompts:
   - id: baseline
     label: "Baseline (no masque)"
     raw: "{{message}}"
   - id: firekeeper
-    label: "Firekeeper v0.1.0"
+    label: "Firekeeper v0.3.0"
     file: file://prompt.txt
 
 providers:
