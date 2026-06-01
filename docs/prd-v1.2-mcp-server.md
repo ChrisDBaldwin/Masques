@@ -46,13 +46,18 @@ same masque content and scoring the plugin uses, from one shared core.
   "guaranteed persistent identity," because MCP can't promise it. Masques are also
   exposed as MCP **prompts** (the closest native "select an identity" surface)
   where clients support them.
-- **D5 — Monetization is deferred (Phase C, design-only).** Long-term goal: a
-  marketplace where **masque authors are paid per use**. Mechanism (later):
-  micropayments via Solana or TigerBeetle hosted on `masques.ai`, with
-  credit-card/wallet ↔ subscription **budget escrow accounts**, gating hosted MCP
-  tool calls. This refines — does not replace — `docs/future/tigerbeetle-integration.md`:
-  gate *MCP calls*, not the old escrow-on-don/settle-on-doff. Stays in
-  `docs/future/`. Phase A ships with no payment code.
+- **D5 — Monetization is deferred (Phase C, design-only), and ladders.**
+  - **Start (C1): subscription via OAuth + Stripe.** Proven, low-friction, and it
+    **reuses the OpenGander stack** (same OAuth + Stripe), so the hosted phase is
+    mostly config + entitlements rather than net-new infra. OAuth identity does
+    double duty: paywall *and* the per-user reputation namespace (v1.1 D6).
+  - **Evolution (C2): author-payout marketplace.** The strong-feeling end goal —
+    **masque authors paid per use**. Micropayments via Solana or TigerBeetle on
+    `masques.ai`, with credit-card/wallet ↔ subscription **budget escrow accounts**,
+    gating hosted MCP tool calls. Refines (not replaces)
+    `docs/future/tigerbeetle-integration.md`: gate *MCP calls*, not
+    escrow-on-don/settle-on-doff. Stays in `docs/future/`.
+  - Phase A ships with **no payment code**.
 
 ## Architecture
 
@@ -104,12 +109,17 @@ SSE/HTTP transport + OAuth2 (reuse the OpenGander stack). Serves the public
 catalog + reputation aggregates; OAuth identity = the per-user reputation
 namespace (v1.1 D6). Free tier; no payment. Tier-3 node of the v1.1 architecture.
 
-## Phase C — Monetization + author marketplace (DESIGN ONLY)
+## Phase C — Monetization (DESIGN ONLY), in two rungs
 
-Entitlements gate hosted premium masques / reputation / analytics. Authors paid
-per use. Payments via Solana / TigerBeetle on masques.ai; card/wallet ↔
-subscription budget **escrow** accounts; gate MCP tool calls (cleaner than
-escrow-on-don). Builds on `docs/future/{roadmap,tigerbeetle-integration}.md`.
+**C1 — Subscription (OAuth + Stripe).** The starting model. Entitlements gate
+hosted premium masques / reputation / analytics behind a Stripe subscription,
+keyed on the Phase-B OAuth identity. Reuses the OpenGander Stripe + OAuth stack —
+config + entitlements, not net-new payment infra.
+
+**C2 — Author-payout marketplace.** The evolution: masque authors paid per use.
+Solana / TigerBeetle on masques.ai; credit-card/wallet ↔ subscription budget
+**escrow** accounts; gate MCP tool calls (cleaner than escrow-on-don). Builds on
+`docs/future/{roadmap,tigerbeetle-integration}.md`.
 
 ## Acceptance Criteria (Phase A)
 
