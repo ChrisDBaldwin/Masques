@@ -18,7 +18,7 @@ _(written at exit)_
 - [x] **M5** — Each masque exposed as MCP prompt; `prompts/get` returns composed identity. ✅ 39 prompts.
 - [x] **M6** — `score` invokes local judge, returns two-layer reaction. ✅ status ok, Layer A+B.
 - [x] **M7** — One authoritative compose: plugin shells out to `masque` CLI; parity check. ✅ 9/9 parity.
-- [ ] **M8** — Docs show registering local server in a real MCP client, verified.
+- [x] **M8** — Docs show registering local server in a real MCP client, verified. ✅ Claude Code ✓ Connected.
 
 ### Phase B/C (DESIGN ONLY — deepen beads)
 - [ ] **D-46z** — Postgres identity/auth store design notes
@@ -107,3 +107,15 @@ $ CLAUDE_PLUGIN_ROOT=… uv run --project services/mcp masque compose Codesmith 
     → <masque-active name="Codesmith" version="0.2.0"> ... (the plugin's actual fallback path works)
 ```
 bd: masques-6sc, masques-0mf closed.
+
+### Iteration 4 — masques-emq: docs + real-client registration (DONE → M8)
+- Wrote `docs/mcp-server.md`: what the server exposes, install (`uv venv && uv pip install -e .`),
+  register in Claude Code / Claude Desktop / Cursor / MCP Inspector, env config matrix, D4/D5 notes.
+- **Verified against a real client (Claude Code):**
+```
+$ claude mcp add masques -- uv run --project /Users/chris/git/masques/services/mcp masques-mcp
+$ claude mcp list → masques: uv run --project … masques-mcp - ✓ Connected
+$ claude mcp get masques → Type: stdio · Status: ✓ Connected
+```
+(Also re-confirmed via MCP Inspector CLI in Iteration 2.)
+bd: masques-emq closed. **Phase A (M1–M8) COMPLETE & VERIFIED.**
