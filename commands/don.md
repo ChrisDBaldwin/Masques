@@ -33,75 +33,43 @@ Run /list to see available masques.
 ```
 Do not proceed to subsequent steps.
 
-### Step 2: Read Both Masque Paths in Parallel
+### Step 2: Compose the identity via the `masque` CLI (single source of truth)
 
-**IMPORTANT:** Issue BOTH Read tool calls in a single message to check paths simultaneously:
+The masque is resolved and composed by the **`masque` CLI** — the one
+authoritative implementation shared by this plugin and the Masques MCP server
+(PRD v1.2 M7). Do **not** re-derive the identity block in prose; that is how the
+two surfaces used to drift. Run the CLI and inject its output verbatim.
 
-1. **Private path:** `${MASQUES_HOME:-~/.masques}/<name>.masque.yaml`
-2. **Shared path:** `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
+**Locate the CLI** (the `$MASQUE` invocation used in this and later steps):
+- If `masque` is on `PATH` (installed via `uv tool install "${CLAUDE_PLUGIN_ROOT}/services/mcp"`),
+  use `masque`.
+- Otherwise fall back to: `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masque`
 
-Use whichever path succeeds (private takes precedence if both exist).
+Compose the identity block — this both resolves the masque (private
+`${MASQUES_HOME:-~/.masques}` over bundled `personas/`) and builds the block:
 
-**If neither file exists**, report an error and list available masques from the manifests:
+```bash
+$MASQUE compose <name> [intent...]
 ```
-✗ Masque "<name>" not found
 
-Checked:
-  Private: ~/.masques/<name>.masque.yaml — not found
-  Shared:  personas/<name>.masque.yaml — not found
+The CLI exits non-zero and prints a diagnostic to stderr if the masque is not
+found, the YAML is malformed, or a required field (`name`, `version`, `lens`)
+is missing. **If it fails**, report that diagnostic and stop — do not proceed to
+subsequent steps. For a not-found error, also suggest `/list`.
 
-Available masques (run /list for full details):
-  [Read personas/manifest.yaml and ~/.masques/manifest.yaml, list names]
+To capture the masque's `name`, `version`, `source`, and `spinnerVerbs` for the
+steps below (session file, spinner verbs), additionally run:
+
+```bash
+$MASQUE compose <name> --json
 ```
-Do not proceed to subsequent steps.
-
-### Step 3: Parse and Validate the YAML
-
-Parse the masque YAML file. **If the YAML is malformed** (syntax errors, invalid structure), report the error and stop:
-```
-✗ Failed to parse <name>.masque.yaml
-
-Error: [describe the parse error, with line number if available]
-
-The masque file may be corrupted. Try opening it directly to inspect.
-```
-Do not proceed to subsequent steps.
-
-Extract these fields from the YAML:
-- `name` - Display name **(required)**
-- `version` - Version string **(required)**
-- `lens` - The cognitive framing and working style **(required)**
-- `attributes` - Domain, stack, style, philosophy, tagline (optional)
-- `context` - Project/domain context (optional)
-- `spinnerVerbs` - Custom spinner verbs for this masque (optional)
-
-**If any required field (`name`, `version`, `lens`) is missing**, report the error and stop:
-```
-✗ Masque "<name>" is missing required fields: [list missing fields]
-
-Required fields: name, version, lens
-```
-Do not proceed to subsequent steps.
 
 ### Step 4: Inject the Masque Context
 
-Output a `<masque-active>` block that will shape your behavior:
-
-```
-<masque-active name="[name]" version="[version]">
-## Lens
-[Full lens content from YAML]
-
-## Context
-[Full context content from YAML]
-
-## Attributes
-- Domain: [domain]
-- Stack: [stack]
-- Style: [style]
-- Philosophy: [philosophy]
-</masque-active>
-```
+Inject the **stdout of `$MASQUE compose <name> [intent...]` verbatim** — it is
+already the `<masque-active>` block (lens + context + attributes + optional
+intent). Do not reformat or regenerate it; emitting it verbatim is what
+guarantees the plugin and the MCP server compose identically.
 
 ### Step 5: Write Session File
 
@@ -136,8 +104,8 @@ previous:
 ```
 
 Where:
-- `active.name` is the display name from the YAML
-- `active.source` is `private` if found in `~/.masques/`, or `shared` if found in plugin's `personas/`
+- `active.name` is the `name` from `$MASQUE compose <name> --json`
+- `active.source` is the `source` from that JSON (`private` or `shared`)
 - `active.donned_at` is the current UTC timestamp in ISO format (e.g., `2026-01-26T12:00:00Z`)
 - `previous.name` / `previous.source` come from the old `active` block (if there was one)
 - `previous.doffed_at` is the current UTC timestamp (the moment the old masque was implicitly doffed)
@@ -171,7 +139,8 @@ metadata, never forwarded (the Tier-2 contract carries only derived scores).
 
 ### Step 5b: Apply Spinner Verbs (if defined)
 
-If the masque defines a `spinnerVerbs` section:
+Use the `spinnerVerbs` field from `$MASQUE compose <name> --json`. If it is
+non-null:
 
 ```yaml
 spinnerVerbs:
@@ -215,7 +184,7 @@ Each error case is handled inline at the step where it occurs. All errors stop e
 | Error | Step | Action |
 |-------|------|--------|
 | No arguments provided | Step 1 | Show usage, suggest `/list` |
-| Masque not found in either path | Step 2 | Show checked paths, list available masques from manifests |
-| Malformed YAML | Step 3 | Report parse error with details |
-| Missing required fields (name, version, lens) | Step 3 | List which required fields are missing |
-| Masque found in both paths | Step 2 | Private wins (not an error) |
+| Masque not found | Step 2 | Relay the CLI's not-found diagnostic; suggest `/list` |
+| Malformed YAML | Step 2 | Relay the CLI's parse-error diagnostic |
+| Missing required fields (name, version, lens) | Step 2 | Relay the CLI's missing-fields diagnostic |
+| Masque found in both paths | Step 2 | Private wins (CLI handles this; not an error) |

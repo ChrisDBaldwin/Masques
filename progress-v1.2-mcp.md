@@ -17,7 +17,7 @@ _(written at exit)_
 - [x] **M4** — `don("Codesmith", intent?)` returns composed identity block (lens+context). ✅ +Intent.
 - [x] **M5** — Each masque exposed as MCP prompt; `prompts/get` returns composed identity. ✅ 39 prompts.
 - [x] **M6** — `score` invokes local judge, returns two-layer reaction. ✅ status ok, Layer A+B.
-- [ ] **M7** — One authoritative compose: plugin shells out to `masque` CLI; parity check.
+- [x] **M7** — One authoritative compose: plugin shells out to `masque` CLI; parity check. ✅ 9/9 parity.
 - [ ] **M8** — Docs show registering local server in a real MCP client, verified.
 
 ### Phase B/C (DESIGN ONLY — deepen beads)
@@ -88,3 +88,22 @@ $ FastMCP Client (in-memory + StdioTransport):
     resource masque://catalog count 39; masque://Witness → Witness v0.2.0
 ```
 bd: masques-b83, masques-0gg, masques-vvw, masques-nsn closed.
+
+### Iteration 3 — masques-6sc/0mf: plugin adapter + parity (DONE → M7)
+- **6sc**: rewrote `commands/{don,list,inspect}.md` to shell out to the `masque` CLI instead of
+  re-deriving compose/list/inspect in prose. don.md Steps 2-4 collapse into `$MASQUE compose`
+  (stdout injected verbatim) + `--json` for session/spinner fields; list.md uses `$MASQUE list
+  --json`; inspect.md uses `$MASQUE inspect --json`. CLI located via `masque` on PATH (uv tool
+  install) or `uv run --project ${CLAUDE_PLUGIN_ROOT}/services/mcp masque` fallback (OQ3 documented).
+- **0mf**: `tests/test_parity.py` proves byte-identical compose across all three adapters —
+  CLI subprocess == `core.compose` == MCP server `don` tool — for Codesmith/Firekeeper/Mirror/
+  Witness, with and without intent (9 tests). Plugin == CLI by construction (commands inject CLI
+  stdout verbatim); this pins CLI == core == server, closing the chain.
+
+**Evidence:**
+```
+$ pytest services/mcp/tests → 30 passed (10 core + 11 server + 9 parity)
+$ CLAUDE_PLUGIN_ROOT=… uv run --project services/mcp masque compose Codesmith "demo"
+    → <masque-active name="Codesmith" version="0.2.0"> ... (the plugin's actual fallback path works)
+```
+bd: masques-6sc, masques-0mf closed.

@@ -10,24 +10,25 @@ Display all available masques that can be donned.
 
 ## Instructions
 
-1. **Read manifest files** from both locations (priority order):
+1. **List masques via the `masque` CLI** — the one authoritative catalog shared
+   by this plugin and the Masques MCP server (PRD v1.2 M7). Do not read the
+   manifests directly; the CLI merges private over bundled for you.
 
-   **Private manifest:**
-   - Path: `${MASQUES_HOME:-~/.masques}/manifest.yaml`
+   Locate the CLI (`$MASQUE`): use `masque` if on `PATH` (installed via
+   `uv tool install "${CLAUDE_PLUGIN_ROOT}/services/mcp"`), otherwise
+   `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masque`.
 
-   **Shared manifest:**
-   - Path: `${CLAUDE_PLUGIN_ROOT}/personas/manifest.yaml`
+   ```bash
+   $MASQUE list --json
+   ```
 
-2. **Parse each manifest** and extract the `masques` array. Each entry has:
-   - `name` - Display name
-   - `version` - Version string
-   - `domain` - Domain area
-   - `tagline` - Brief description
+2. **Each entry** has `name`, `version`, `domain`, `tagline`, `has_rubric`, and
+   `source` (`private` or `shared`). The CLI has already merged the two
+   locations — private wins on a name collision; there is nothing to dedupe.
 
-3. **Merge masques from both sources:**
-   - Tag private masques with source `[private]`
-   - Tag shared masques with source `shared`
-   - If a masque name exists in both, the private version wins (skip the shared one)
+   _(If the CLI is unavailable, fall back to reading the manifests at
+   `${MASQUES_HOME:-~/.masques}/manifest.yaml` and
+   `${CLAUDE_PLUGIN_ROOT}/personas/manifest.yaml`.)_
 
 4. **Check for active masque:**
    - Read `.claude/masque.session.yaml` if it exists
