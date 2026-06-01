@@ -18,16 +18,16 @@ _(written at exit — see bottom of file until then)_
 
 ### Tier 1 — Always-on capture (Phase 1)
 - [x] **C1** — Collector runs always-on (`restart: unless-stopped`), survives reboot, no per-session start. **VERIFIED** (Iter 1).
-- [ ] **C2** — A never-donned `claude` session is captured to local JSONL with a detectable session boundary. Verify: query real logs.jsonl for baseline session.id.
-- [ ] **C3** — Masque and baseline sessions both present, distinguishable by a `masque` field (null for baseline). Verify: DuckDB attribution query over real data + sidecar map.
+- [x] **C2** — A never-donned `claude` session is captured to local JSONL with a detectable session boundary. **VERIFIED** (Iter 4).
+- [x] **C3** — Masque and baseline sessions both present, distinguishable by a `masque` field (null for baseline). **VERIFIED** (Iter 4).
 - [x] **C4** — `/audience status` reports house open/closed + count of captured sessions. **VERIFIED** (Iter 2).
 
 ### Tier 2 — Honest scoring (Phase 2)
-- [ ] **C5** — Each session assigned a `task_class` by heuristic; `unclassified` valid; baselines classify too. Verify: run classifier SQL over real data, paste class distribution.
-- [ ] **C6** — Mid-stream masque switch flagged `attribution: mixed`, excluded from lift. Verify: SQL over a synthesized mixed session.
-- [ ] **C7** — `/performance` emits Layer-A 7-point reaction for every scored session, from session one, no baseline required. Verify: run score.sql over real data, paste band.
-- [ ] **C8** — When a task-class has sufficient baseline sessions, `/performance` adds Layer-B lift as a delta vs baseline; below threshold shows only Layer A. Verify: SQL lift query + threshold gate.
-- [~] **C8b** — Rubric-bearing masque → Layer-A band from rubric read; rubric-less → activity fallback. **SCHEMA + example done (Iter 3)**; judge-interface wiring pending (score.sql rewrite).
+- [x] **C5** — Each session assigned a `task_class` by heuristic; `unclassified` valid; baselines classify too. Verify: run classifier SQL over real data, paste class distribution.
+- [x] **C6** — Mid-stream masque switch flagged `attribution: mixed`, excluded from lift. Verify: SQL over a synthesized mixed session.
+- [x] **C7** — `/performance` emits Layer-A 7-point reaction for every scored session, from session one, no baseline required. Verify: run score.sql over real data, paste band.
+- [x] **C8** — When a task-class has sufficient baseline sessions, `/performance` adds Layer-B lift as a delta vs baseline; below threshold shows only Layer A. Verify: SQL lift query + threshold gate.
+- [x] **C8b** — Rubric-bearing masque → Layer-A band from rubric read; rubric-less → activity fallback. **VERIFIED** (schema+example Iter 3; judge interface Iter 4).
 
 ### Tier 3 — Personal reputation (Phase 3) — DESIGN ONLY
 - [ ] **C9** — Scores persist across sessions in a personal reputation corpus. (design + bead)
@@ -82,3 +82,26 @@ _(written at exit — see bottom of file until then)_
   - firekeeper, mirror → VALID, rubric=False (rubric-less controls).
   - Full corpus: all **35** personas still valid — the optional field broke nothing.
 - C8b is partially met: the schema + worked example + a rubric-bearing/rubric-less pair exist and validate. The remaining half (a judge that actually emits a band from the rubric vs the activity fallback) is wired in the score.sql/judge iteration.
+
+### Iteration 4 — Two-layer scoring engine: sessions.sql + score.sql + judge.sh (beads ir8.5/ir8.6/ir8.7; C2,C3,C5,C6,C7,C8,C8b)
+The core of the product. Rewrote the judge from a single-masque 5-proxy verdict to the two-layer model over EVERY session.
+
+**`services/judge/sessions.sql` (rewrite):** enumerates all 68 sessions; per-session boundaries, tool-mix (tool_result only — `tool_name` also appears on tool_decision), api cost/tokens, friction. Heuristic `task_class` (D5, coarse/first-match/tunable-OQ2): research→review→ops→debug→greenfield→refactor→unclassified. Masque attribution via LEFT JOIN to an `attribution` table (sidecar map): 0 masques=baseline, 1=clean, >1=mixed (D2). Fixed `attr` macro to also read OTLP `doubleValue` (cost_usd is a double — was silently zeroing cost).
+
+**`services/judge/score.sql` (rewrite):** scores one target session. Layer A = 7-point band from an activity composite (0.35 success + 0.20 throughput + 0.20 cost + 0.25 low-friction) → perfect/great/good/neutral/bad/awful/detracting; OR a rubric band when an LLM/Witness judge supplies `rubric_band` (judge: rubric vs activity-fallback) — the D7 judge INTERFACE. Layer B = failed-tool-call lift vs the user's baseline corpus for the same task_class, GATED on baseline_min + clean attribution; otherwise honest `not_yet`/`n/a (baseline)`/`excluded (mixed)`. Old 5 proxies demoted to `supporting_signals`.
+
+**`services/judge/judge.sh` (rewrite):** builds the attribution table from the optional sidecar `services/collector/data/sessions.attribution.jsonl` (empty → all baseline), passes target_session/rubric_band/baseline_min, runs both SQL files.
+
+**`commands/don.md` (Step 5a added):** `/don` now appends `{session_id,masque,donned_at}` to the sidecar using `$CLAUDE_CODE_SESSION_ID` — which I verified equals the telemetry `session.id` (env value `7c8f7b8b…` → 205 matching events). This is the C3 capture mechanism, no OTEL plumbing needed. Append (not overwrite) so a second don in one session → `mixed`.
+
+**Verification (all real `logs.jsonl`, 68 sessions):**
+- **C5** task_class over all 68: refactor 18 / review 18 / unclassified 16 / ops 7 / greenfield 5 / debug 3 / research 1. total=classed=68 (every session classified; unclassified valid; all-baseline corpus still classifies). 
+- **C7** Layer-A band for all 68: perfect 21 / great 32 / good 11 / bad 3 / awful 1; **0 null bands** — a reaction from session one, spans the scale both ways.
+- **C2** baseline boundary: e.g. d204fe6f → baseline, 34.2 min, 4 prompts, 198 tools (don_time/doff_time present).
+- **C3** end-to-end on real data via the env-var→sidecar→judge chain: my live session (`$CLAUDE_CODE_SESSION_ID`) with an attribution line → `masque: Codesmith, attribution: clean`; a no-line session → `masque: null (baseline)`. Distinguishable by the masque field, null for baseline.
+- **C8** lift SHOWN: clean Codesmith refactor session vs baseline refactor corpus → `failed_tool_calls_lift_pct: +34.3` (15 baseline / 3 masque sessions, baseline_min=5). Threshold gate: same session with baseline_min=20 → `not_yet, baseline_sessions: 15 / 20 needed` (no misleading number).
+- **C6** mixed: a session with two distinct masque lines → `attribution: mixed`, `masque: null`, Layer B `excluded (mixed attribution — PRD D2)`.
+- **C8b** judge interface: `RUBRIC_BAND=perfect` → `reaction: perfect, judge: rubric` (activity_band still shown as `great` for transparency); no rubric → `judge: activity-fallback`. Combined with Iter-3 schema+codesmith rubric, both the rubric-bearing and rubric-less paths are exercised.
+- **cost fix** confirmed: session d204fe6f now `cost_usd: 9.50`, `cost_per_tool: 0.0489` (was 0.00 before the doubleValue fix).
+
+**Judgment call (flagged for review):** the task_class thresholds and the Layer-A activity weights/band cutoffs are first-pass and admittedly arbitrary (OQ2/OQ3). They are deliberately transparent and centralized so they can be tuned; correctness of the buckets is explicitly out of scope for v1.1 (the criteria require *a* class + *a* band for every session, which holds). Synthetic attribution was used ONLY to exercise C6/C8 mechanics (no masque sessions exist in the real corpus yet); C2/C3/C5/C7 used the real corpus unmodified.

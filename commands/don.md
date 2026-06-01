@@ -146,6 +146,29 @@ Write the session state using the Write tool to `.claude/masque.session.yaml`.
 
 **Note:** Do NOT store absolute paths - they break when the plugin version changes. The path can be reconstructed at runtime from name + source.
 
+### Step 5a: Record audience attribution (session → masque map)
+
+So the always-on audience can tell masque sessions from baseline ones (and
+flag mid-session masque switches), append one line to the attribution sidecar
+the judge reads. The OTEL telemetry session id is available as the
+`CLAUDE_CODE_SESSION_ID` env var and matches the `session.id` on every captured
+event, so this is a clean join key — no extra plumbing.
+
+Append (do NOT overwrite — multiple dons in one session is how a `mixed`
+session is detected, PRD D2) to
+`${CLAUDE_PLUGIN_ROOT}/services/collector/data/sessions.attribution.jsonl`:
+
+```bash
+printf '{"session_id":"%s","masque":"%s","donned_at":"%s"}\n' \
+  "$CLAUDE_CODE_SESSION_ID" "<MasqueName>" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  >> "${CLAUDE_PLUGIN_ROOT}/services/collector/data/sessions.attribution.jsonl"
+```
+
+This is the only thing that makes a session attributable to a masque; baseline
+sessions (no `/don`) simply never get a line, so the judge reads them as
+`masque: null`. The file stays on the machine — it is local attribution
+metadata, never forwarded (the Tier-2 contract carries only derived scores).
+
 ### Step 5b: Apply Spinner Verbs (if defined)
 
 If the masque defines a `spinnerVerbs` section:

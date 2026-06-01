@@ -1,147 +1,166 @@
--- score.sql — Compute 5 performance dimensions + composite score
+-- score.sql — Two-layer scoring for one captured session (PRD D4).
 --
--- Reads raw_logs and masque_sessions (from sessions.sql) and scores
--- events within the most recent session across 5 dimensions:
+-- Reads the `sessions` table (built by sessions.sql) and scores ONE target
+-- session:
 --
---   Quality (30%)        — tool success rate
---   Autonomy (25%)       — tool actions per user prompt
---   Productivity (20%)   — tool completions per minute
---   Token Efficiency (15%) — cache hit ratio
---   Cost Efficiency (10%)  — cost per tool completion
+--   Layer A — the house reaction (always, from session one): a 7-point band
+--     perfect · great · good · neutral · bad · awful · detracting.
+--     Derived from observable activity signals (success, throughput, cost,
+--     friction) — the honest home of the old five proxies. This answers
+--     "how did this session go?", NEVER "did the masque cause it?".
+--     If a rubric judge supplies a band (variable `rubric_band`), that band is
+--     used instead and `judge: rubric`; otherwise `judge: activity-fallback`.
 --
--- Output: YAML to stdout
+--   Layer B — lift (only when earned): the masque's mean vs the user's baseline
+--     corpus for the SAME task_class. Shown only when the baseline cohort has
+--     >= baseline_min sessions and the masque has >= 1 clean session of that
+--     class. Below threshold, or for baseline/mixed sessions, Layer B is
+--     suppressed (never a misleading number).
+--
+-- Inputs (set by judge.sh):
+--   target_session — session.id to score (default: most recent by don_time)
+--   rubric_band    — optional Layer-A band from an LLM/Witness judge (D7).
+--                    Empty string => activity fallback.
+--   baseline_min   — min baseline sessions per task_class before lift shows.
+--
+-- Output: YAML to stdout.
 
--- Score the most recent masque session
-WITH session AS (
-  SELECT * FROM masque_sessions ORDER BY don_time DESC LIMIT 1
+-- The supporting activity signals (DEMOTED from "the verdict" to context, D7).
+-- These are the old proxies, reused honestly as Layer-A inputs.
+WITH target AS (
+  SELECT * FROM sessions
+  WHERE session_id = NULLIF(getvariable('target_session'), '')
+  UNION ALL
+  SELECT * FROM sessions
+  WHERE NULLIF(getvariable('target_session'), '') IS NULL
+  ORDER BY don_time DESC
+  LIMIT 1
 ),
-
--- Count tool results within the session window
-tool_events AS (
+sig AS (
   SELECT
-    attr(attributes, 'success') AS success,
-    attr(attributes, 'tool_name') AS tool_name
-  FROM raw_logs, session s
-  WHERE event_type = 'claude_code.tool_result'
-    AND event_time BETWEEN s.don_time AND s.doff_time
+    t.*,
+    -- success rate 0-10
+    ROUND((t.n_tools_ok::DOUBLE / GREATEST(t.n_tools, 1)) * 10, 2) AS s_success,
+    -- throughput: tools_ok/min, 1/min => 10
+    LEAST(10, ROUND((t.n_tools_ok::DOUBLE / GREATEST(t.duration_min, 1)) * 10, 2)) AS s_throughput,
+    -- cost efficiency: $0 => 10, ~$0.10/tool => ~0
+    LEAST(10, GREATEST(0, ROUND(10 - (t.cost_usd / GREATEST(t.n_tools_ok, 1)) * 100, 2))) AS s_cost,
+    -- low friction: 1 - fail_rate, 0 fails => 10
+    ROUND((1 - t.fail_rate) * 10, 2) AS s_friction
+  FROM target t
 ),
-
--- Count user prompts within the session window
-prompt_events AS (
-  SELECT COUNT(*) AS prompt_count
-  FROM raw_logs, session s
-  WHERE event_type = 'claude_code.user_prompt'
-    AND event_time BETWEEN s.don_time AND s.doff_time
-),
-
--- Extract API request costs and token usage
-api_events AS (
-  SELECT
-    COALESCE(attr(attributes, 'cost_usd'), '0')::DOUBLE AS cost_usd,
-    COALESCE(attr(attributes, 'cache_read_tokens'), '0')::BIGINT AS cache_read_tokens,
-    COALESCE(attr(attributes, 'input_tokens'), '0')::BIGINT AS input_tokens,
-    COALESCE(attr(attributes, 'output_tokens'), '0')::BIGINT AS output_tokens
-  FROM raw_logs, session s
-  WHERE event_type = 'claude_code.api_request'
-    AND event_time BETWEEN s.don_time AND s.doff_time
-),
-
--- Aggregate metrics
-metrics AS (
-  SELECT
-    COUNT(*) AS total_tools,
-    COUNT(*) FILTER (WHERE success = 'true') AS tools_ok,
-    (SELECT GREATEST(prompt_count, 1) FROM prompt_events) AS prompts,
-    (SELECT GREATEST(duration_min, 1) FROM session) AS duration_min,
-    (SELECT masque_name FROM session) AS masque_name
-  FROM tool_events
-),
-
-api_agg AS (
-  SELECT
-    COALESCE(SUM(cost_usd), 0) AS total_cost,
-    COALESCE(SUM(cache_read_tokens), 0) AS total_cache_tokens,
-    COALESCE(SUM(input_tokens + output_tokens), 1) AS total_tokens
-  FROM api_events
-),
-
--- Compute dimension scores (0-10 scale)
-scores AS (
-  SELECT
-    m.masque_name,
-    m.duration_min,
-    m.total_tools,
-    m.tools_ok,
-    m.prompts,
-    a.total_cost,
-    a.total_cache_tokens,
-    a.total_tokens,
-
-    -- Quality: tool success rate -> 0-10
-    LEAST(10, ROUND((m.tools_ok::DOUBLE / GREATEST(m.total_tools, 1)) * 10, 1)) AS quality,
-
-    -- Autonomy: tool actions per prompt -> 0-10 (5+ tools/prompt = 10)
-    LEAST(10, ROUND((m.total_tools::DOUBLE / m.prompts) * 2, 1)) AS autonomy,
-
-    -- Productivity: tool completions per minute -> 0-10 (1+/min = 10)
-    LEAST(10, ROUND((m.tools_ok::DOUBLE / m.duration_min) * 10, 1)) AS productivity,
-
-    -- Token Efficiency: cache ratio -> 0-10
-    LEAST(10, ROUND((a.total_cache_tokens::DOUBLE / GREATEST(a.total_tokens, 1)) * 10, 1)) AS token_efficiency,
-
-    -- Cost Efficiency: inverse cost per tool -> 0-10
-    -- $0 = 10, $0.01/tool = 8, $0.05/tool = 5, $0.10+/tool = 2
-    LEAST(10, GREATEST(0, ROUND(
-      10 - (a.total_cost / GREATEST(m.tools_ok, 1)) * 100,
-    1))) AS cost_efficiency
-  FROM metrics m, api_agg a
-),
-
--- Compute composite and recommendation
-final AS (
+activity AS (
   SELECT
     *,
-    ROUND(
-      quality * 0.30 +
-      autonomy * 0.25 +
-      productivity * 0.20 +
-      token_efficiency * 0.15 +
-      cost_efficiency * 0.10,
-    1) AS composite,
+    -- Layer-A activity composite (0-10). Weighted toward "did the work land and
+    -- stick" (success + low friction) over raw speed. Tunable.
+    ROUND(0.35*s_success + 0.20*s_throughput + 0.20*s_cost + 0.25*s_friction, 2) AS activity_score
+  FROM sig
+),
+band AS (
+  SELECT
+    *,
+    -- activity -> 7-point fallback band
     CASE
-      WHEN (quality * 0.30 + autonomy * 0.25 + productivity * 0.20 +
-            token_efficiency * 0.15 + cost_efficiency * 0.10) >= 7 THEN 'keep'
-      WHEN (quality * 0.30 + autonomy * 0.25 + productivity * 0.20 +
-            token_efficiency * 0.15 + cost_efficiency * 0.10) >= 4 THEN 'review'
-      ELSE 'doff'
-    END AS recommendation
-  FROM scores
+      WHEN activity_score >= 9.0 THEN 'perfect'
+      WHEN activity_score >= 7.5 THEN 'great'
+      WHEN activity_score >= 6.0 THEN 'good'
+      WHEN activity_score >= 4.5 THEN 'neutral'
+      WHEN activity_score >= 3.0 THEN 'bad'
+      WHEN activity_score >= 1.5 THEN 'awful'
+      ELSE 'detracting'
+    END AS activity_band
+  FROM activity
+),
+layerA AS (
+  SELECT
+    *,
+    NULLIF(getvariable('rubric_band'), '') AS rubric_band_in,
+    CASE WHEN NULLIF(getvariable('rubric_band'), '') IS NOT NULL
+         THEN getvariable('rubric_band') ELSE activity_band END AS reaction,
+    CASE WHEN NULLIF(getvariable('rubric_band'), '') IS NOT NULL
+         THEN 'rubric' ELSE 'activity-fallback' END AS judge
+  FROM band
+),
+-- Layer B: baseline + masque cohorts for the target's task_class.
+cohorts AS (
+  SELECT
+    (SELECT task_class FROM layerA) AS tc,
+    (SELECT masque     FROM layerA) AS mq,
+    (SELECT attribution FROM layerA) AS attr_target,
+    (SELECT COUNT(*) FROM sessions WHERE attribution='baseline'
+        AND task_class=(SELECT task_class FROM layerA)) AS n_base,
+    (SELECT AVG(fail_rate) FROM sessions WHERE attribution='baseline'
+        AND task_class=(SELECT task_class FROM layerA)) AS base_fail,
+    (SELECT COUNT(*) FROM sessions WHERE attribution='clean'
+        AND masque=(SELECT masque FROM layerA)
+        AND task_class=(SELECT task_class FROM layerA)) AS n_masque,
+    (SELECT AVG(fail_rate) FROM sessions WHERE attribution='clean'
+        AND masque=(SELECT masque FROM layerA)
+        AND task_class=(SELECT task_class FROM layerA)) AS masque_fail
+),
+lift AS (
+  SELECT
+    *,
+    -- lift is shown only when: target is a clean masque session, the baseline
+    -- cohort is large enough, and the masque has >=1 clean session of this class.
+    (attr_target = 'clean' AND mq IS NOT NULL
+       AND n_base >= TRY_CAST(getvariable('baseline_min') AS BIGINT)
+       AND n_masque >= 1) AS lift_ready,
+    -- fewer failed tool calls is positive lift (PRD's worked example)
+    CASE WHEN base_fail IS NOT NULL AND base_fail > 0
+         THEN ROUND((base_fail - masque_fail) / base_fail * 100, 1) END AS lift_fail_pct
+  FROM cohorts
 )
-
--- Output as YAML
-SELECT printf('masque: %s
-duration_min: %.0f
-dimensions:
-  quality: %.1f
-  autonomy: %.1f
-  productivity: %.1f
-  token_efficiency: %.1f
-  cost_efficiency: %.1f
-composite: %.1f
-recommendation: %s
-stats:
-  total_cost: %.2f
-  total_tools: %d
-  tools_ok: %d
+SELECT printf(
+'session: %s
+masque: %s
+attribution: %s
+task_class: %s
+duration_min: %.1f
+layer_a:
+  reaction: %s          # 7-point: perfect>great>good>neutral>bad>awful>detracting
+  judge: %s
+  activity_band: %s     # the activity-only fallback band (shown for transparency)
+  activity_score: %.2f  # 0-10, supporting signal — NOT a masque verdict
+layer_b:%s
+supporting_signals:     # demoted proxies (D7) — context, never the verdict
   tool_success_pct: %.0f
-  prompts: %d
-  total_tokens: %d
-  cache_tokens: %d',
-  masque_name, duration_min,
-  quality, autonomy, productivity, token_efficiency, cost_efficiency,
-  composite, recommendation,
-  total_cost, total_tools, tools_ok,
-  (tools_ok::DOUBLE / GREATEST(total_tools, 1)) * 100,
-  prompts, total_tokens, total_cache_tokens
+  tools: %d
+  tools_failed: %d
+  throughput_per_min: %.2f
+  cost_usd: %.2f
+  cost_per_tool: %.4f
+tool_mix: { read: %d, edit: %d, write: %d, bash: %d, search: %d, web: %d }',
+  b.session_id,
+  COALESCE(b.masque, 'null (baseline)'),
+  b.attribution,
+  b.task_class,
+  b.duration_min,
+  l_reaction.reaction, l_reaction.judge, b.activity_band, b.activity_score,
+  -- Layer B block: either a real lift line, or an honest "not yet" note.
+  CASE WHEN lift.lift_ready AND lift.lift_fail_pct IS NOT NULL THEN
+    printf('
+  status: shown
+  vs: your baseline corpus (same task_class)
+  failed_tool_calls_lift_pct: %+.1f   # positive = fewer failures than baseline
+  baseline_sessions: %d
+  masque_sessions: %d', lift.lift_fail_pct, lift.n_base, lift.n_masque)
+  WHEN b.attribution = 'baseline' THEN '
+  status: n/a (this IS a baseline session — nothing to lift against)'
+  WHEN b.attribution = 'mixed' THEN '
+  status: excluded (mixed attribution — multiple masques this session, PRD D2)'
+  ELSE printf('
+  status: not_yet
+  reason: baseline corpus too thin for task_class "%s"
+  baseline_sessions: %d / %s needed', b.task_class, lift.n_base, getvariable('baseline_min'))
+  END,
+  b.n_tools_ok::DOUBLE / GREATEST(b.n_tools,1) * 100,
+  b.n_tools, b.n_tools_fail,
+  b.s_throughput,
+  b.cost_usd,
+  b.cost_usd / GREATEST(b.n_tools_ok,1),
+  b.n_read, b.n_edit, b.n_write, b.n_bash, b.n_search, b.n_web
 ) AS yaml_output
-FROM final;
+FROM band b, layerA l_reaction, lift
+WHERE b.session_id = l_reaction.session_id;
