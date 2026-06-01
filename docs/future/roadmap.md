@@ -194,3 +194,23 @@ Mirrors the whiteboard sketch:
 ## Not committing yet
 
 This roadmap is a working draft. Refine the open questions, adjust phasing, then move to beads epics and begin Phase 0.
+
+---
+
+## Update 2026-06-01 — the MCP-server route to this vision
+
+The agent-factory/spawn model above is one way to reach paid masques. A simpler
+delivery route emerged: ship Masques as an **MCP server** (see
+`docs/prd-v1.2-mcp-server.md`). The monetization then gates **MCP tool calls**
+rather than spawning processes — cleaner than the escrow-on-don/settle-on-doff
+design in `tigerbeetle-integration.md`.
+
+Refined (still deferred) payment vision:
+- **Authors are paid per masque use** — the marketplace goal, unchanged.
+- Hosted on `masques.ai`, alongside the OpenGander MCP stack (SSE + OAuth2).
+- Micropayments via **Solana or TigerBeetle**, with credit-card/wallet ↔
+  subscription **budget escrow accounts**: a user funds a budget; dons draw from
+  it; authors get paid out. OAuth identity (Phase B) keys both reputation and the
+  budget account.
+- Phase A (the local, free, stdio MCP server) ships with **none** of this. Payment
+  is Phase C, design-only, and stays in `docs/future/`.
