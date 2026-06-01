@@ -11,12 +11,12 @@ _(written at exit)_
 ## Acceptance Criteria
 
 ### Phase A (BUILD)
-- [ ] **M1** — Local FastMCP stdio server starts; an MCP client lists its tools.
-- [ ] **M2** — `list_masques` returns full catalog (≥35), private over bundled.
-- [ ] **M3** — `inspect_masque("Firekeeper")` returns lens/context/attributes/rubric.
-- [ ] **M4** — `don("Codesmith", intent?)` returns composed identity block (lens+context).
-- [ ] **M5** — Each masque exposed as MCP prompt; `prompts/get` returns composed identity.
-- [ ] **M6** — `score` invokes local judge, returns two-layer reaction.
+- [x] **M1** — Local FastMCP stdio server starts; MCP client lists its tools. ✅ Inspector CLI + stdio.
+- [x] **M2** — `list_masques` returns full catalog (≥35), private over bundled. ✅ 39 (35+4).
+- [x] **M3** — `inspect_masque("Firekeeper")` returns lens/context/attributes/rubric. ✅ rubric 1534ch.
+- [x] **M4** — `don("Codesmith", intent?)` returns composed identity block (lens+context). ✅ +Intent.
+- [x] **M5** — Each masque exposed as MCP prompt; `prompts/get` returns composed identity. ✅ 39 prompts.
+- [x] **M6** — `score` invokes local judge, returns two-layer reaction. ✅ status ok, Layer A+B.
 - [ ] **M7** — One authoritative compose: plugin shells out to `masque` CLI; parity check.
 - [ ] **M8** — Docs show registering local server in a real MCP client, verified.
 
@@ -62,3 +62,29 @@ $ pytest tests/test_core.py → 10 passed
 ```
 Note: M2/M3/M4 satisfied at the CORE/CLI layer; will re-verify through the MCP server (b83) for M1–M4.
 bd: masques-oru closed.
+
+### Iteration 2 — masques-b83/0gg/vvw/nsn: FastMCP stdio server (DONE → M1–M6)
+Built `server.py` (mirrors OG server.py minus ClickHouse/auth) + `session.py` (soft local
+session state, D5-honest). All four server-wiring beads done together (they share server.py):
+- **b83** tools: `list_masques`, `inspect_masque(name)`, `don(name,intent?)`, `doff()`.
+- **0gg** prompts: one `don-<stem>` per masque (39), `prompts/get` → composed identity.
+- **vvw** resources: `masque://catalog` + `masque://{name}` template.
+- **nsn** `score(session_id?)` → `core.score` → `judge.sh`, LOCAL-ONLY (D4), degrades gracefully.
+- `tests/test_server.py` — 11 client-level tests. Full suite: **21 passed**.
+
+**Evidence (real stdio + canonical MCP Inspector CLI):**
+```
+$ npx @modelcontextprotocol/inspector --cli .venv/bin/masques-mcp --method tools/list
+    → tools: [doff, don, inspect_masque, list_masques, score]            # M1
+$ … --method prompts/list → prompt count: 39                            # M5
+$ … --method tools/call --tool-name don --tool-arg name=Codesmith
+    → name Codesmith 0.2.0; block: <masque-active name="Codesmith" version="0.2.0">  # M4
+$ FastMCP Client (in-memory + StdioTransport):
+    M2 list_masques count: 39
+    M3 inspect Firekeeper: v0.3.0 has_rubric True rubric_len 1534
+    M4 don Codesmith: Lens+Context+Intent present; doff: doffed
+    M5 prompt don-firekeeper → <masque-active name="Firekeeper" version="0.3.0">
+    M6 score status: ok; report head: session: 56626d73-…
+    resource masque://catalog count 39; masque://Witness → Witness v0.2.0
+```
+bd: masques-b83, masques-0gg, masques-vvw, masques-nsn closed.
