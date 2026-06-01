@@ -20,7 +20,7 @@ _(written at exit — see bottom of file until then)_
 - [x] **C1** — Collector runs always-on (`restart: unless-stopped`), survives reboot, no per-session start. **VERIFIED** (Iter 1).
 - [ ] **C2** — A never-donned `claude` session is captured to local JSONL with a detectable session boundary. Verify: query real logs.jsonl for baseline session.id.
 - [ ] **C3** — Masque and baseline sessions both present, distinguishable by a `masque` field (null for baseline). Verify: DuckDB attribution query over real data + sidecar map.
-- [ ] **C4** — `/audience status` reports house open/closed + count of captured sessions. Verify: close-read spec; run the status bash against real data.
+- [x] **C4** — `/audience status` reports house open/closed + count of captured sessions. **VERIFIED** (Iter 2).
 
 ### Tier 2 — Honest scoring (Phase 2)
 - [ ] **C5** — Each session assigned a `task_class` by heuristic; `unclassified` valid; baselines classify too. Verify: run classifier SQL over real data, paste class distribution.
@@ -63,3 +63,12 @@ _(written at exit — see bottom of file until then)_
   - `docker inspect` → `RestartCount=0 Health=healthy Running=true`; last healthcheck exec `exit=0` (busybox probe genuinely runs in-container).
   - `docker logs` → no ClickHouse errors; pipelines started; debug exporter actively shows live tool_result events from THIS session (dogfooding — Claude Code OTEL env is configured and flowing to the local sink).
 - **"Survives reboot" caveat (honest):** guaranteed by `restart: unless-stopped` + Docker-Desktop-start-on-login; I cannot physically reboot mid-session to prove it. Mechanism is correct and standard; documented in otel-setup. Not claiming an observed reboot.
+
+### Iteration 2 — C4 + /audience seat-once rewrite (bead masques-ir8.2)
+- **`commands/audience.md` rewritten** from per-session summon (`start`/`stop`/`config`) to seat-once lifecycle: `seat` (open the house once: `docker compose up -d --build`, verify `:13133` health, verify Claude Code OTEL env in `~/.claude/settings.json`, remind to enable Docker start-on-login), `dismiss` (close the house entirely), `status` (open/closed + captured session count + env), `logs`. `start`/`stop` kept as deprecated aliases so cross-command refs don't break. Folded the old `config` env block into `seat`.
+- **`services/judge/captured.sh`** added — counts distinct `session.id` in the local JSONL (masque + baseline). Exit codes: 0 ok, 2 duckdb-missing, 3 no-data, so `/audience status` can degrade gracefully.
+- **Verification (real, live):** ran the exact `status` action commands against the running collector:
+  - `docker ps … {{.Status}}` → `Up 3 minutes (healthy)` (house OPEN).
+  - `curl :13133/` → `200`.
+  - `./services/judge/captured.sh` → `68`, exit 0 (68 sessions in the real corpus).
+- **Cross-command trace:** audience.md references only existing paths (`services/judge/captured.sh`, `services/collector/data/logs.jsonl`, `docs/otel-setup.md`). The OTEL env block matches the keys actually present in the captured telemetry.
