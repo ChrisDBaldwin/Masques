@@ -10,7 +10,80 @@ Source of truth for acceptance: PRD §Acceptance Criteria (C1–C10, P1–P4, C8
 ---
 
 ## MORNING REPORT
-_(written at exit — see bottom of file until then)_
+
+**Bottom line:** Every Phase-1 and Phase-2 acceptance criterion is **done and
+verified on real data** — C1, C2, C3, C4, C5, C6, C7, C8, C8b, plus the
+cross-cutting P1, P2, P3, P4. Phases 3 & 4 are decomposed into design-only beads
+with build-ready notes. Branch `prd-v1.1-persistent-audience` is pushed; tree is
+clean. 8 commits. The always-on audience is genuinely seated and was scoring my
+own overnight session live.
+
+### Done & verified (evidence in the iteration log below)
+- **C1 always-on collector** (Iter 1): root-caused a live **crash-loop** — the
+  ClickHouse exporter was a hard startup dependency on an unreachable remote,
+  taking the local sink down with it. Made the collector **local-only by
+  default** + added a busybox-based `:13133` healthcheck. Verified live:
+  `Up (healthy)`, RestartCount=0, HTTP 200.
+- **C4 /audience seat-once** (Iter 2): rewrote to `seat`/`dismiss`/`status`/`logs`;
+  `status` reports house-open + captured count (verified live: 68 sessions).
+- **C8b schema** (Iter 3): optional `rubric` field + codesmith example; validated
+  with jsonschema (all 35 personas still valid, pure addition).
+- **C2/C3/C5/C6/C7/C8/C8b judge** (Iter 4): rewrote sessions.sql + score.sql +
+  judge.sh into the **two-layer model** over all 68 real sessions. Task-class for
+  all 68; a 7-point band for all 68 (0 nulls); real-session masque-vs-baseline
+  attribution; lift **+34.3%** shown with a working threshold gate; mixed
+  excluded; rubric-band override. Found+fixed a real cost bug (OTLP doubleValue).
+- **/performance** (Iter 5): two-layer output, field-trace verified against live
+  judge YAML.
+- **Docs P3/P4** (Iter 6): otel-setup + evaluation rewritten; README + vision lead
+  with measurable identity; future/ retains the deferred vision.
+- **P1/P2** (Iter 7): collector holds **no outbound** clickhouse connections
+  (netstat); derived signal is content-free.
+
+### Blocked / deferred (by design, not stuck)
+- Nothing is blocked on an external dependency. The 4 "blocked" beads in `bd
+  stats` are the Phase-3/4 **design-only** items correctly gated behind Phase 3.
+- Design-only, build-ready next: `masques-ir8.10` (personal reputation
+  persistence — has a concrete DuckDB schema + ingest design), `ir8.11`
+  (/reputation view), `ir8.12` (masques.ai forwarding), `ir8.13` (global pool).
+- Follow-ups I filed: `masques-tiu` (live rubric/Witness judge that produces
+  `RUBRIC_BAND` — the interface is already wired), `masques-0rd` (validate the
+  live don→score loop in a fresh session). `masques-hxr` reframed to an optional
+  OTEL-enrichment enhancement (superseded by the sidecar).
+
+### The single most important decision to review
+**Masque attribution is done with a local sidecar map keyed on
+`CLAUDE_CODE_SESSION_ID`, not by enriching OTEL spans (which is what the original
+`masques-hxr` proposed).** I verified that `CLAUDE_CODE_SESSION_ID` is exactly
+equal to the telemetry `session.id`, so `/don` appending one line to
+`services/collector/data/sessions.attribution.jsonl` gives the judge a clean
+join with zero OTEL plumbing — and it's the load-bearing mechanism for the entire
+clean/mixed/baseline distinction and therefore for lift. It's simpler and was
+verified end-to-end on my real session. The tradeoff: the masque tag lives in a
+local sidecar rather than *on the wire*, so a future forwarder must join locally
+before emitting the Tier-2 signal (fine — forwarding is Phase 4 anyway). If you'd
+rather the masque ride directly on OTEL resource attributes, that's `masques-hxr`
+(kept open as the optional upgrade). **Secondary flags:** (a) the README/vision
+reframe pushes "observability is the core" over the very recent mvp "minimal
+representation tool" positioning — I kept both truths but the emphasis shifted;
+(b) the collector is now local-only by default, so the old ironwood ClickHouse
+pipeline no longer receives data (it was crash-looping anyway).
+
+### Suggested next session's first move
+Run **`masques-0rd`**: in a fresh `claude` session, `/don codesmith`, do a little
+real work, then `/performance` — confirm `attribution: clean, masque: Codesmith`
+on the true session with no synthetic map. That closes the one remaining gap
+between "mechanism verified piecewise" and "verified in a live don→score loop,"
+and it's a 10-minute dogfood. Then pick up `masques-ir8.10` to make scores persist.
+
+### Caveats I want to be honest about
+- The task-class thresholds and Layer-A weights/cutoffs are **first-pass and
+  deliberately arbitrary** (OQ2/OQ3) — centralized for tuning. The criteria
+  require *a* class and *a* band for every session (met), not "correct" buckets.
+- "Survives reboot" (C1) is by `restart: unless-stopped` + Docker-start-on-login;
+  I could not physically reboot to observe it. Mechanism is standard.
+- C6/C8 *mechanics* used a synthetic attribution map (no masque sessions exist in
+  the real corpus yet); C2/C3/C5/C7 used the real corpus unmodified.
 
 ---
 
