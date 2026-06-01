@@ -38,8 +38,8 @@ _(written at exit — see bottom of file until then)_
 - [ ] **P2** — Forwarded payload contains only the Tier-2 derived signal (no prompts/tool I/O/code). Verify: document the contract + strip path.
 
 ### Tier 5 — Documentation reframe
-- [ ] **P3** — `docs/vision.md`, `docs/evaluation.md`, `README` lead with measurable identity / persistent audience. Verify: close-read.
-- [ ] **P4** — `docs/future/` retains payment/factory/marketplace vision, marked deferred. Verify: ls + close-read.
+- [x] **P3** — `docs/vision.md`, `docs/evaluation.md`, `README` lead with measurable identity / persistent audience. Verify: close-read.
+- [x] **P4** — `docs/future/` retains payment/factory/marketplace vision, marked deferred. Verify: ls + close-read.
 
 ---
 
@@ -109,3 +109,11 @@ The core of the product. Rewrote the judge from a single-masque 5-proxy verdict 
 ### Iteration 5 — /performance two-layer rewrite (bead masques-ir8.8)
 - **`commands/performance.md` rewritten** to surface Layer A always and Layer B only when `layer_b.status: shown`; otherwise print the honest one-line reason (`not_yet` / `n/a (baseline)` / `excluded (mixed)`) — never a fabricated number. Old 5 proxies reframed as a subordinate `supporting_signals` line. Documents the rubric-judge knob (`RUBRIC_BAND`) and `BASELINE_MIN`. Leads with the 7-point reaction.
 - **Verification (field-name trace, end to end):** ran the spec's exact Step-3 command `TARGET_SESSION="$CLAUDE_CODE_SESSION_ID" judge.sh`; every YAML key the spec tells the model to read (`layer_a.{reaction,judge,activity_band,activity_score}`, `layer_b.status`, `supporting_signals.*`, `tool_mix`, `attribution`, `task_class`) is present in the real output. Live result: this session scored `good` (6.04) — the composite dropped from `great` earlier as the session grew to 570 min / 66 tools / $7.36 / 1.12 tools per min, i.e. scoring tracks reality.
+
+### Iteration 6 — Documentation reframe (beads ir8.3, ir8.9; P3, P4)
+- **`docs/otel-setup.md` (ir8.3)** rewritten around seat-once always-on: why always-on, privacy posture (local-only default), seat-once Step 1–2, the sidecar attribution mechanism, two-layer scoring pointer, deferred no-Docker/forwarding. Removed the old per-session `docker run` / "use /audience start" framing.
+- **`docs/evaluation.md` (ir8.9)** rewritten to the two-layer rubric model: Layer A (rubric judge or activity fallback, 7-point), Layer B (lift, gated), clean-attribution-without-factory, task-class, judge-is-a-role, proxies demoted, real output example, Phase-3 persistence note. Leads with "Measurable Identity."
+- **P3** — `README.md` now leads with a "Measurable Identity — the differentiated half" section (audience always seated, 7-point reaction + lift); reframed the Services tables from "optional telemetry" to "the audience that measures it, local by default"; replaced the stale 5-dimension judge section with the two-layer model. `docs/vision.md` gains a top "The Thesis: Observability Is the Core" section. `docs/evaluation.md` leads with measurable identity. **Verified by close-read + grep:** no stale `/audience start|stop` or "5 dimensions / keep-review-doff" framing remains in README/docs/commands (the only matches are inside the PRD, which is correctly describing the OLD state it replaces). All cross-reference targets exist.
+- **P4** — `docs/future/` retains `roadmap.md` (agent-factory pivot) + `tigerbeetle-integration.md` (payments) + a `README.md` that explicitly marks them deferred and distinct from the shipping product. No change needed; verified by ls + close-read. (Left intact per scope: do not revive.)
+
+**Judgment call (flagged for review):** the README/vision reframe pushes "observability is the core" to the top, which is a tonal shift from the very recent mvp commit `c7c2d7b` ("reframe around the minimal representation tool"). I kept the zero-infra don/doff truth intact and framed the audience as the *differentiated* half rather than replacing the representation framing — but this is the one place the PRD's thesis and the mvp positioning pull against each other. Worth a glance to confirm the balance is right.

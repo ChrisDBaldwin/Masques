@@ -12,6 +12,22 @@ Agents today get configured through scattered mechanisms: system prompts, MCP se
 
 It's a representation layer you slap on top of any agent: don a masque to adopt its lens and context, do the work, then doff to step backstage and return to baseline. The core needs **zero infrastructure** — a masque is just YAML, and identity lives in a session file. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge, credentials, and tools.
 
+## Measurable Identity — the differentiated half
+
+A masque without an audience is just a system prompt. The interesting question
+isn't that you *wore* a costume — it's whether wearing it made the work **better**.
+
+So the audience is **always seated**: a local, always-on observer captures every
+session — masque or baseline — and scores it two ways. From session one you get a
+**7-point house reaction** (`perfect · great · good · neutral · bad · awful ·
+detracting`) — an honest read of how the session went. As your own baseline corpus
+thickens, the audience adds **lift**: how a masque compares to *your* no-masque
+baseline on the *same kind of work* — *"Codesmith runs +1.4 on your refactor
+work."* A difference, never a vanity number, and it never leaves your machine.
+
+This is the part that makes masques more than prompt presets. See
+[`docs/evaluation.md`](docs/evaluation.md) and [`docs/otel-setup.md`](docs/otel-setup.md).
+
 ## How It Works
 
 The core loop needs no databases, no services, no credentials — just YAML and a session file:
@@ -22,12 +38,18 @@ Work  → operate with the masque's framing
 Doff  → clear the session, return to baseline Claude
 ```
 
-That's the whole product. **Optionally**, OTEL telemetry can score how a session went — entirely opt-in, with two databases, neither required to use a masque:
+That don/doff loop needs zero infrastructure. The **audience** that measures it
+(above) runs locally and stays on your machine:
 
-| Engine | Role | Data |
-|--------|------|------|
-| **ClickHouse** | Analytics *(optional)* | Telemetry from OTEL collector |
-| **DuckDB** | Local scoring *(optional)* | Session performance from OTEL JSONL exports |
+| Component | Role | Where |
+|-----------|------|-------|
+| **OTEL collector** | Always-on capture of every session → local JSONL | Local Docker, seated once (`/audience seat`) |
+| **DuckDB judge** | Two-layer scoring (reaction + lift) | Local, ephemeral |
+| **ClickHouse** | Remote reputation store *(opt-in, deferred — Tier 3)* | masques.ai, off by default |
+
+The local collector + DuckDB are the measurable-identity layer. Remote forwarding
+to masques.ai is strictly opt-in and ships only derived scores — never your
+prompts, code, or tool I/O.
 
 ## Quick Start
 
@@ -81,31 +103,30 @@ See [Schema Reference](docs/schema.md) for the full specification.
 
 ### OTEL Collector
 
-Receives metrics and logs from Claude Code sessions via OTLP, exports to ClickHouse (remote analytics) and local JSONL (DuckDB scoring).
+The always-on audience. Receives metrics and logs from every Claude Code session via OTLP and writes them to local JSONL. **Local-only by default** — nothing leaves the machine. Seated once and left running:
 
 ```bash
 cd services/collector
-docker compose up -d      # Start collector
-# Configure via .env — see .env.example
+docker compose up -d --build   # or: /audience seat — seat the house once
 ```
 
 ### Performance Judge (DuckDB)
 
-Scores masque sessions across 5 dimensions from local OTEL exports:
+Reads the local OTEL exports and emits the **two-layer** score (see [evaluation](docs/evaluation.md)):
 
-- **Quality** (30%) — tool success rate
-- **Autonomy** (25%) — agent actions per user prompt
-- **Productivity** (20%) — tool completions per minute
-- **Token Efficiency** (15%) — cache hit ratio
-- **Cost Efficiency** (10%) — cost per tool completion
+- **Layer A — house reaction** (always): a 7-point verdict — `perfect · great · good · neutral · bad · awful · detracting` — from a rubric judge (if the masque carries a `rubric`) or an activity fallback.
+- **Layer B — lift** (once earned): the masque's delta vs *your* baseline corpus on the same task-class — never a bare number, never below threshold.
+
+The old activity proxies (tool success, throughput, cost…) are demoted to *supporting signals* — context, not the verdict.
 
 ```bash
-services/judge/judge.sh   # Outputs YAML score to stdout
+services/judge/judge.sh   # Outputs the two-layer YAML score to stdout
+# or: /performance
 ```
 
-### ClickHouse (optional)
+### ClickHouse (opt-in, deferred)
 
-An optional remote analytics sink for OTEL data. The collector ships metrics and logs to ClickHouse and auto-creates its schema (`create_schema: true`) — no migrations to run. Configure via the collector's `.env`; leave it unset to keep everything local.
+The remote reputation store (Tier 3, masques.ai). **Off by default** and not wired into the shipping collector — the local audience never depends on it. When enabled it must forward only the derived Tier-2 signal (scores + coarse metadata), never prompts, code, or tool I/O. See the [PRD](docs/prd-v1.1-persistent-audience.md).
 
 ## TUI — Masque
 
