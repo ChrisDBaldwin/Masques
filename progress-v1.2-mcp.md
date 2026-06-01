@@ -3,8 +3,53 @@
 > Monotonic memory for the Phase A build (M1–M8) + Phase B/C design deepening.
 > Source: docs/prd-v1.2-mcp-server.md · Epic: masques-zyu
 
-## MORNING REPORT
-_(written at exit)_
+## MORNING REPORT (2026-06-01)
+
+**Phase A (M1–M8) is COMPLETE and VERIFIED. Phase B/C design beads carry buildable notes.**
+Branch `prd-v1.2-mcp-server` pushed; `git status` clean. No PR opened (left for you).
+
+### Done + verified (evidence in iteration log below)
+- **One tool-agnostic core** (`services/mcp/`, package `masques_mcp`) + `masque` CLI — the single
+  authoritative compose. `resolve` (private over bundled), `compose` (the `<masque-active>` block),
+  `list`, `inspect`, `score` (local judge wrapper).
+- **FastMCP stdio server** (`masques-mcp`): tools `list_masques`/`inspect_masque`/`don`/`doff`/`score`,
+  39 `don-<name>` prompts, `masque://catalog` + `masque://{name}` resources.
+- **M1** stdio server lists tools in MCP Inspector CLI **and** Claude Code (`✓ Connected`).
+- **M2** 39 masques (35 bundled + 4 private), private precedence proven.
+- **M3** `inspect_masque(Firekeeper)` → lens+context+attributes+rubric (1534-char rubric).
+- **M4** `don(Codesmith, intent)` → identity block w/ Lens+Context+Intent.
+- **M5** 39 prompts; `prompts/get don-firekeeper` → composed identity.
+- **M6** `score` → local judge two-layer reaction (status ok, Layer A `great`, Layer B n/a baseline).
+- **M7** plugin commands shell out to the CLI; parity test pins CLI == core == server (9 tests).
+- **M8** `docs/mcp-server.md` + verified `claude mcp add masques` → `✓ Connected`.
+- **30 tests pass** (10 core + 11 server + 9 parity).
+- **Phase B/C** (46z, an2, og3, c3k, ass, 9n1): deepened `bd --design` notes — concrete OG file
+  maps, Postgres DDL, retargeting deltas, M9/M10 hooks, Stripe webhook reuse, TigerBeetle escrow
+  model. Left OPEN (design-only, not built).
+
+### Blocked / not built (by design — Phase B/C is DESIGN ONLY per the PRD)
+- None blocked. All Phase B/C work is intentionally design-only; no OAuth/Postgres/Stripe/Solana
+  code was written, per scope. The six beads are design-ready for a future build.
+
+### Single most important decision to review
+**OQ3 — how the plugin invokes the CLI.** The commands now call `masque` on PATH (via
+`uv tool install`) with a `uv run --project ${CLAUDE_PLUGIN_ROOT}/services/mcp` fallback. This
+assumes the plugin may depend on a local Python/uv install. If you'd rather ship a self-contained
+binary (PyInstaller / `uv tool`), that changes the install story in `commands/*.md` and
+`docs/mcp-server.md`. Verified the `uv run` fallback works; the PATH path needs `uv tool install`.
+
+### Suggested next first move
+Decide OQ3 (above). If "local uv install is fine," Phase A is shippable as-is — review the diff and
+merge. If not, the only change is the CLI-resolution snippet in the three command files + the doc.
+Then Phase B is a clean fan-out from the `og3` design note (lift OG `server.py` auth scaffold onto
+the existing `services/mcp/server.py`, gated by a `hosted` flag).
+
+### Note on the live MCP registration
+I registered `masques` in **your** Claude Code local config (`claude mcp add`) to verify M8. It
+points at `uv run --project /Users/chris/git/masques/services/mcp masques-mcp` and is connected.
+Remove with `claude mcp remove masques -s local` if you don't want it.
+
+---
 
 ---
 
@@ -21,12 +66,12 @@ _(written at exit)_
 - [x] **M8** — Docs show registering local server in a real MCP client, verified. ✅ Claude Code ✓ Connected.
 
 ### Phase B/C (DESIGN ONLY — deepen beads)
-- [ ] **D-46z** — Postgres identity/auth store design notes
-- [ ] **D-an2** — Clone OAuth authz → app.masques.ai design notes
-- [ ] **D-og3** — Hosted resource server design notes
-- [ ] **D-c3k** — Deploy design notes
-- [ ] **D-ass** — Stripe subscription (C1) design notes
-- [ ] **D-9n1** — Author payouts (C2) design notes
+- [x] **D-46z** — Postgres identity/auth store design notes (DDL, CH→PG divergence, revocation map, docker-compose)
+- [x] **D-an2** — Clone OAuth authz → app.masques.ai design notes (per-file clone map, retargeting deltas)
+- [x] **D-og3** — Hosted resource server design notes (verbatim lifts, score-absent, reputation() add, M9/M10)
+- [x] **D-c3k** — Deploy design notes (Dockerfile/ALB mirror, DNS, env/config matrix, M9 invariant)
+- [x] **D-ass** — Stripe subscription (C1) design notes (OG webhook reuse, entitlement toggle, free/paid split)
+- [x] **D-9n1** — Author payouts (C2) design notes (TB escrow ledger, per-call metering hook, Solana vs TB)
 
 ---
 
