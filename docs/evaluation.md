@@ -156,6 +156,6 @@ Layers A and B score *sessions*. Making the verdict **accumulate** —
 per-(masque, task-class) lift with a sample count, across many sessions and
 machines, so "Codesmith beats my baseline on refactors" becomes a standing fact
 — is Phase 3 (a persistent personal corpus). The opt-in global community pool,
-with normalization and anti-gaming, is Phase 4. Both are designed in the
-[PRD](prd-v1.1-persistent-audience.md); the payment/marketplace economy remains
-deferred in [`docs/future/`](future/).
+with normalization and anti-gaming, is Phase 4. Both are designed but not yet
+built; the payment/marketplace economy remains deferred in
+[`docs/future/`](future/).

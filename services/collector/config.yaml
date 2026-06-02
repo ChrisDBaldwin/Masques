@@ -47,7 +47,7 @@ exporters:
   # dependency — the whole collector crash-looped and took the local file sink
   # down with it, defeating "always-on" (PRD D1). It is now opt-in only.
   #
-  # To enable forwarding (deferred to Phase 4 — see docs/prd-v1.1-persistent-audience.md):
+  # To enable forwarding (deferred — opt-in remote reputation, off by default):
   #   1. Copy .env.example -> .env and set your endpoint/credentials.
   #   2. Uncomment the clickhouse exporter below.
   #   3. Add `clickhouse` to the exporters list of the pipelines in `service:`.

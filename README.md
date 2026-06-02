@@ -126,7 +126,7 @@ services/judge/judge.sh   # Outputs the two-layer YAML score to stdout
 
 ### ClickHouse (opt-in, deferred)
 
-The remote reputation store (Tier 3, masques.ai). **Off by default** and not wired into the shipping collector — the local audience never depends on it. When enabled it must forward only the derived Tier-2 signal (scores + coarse metadata), never prompts, code, or tool I/O. See the [PRD](docs/prd-v1.1-persistent-audience.md).
+The remote reputation store (Tier 3, masques.ai). **Off by default** and not wired into the shipping collector — the local audience never depends on it. When enabled it must forward only the derived Tier-2 signal (scores + coarse metadata), never prompts, code, or tool I/O.
 
 ## TUI — Masque
 

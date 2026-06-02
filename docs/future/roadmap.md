@@ -82,7 +82,7 @@ Mirrors the whiteboard sketch:
 **Size:** ~1 hour
 **Deliverables:**
 - Fix `bd` database repo-ID mismatch (`bd migrate --update-repo-id`)
-- Sync version: `plugin.json` 0.5.0 → 1.0.0 (progress.md says done, file says otherwise); marketplace.json match
+- Sync version: `plugin.json` and `marketplace.json` must match
 - CHANGELOG entry noting the upcoming pivot so users aren't surprised
 
 ### Phase 1 — `masques-mcp` v0: the agent factory
@@ -200,8 +200,8 @@ This roadmap is a working draft. Refine the open questions, adjust phasing, then
 ## Update 2026-06-01 — the MCP-server route to this vision
 
 The agent-factory/spawn model above is one way to reach paid masques. A simpler
-delivery route emerged: ship Masques as an **MCP server** (see
-`docs/prd-v1.2-mcp-server.md`). The monetization then gates **MCP tool calls**
+delivery route emerged: ship Masques as an **MCP server**. The monetization
+then gates **MCP tool calls**
 rather than spawning processes — cleaner than the escrow-on-don/settle-on-doff
 design in `tigerbeetle-integration.md`.
 
