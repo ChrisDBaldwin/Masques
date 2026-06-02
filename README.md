@@ -67,9 +67,34 @@ claude plugins add github:ChrisDBaldwin/masques
 /list                     # List available masques
 /inspect [masque]         # View full masque details
 /sync-manifest [scope]    # Regenerate manifest files
-/audience [action]        # Manage telemetry (start/stop/status/config/logs)
+/audience [action]        # Manage the audience (seat/dismiss/status/logs)
 /performance              # Score masque session performance
 ```
+
+## MCP Server
+
+Masques also ships as an **MCP server**, so any MCP client — Claude Code, Claude
+Desktop, Cursor, the MCP Inspector — can `list` / `inspect` / `don` a masque and
+`score` a session. It's a thin adapter over the **same authoritative core** the
+plugin uses, so both surfaces compose identical identities (no drift).
+
+Local, free, and unauthenticated over **stdio**. Scoring runs the local DuckDB
+judge on-device and never leaves your machine.
+
+```bash
+cd services/mcp
+uv tool install --editable .              # installs masques-cli + masques-mcp
+claude mcp add masques -- masques-mcp     # register in Claude Code
+claude mcp list                           # → masques: … ✓ Connected
+```
+
+It exposes five tools (`list_masques`, `inspect_masque`, `don`, `doff`, `score`),
+one `don-<name>` prompt per masque, and `masque://catalog` resources. The
+`masques-cli` command is also what the plugin shells out to, so plugin and server
+stay in lockstep. See [`docs/mcp-server.md`](docs/mcp-server.md).
+
+> A hosted catalog on masques.ai with OAuth is **designed but not built** — the
+> shipping server is local stdio only.
 
 ## Schema
 
@@ -128,7 +153,7 @@ services/judge/judge.sh   # Outputs the two-layer YAML score to stdout
 
 The remote reputation store (Tier 3, masques.ai). **Off by default** and not wired into the shipping collector — the local audience never depends on it. When enabled it must forward only the derived Tier-2 signal (scores + coarse metadata), never prompts, code, or tool I/O.
 
-## TUI — Masque
+## TUI — `masques`
 
 Terminal UI for browsing masques and drafting teams. Built with Zig 0.16+ and [libvaxis](https://github.com/rockorager/libvaxis).
 
@@ -165,11 +190,12 @@ The larger "agent marketplace" direction — spawning masques as paid workers wi
 | [Vision](docs/vision.md) | The theater metaphor and why masques exist |
 | [Concepts](docs/concepts.md) | The five components explained |
 | [Schema](docs/schema.md) | Full YAML specification |
+| [MCP Server](docs/mcp-server.md) | Run Masques as an MCP server for any client |
 | [OTEL Setup](docs/otel-setup.md) | Configuring the telemetry pipeline |
 | [Evaluation](docs/evaluation.md) | DuckDB session scoring |
 | [Evaluations](evals/README.md) | Testing masque behavioral fidelity |
 | [Future](docs/future/) | Deferred vision — agent marketplace, payments |
-| [TUI](tui/) | Masque — terminal UI for browsing and team drafting |
+| [TUI](tui/) | `masques` — terminal UI for browsing and team drafting |
 
 ## Contributing
 
@@ -187,7 +213,7 @@ This is a personal project maintained in spare time. For bugs, please [open an i
 
 ## Status
 
-A Claude Code plugin for donning cognitive identities, a library of 35 masques, and a Zig TUI for team drafting. The core is infrastructure-free; telemetry (OTEL → optional ClickHouse + DuckDB scoring) is opt-in. Payment/marketplace infrastructure is deferred (see [`docs/future/`](docs/future/)).
+A Claude Code plugin for donning cognitive identities, an MCP server exposing the same masques to any MCP client, a library of 35 masques, and a Zig TUI for team drafting. The core is infrastructure-free; telemetry (OTEL → optional ClickHouse + DuckDB scoring) is opt-in. Payment/marketplace infrastructure is deferred (see [`docs/future/`](docs/future/)).
 
 ---
 

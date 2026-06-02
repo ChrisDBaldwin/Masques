@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-06-01
+
+### Added
+- **MCP server** (`services/mcp`) — Masques now ships as a FastMCP **stdio** server (`masques-mcp`), exposing `list_masques` / `inspect_masque` / `don` / `doff` / `score` tools, one `don-<name>` prompt per masque, and `masque://catalog` resources to any MCP client (Claude Code, Claude Desktop, Cursor, MCP Inspector). Local, free, unauthenticated.
+- **`masques-cli`** — a thin command-line adapter over the authoritative core. The Claude Code plugin (`/don`, `/list`, `/inspect`) now shells out to it, so the plugin and the MCP server compose **identical** identities — pinned by a parity test, so the two surfaces cannot drift.
+- **Persistent-audience scoring** — always-on local capture plus a two-layer score: a 7-point house reaction (Layer A) available from session one, and lift vs your own baseline corpus on the same task-class (Layer B) once earned. An optional `rubric` field on the masque schema feeds a qualitative judge; the old activity proxies are demoted to supporting signals.
+
+### Changed
+- `/audience` is now a seat-once lifecycle (`seat` / `dismiss` / `status` / `logs`) — the collector runs always-on rather than being summoned per session.
+- Renamed the CLI console script `masque` → `masques-cli`, avoiding collision with the domain term and the TUI binary (`masques`).
+
+### Notes
+- A hosted masques.ai catalog with OAuth 2.1 is **designed, not built** — the shipping MCP server is local stdio only.
+
 ## [0.6.0] - 2026-05-30
 
 ### Changed
