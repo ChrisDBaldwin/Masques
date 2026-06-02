@@ -34,7 +34,7 @@ dev = [
 ]
 
 [project.scripts]
-masque = "masques_mcp.cli:main"
+masques-cli = "masques_mcp.cli:main"
 masques-mcp = "masques_mcp.server:main"
 
 [tool.hatch.build.targets.wheel]

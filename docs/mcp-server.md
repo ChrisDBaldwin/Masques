@@ -34,10 +34,10 @@ Requires Python ≥ 3.11 and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
 cd services/mcp
-uv venv && uv pip install -e .     # provides the `masque` CLI and `masques-mcp` server
+uv venv && uv pip install -e .     # provides the `masques-cli` CLI and `masques-mcp` server
 ```
 
-Optionally put the `masque` CLI on your `PATH` (this is also what the plugin
+Optionally put the `masques-cli` CLI on your `PATH` (this is also what the plugin
 prefers):
 
 ```bash

@@ -121,7 +121,7 @@ previous:
   doffed_at: 2026-01-26T11:00:00Z
 ```
 
-### 2. TUI — `masque`
+### 2. TUI — `masques`
 
 A Zig terminal application for visually composing masque teams. Lives in `tui/`.
 

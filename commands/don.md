@@ -33,17 +33,17 @@ Run /list to see available masques.
 ```
 Do not proceed to subsequent steps.
 
-### Step 2: Compose the identity via the `masque` CLI (single source of truth)
+### Step 2: Compose the identity via the `masques-cli` CLI (single source of truth)
 
-The masque is resolved and composed by the **`masque` CLI** — the one
+The masque is resolved and composed by the **`masques-cli` CLI** — the one
 authoritative implementation shared by this plugin and the Masques MCP server
 (PRD v1.2 M7). Do **not** re-derive the identity block in prose; that is how the
 two surfaces used to drift. Run the CLI and inject its output verbatim.
 
 **Locate the CLI** (the `$MASQUE` invocation used in this and later steps):
-- If `masque` is on `PATH` (installed via `uv tool install "${CLAUDE_PLUGIN_ROOT}/services/mcp"`),
-  use `masque`.
-- Otherwise fall back to: `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masque`
+- If `masques-cli` is on `PATH` (installed via `uv tool install "${CLAUDE_PLUGIN_ROOT}/services/mcp"`),
+  use `masques-cli`.
+- Otherwise fall back to: `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masques-cli`
 
 Compose the identity block — this both resolves the masque (private
 `${MASQUES_HOME:-~/.masques}` over bundled `personas/`) and builds the block:

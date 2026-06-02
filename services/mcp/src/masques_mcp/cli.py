@@ -1,13 +1,13 @@
 """
-`masque` CLI — the thin command-line adapter over the core.
+`masques-cli` — the thin command-line adapter over the core.
 
 This is what the Claude Code plugin shells out to (PRD M7), so there is ONE
 authoritative compose shared by the plugin and the MCP server. Commands:
 
-    masque list                       # catalog (YAML; --json for JSON)
-    masque inspect <name>             # full fields incl rubric
-    masque compose <name> [intent]    # the identity block /don injects
-    masque score [session]            # local judge two-layer reaction
+    masques-cli list                  # catalog (YAML; --json for JSON)
+    masques-cli inspect <name>        # full fields incl rubric
+    masques-cli compose <name> [intent]   # the identity block /don injects
+    masques-cli score [session]       # local judge two-layer reaction
 
 `compose` prints the raw `<masque-active>` identity block to stdout by default
 (what the host pins into context); pass --json for the structured payload.
@@ -74,7 +74,7 @@ def cmd_score(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="masque",
+        prog="masques-cli",
         description="Compose, list, inspect, and score masques (the authoritative core).",
     )
     # Shared `--json` flag, accepted both before and after the subcommand.

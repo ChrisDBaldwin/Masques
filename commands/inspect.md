@@ -24,12 +24,12 @@ Display the complete details of a masque — all components plus attributes.
      - If `source` is `shared`: `${CLAUDE_PLUGIN_ROOT}/personas/<name>.masque.yaml`
    - If `active.name` is null or file doesn't exist: report "No masque active. Use `/don <name>` to adopt one."
 
-3. **If inspecting by name** — use the `masque` CLI, the one authoritative
+3. **If inspecting by name** — use the `masques-cli` CLI, the one authoritative
    resolver shared by this plugin and the Masques MCP server (PRD v1.2 M7):
 
-   Locate the CLI (`$MASQUE`): use `masque` if on `PATH` (installed via
+   Locate the CLI (`$MASQUE`): use `masques-cli` if on `PATH` (installed via
    `uv tool install "${CLAUDE_PLUGIN_ROOT}/services/mcp"`), otherwise
-   `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masque`.
+   `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masques-cli`.
 
    ```bash
    $MASQUE inspect <name> --json

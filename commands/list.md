@@ -10,13 +10,13 @@ Display all available masques that can be donned.
 
 ## Instructions
 
-1. **List masques via the `masque` CLI** — the one authoritative catalog shared
+1. **List masques via the `masques-cli` CLI** — the one authoritative catalog shared
    by this plugin and the Masques MCP server (PRD v1.2 M7). Do not read the
    manifests directly; the CLI merges private over bundled for you.
 
-   Locate the CLI (`$MASQUE`): use `masque` if on `PATH` (installed via
+   Locate the CLI (`$MASQUE`): use `masques-cli` if on `PATH` (installed via
    `uv tool install "${CLAUDE_PLUGIN_ROOT}/services/mcp"`), otherwise
-   `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masque`.
+   `uv run --project "${CLAUDE_PLUGIN_ROOT}/services/mcp" masques-cli`.
 
    ```bash
    $MASQUE list --json

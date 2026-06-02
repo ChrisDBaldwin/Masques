@@ -4,8 +4,8 @@ Parity test (PRD M7) — the no-drift guarantee.
 There is exactly ONE compose. This test proves the three adapters all produce
 the byte-identical identity block:
 
-  1. the `masque compose` CLI (a real subprocess — what the Claude Code plugin
-     shells out to),
+  1. the `masques-cli compose` CLI (a real subprocess — what the Claude Code
+     plugin shells out to),
   2. the in-process core (`core.compose`),
   3. the MCP server `don` tool (what any MCP client receives).
 
