@@ -3,12 +3,15 @@ services:
     build: .
     image: masques-audience
     container_name: masques-audience
+    # The local audience has no remote dependency by default (PRD D1/D3).
+    # The CLICKHOUSE_* vars below are only read if you opt into forwarding by
+    # uncommenting the clickhouse exporter in config.yaml; the .env is optional.
     env_file:
       - path: .env
         required: false
     environment:
-      # Defaults if .env is missing — collector starts but ClickHouse export
-      # retries silently until configured. See .env.example.
+      # Harmless defaults so config.yaml resolves even with no .env present.
+      # Unused unless the (opt-in) clickhouse exporter is enabled in config.yaml.
       - CLICKHOUSE_ENDPOINT=${CLICKHOUSE_ENDPOINT:-http://localhost:8123}
       - CLICKHOUSE_DATABASE=${CLICKHOUSE_DATABASE:-otel}
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
@@ -19,4 +22,18 @@ services:
       - "0.0.0.0:4317:4317"   # gRPC
       - "0.0.0.0:4318:4318"   # HTTP
       - "0.0.0.0:13133:13133" # Health check
+    # Probe the health_check extension (:13133) from inside the container using
+    # the static busybox added in the Dockerfile. A HUNG collector returns 503
+    # (or refuses the connection) -> wget exits non-zero -> unhealthy. Combined
+    # with restart: unless-stopped, this recovers a wedged collector, not just a
+    # crashed one — the keystone of an always-on audience (PRD C1).
+    healthcheck:
+      test: ["CMD", "/bin/busybox", "wget", "--quiet", "--spider", "http://127.0.0.1:13133/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    # Seat once; Docker keeps it alive across crashes and reboots (assuming the
+    # Docker daemon is set to start on login). Capture is then ambient — no
+    # per-session /audience start. See docs/otel-setup.md.
     restart: unless-stopped

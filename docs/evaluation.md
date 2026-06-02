@@ -1,179 +1,161 @@
-# Evaluation & Reputation
+# Evaluation — Measurable Identity
 
-Masques has two scoring systems that measure different things at different timescales.
+The point of a masque is not that you wore it; it's whether wearing it made the
+work better. **Measurable identity** is the product: an always-on audience
+watches every session and tells you, honestly, how a masque performed *for you,
+on your work*.
 
-**DuckDB Performance** scores a single masque session — "how well did the agent work just now?" Local, ephemeral, immediate feedback.
-
-**ClickHouse Reputation** scores an identity over time — "how reliable is this agent across all its work?" Remote, persistent, trend-aware.
-
-```
-OTEL Collector
-  ├── JSONL (local) ──→ DuckDB ──→ Session score (YAML)
-  │                                 quality/autonomy/productivity/...
-  │                                 → keep / review / doff
-  │
-  └── ClickHouse (remote) ──→ reputation_events
-                               → reputation_scores_mv
-                               → overall score + category breakdown
-```
-
-## DuckDB Performance Scoring
-
-Runs locally via `services/judge/judge.sh`. Reads OTEL JSONL exports, scores the most recent masque session, outputs YAML to stdout. No persistent state — ephemeral by design.
-
-### Data Source
-
-The OTEL collector writes `logs.jsonl` in OTLP format. The judge flattens the three-level hierarchy (`resourceLogs → scopeLogs → logRecords`) and extracts events within the session window (don to doff).
-
-Three event types matter:
-- `claude_code.tool_result` — tool invocations with `success` and `tool_name` attributes
-- `claude_code.user_prompt` — user messages (measures how much the agent does per prompt)
-- `claude_code.api_request` — API calls with `cost_usd`, token counts, and cache stats
-
-### Dimensions
-
-All dimensions score on a 0–10 scale.
-
-| Dimension | Weight | What it measures | Scaling |
-|-----------|--------|-----------------|---------|
-| **Quality** | 30% | Tool success rate | `(tools_ok / total_tools) × 10` |
-| **Autonomy** | 25% | Tool actions per user prompt | `(total_tools / prompts) × 2` — caps at 5+ tools/prompt |
-| **Productivity** | 20% | Tool completions per minute | `(tools_ok / duration_min) × 10` — caps at 1+/min |
-| **Token Efficiency** | 15% | Cache hit ratio | `(cache_tokens / total_tokens) × 10` |
-| **Cost Efficiency** | 10% | Inverse cost per tool completion | `10 − (cost / tools_ok) × 100` — $0 = 10, $0.01/tool ≈ 8, $0.05/tool ≈ 5 |
-
-### Composite Score
-
-Weighted sum of all dimensions:
+This is a deliberately modest, personal claim — not a universal benchmark. Your
+audience compares *your* masque sessions to *your* baseline. The honesty comes
+from the audience never leaving (it is [always seated](otel-setup.md)), so a
+baseline accrues on its own and lift can be measured against it.
 
 ```
-composite = quality×0.30 + autonomy×0.25 + productivity×0.20
-          + token_efficiency×0.15 + cost_efficiency×0.10
+Every claude session (masque OR baseline)
+  └── OTEL (always on) ──→ local JSONL ──→ the judge (DuckDB) ──→ two-layer score
+                                                 │
+                              Layer A: 7-point house reaction (always)
+                              Layer B: lift vs YOUR baseline (once earned)
 ```
 
-### Recommendation
+## The two layers (PRD D4)
 
-| Composite | Recommendation | Meaning |
-|-----------|---------------|---------|
-| ≥ 7.0 | **keep** | Masque is performing well |
-| 4.0 – 6.9 | **review** | Investigate before continuing |
-| < 4.0 | **doff** | Switch masques or return to baseline |
+Lift is the honest comparative verdict — but it can't exist on session one,
+before any baseline exists. Forcing you to wait for "enough data" is the
+cold-start trap. So scoring has two layers.
 
-### Output
+### Layer A — the house reaction (from session one)
+
+A single qualitative verdict on a **7-point scale**, oriented positive or
+negative immediately, like a soapstone rating:
+
+> **perfect · great · good · neutral · bad · awful · detracting**
+
+It is an *absolute* read of how the session went, from observable signals
+(tool success, throughput, cost, friction). It answers *"how did this go?"* — it
+never claims the masque *caused* it. The audience always has something to say.
+
+**Where the band comes from:**
+
+- **Rubric judge (meaningful).** If the masque carries a [`rubric`](schema.md)
+  (D7) and a judge has read the session against it — an LLM pass, optionally a
+  persistently-running **Witness** masque — that judge supplies the band
+  (`judge: rubric`). The rubric is the measurable shadow of the lens: a great
+  Codesmith session is one where *every line teaches*, which no generic metric
+  can see.
+- **Activity fallback (cold-start).** No rubric, or no judge configured? The
+  band falls back to a generic activity composite (`judge: activity-fallback`).
+  Every masque still gets a reaction from session one.
+
+The activity composite is `0.35·success + 0.20·throughput + 0.20·cost +
+0.25·low-friction` on a 0–10 scale, mapped to the 7 bands. These weights and
+cutoffs are first-pass and centralized for tuning (PRD OQ2/OQ3).
+
+### Layer B — lift (once the corpus thickens)
+
+Once enough same-task-class sessions exist, the audience adds the comparative
+verdict: **relative lift vs your baseline corpus** — e.g. *"Codesmith completes
+refactor work with 22% fewer failed tool calls than your baseline."* This is the
+masque-attribution layer, and it is always a **difference**, never an absolute
+level.
+
+Layer B is shown **only** when it has earned the right to:
+
+- the session's attribution is `clean` (one masque), and
+- the baseline cohort for that task-class has ≥ `BASELINE_MIN` sessions
+  (default 5), and
+- the masque has ≥ 1 clean session of that class.
+
+Otherwise the audience states why, plainly — `not_yet` (baseline too thin),
+`n/a` (this *is* a baseline session), or `excluded` (mixed attribution) — and
+shows **no number**. Never a misleading figure.
+
+## Clean attribution without a factory (PRD D2)
+
+Lift is only honest when "baseline" really is masque-free. v1.1 scores at the
+**session grain**: each `claude` invocation is already its own process.
+
+- never donned → a clean **baseline** sample
+- donned once, early → a clean **masque** sample
+- switched masques mid-session → **mixed**, excluded from lift (still scored for
+  your own curiosity)
+
+This is how masques are used in practice (spawn an agent, don immediately, hand
+it a task), so "one masque per scored session" is a measurement-hygiene
+discipline, not a new constraint. Attribution is recorded by `/don` into a local
+[sidecar map](otel-setup.md#how-masque-vs-baseline-is-distinguished); no
+agent-factory rewrite needed.
+
+## Task-class (PRD D5)
+
+Lift only compares *the same kind of work*. Task-class is the bucket, **inferred
+from signals the always-on audience already sees** — tool mix, edit/read ratio,
+session shape — so it works for **all** sessions, including baselines that never
+declared an intent. Starter buckets: `refactor · debug · greenfield · review ·
+research · ops · unclassified`. The classifier is coarse and transparent by
+design, and explicitly refinable (OQ2).
+
+## The judge is a role, not one component (PRD D7)
+
+- **DuckDB** is the mechanical, always-on default: it classifies, attributes,
+  produces the activity-fallback band, and computes lift. It cannot read prose,
+  so it never produces the *rubric* band.
+- A **Witness-masque agent** is an optional qualitative judge — an attentive
+  critic in the audience that reads the session against the rubric and upgrades
+  Layer A from meter to critic. Witness is *a* judge, not *the* judge.
+
+The old five proxies (tool-success, tools/prompt, tools/min, cache ratio,
+cost/tool) used to *be* the masque verdict. They were masque-agnostic — identical
+with or without a masque — so they are **demoted** to `supporting_signals`:
+context that describes a session, never a claim about the masque.
+
+## Output
+
+`services/judge/judge.sh` (or `/performance`) emits:
 
 ```yaml
-masque: Codesmith
-duration_min: 45
-dimensions:
-  quality: 9.2
-  autonomy: 7.4
-  productivity: 6.0
-  token_efficiency: 8.1
-  cost_efficiency: 7.5
-composite: 7.8
-recommendation: keep
-stats:
-  total_cost: 0.34
-  total_tools: 87
-  tools_ok: 80
-  tool_success_pct: 92
-  prompts: 12
-  total_tokens: 142000
-  cache_tokens: 98000
+session: 7c8f7b8b-...
+masque: Codesmith            # null (baseline) for un-donned sessions
+attribution: clean           # clean | mixed | baseline
+task_class: refactor
+duration_min: 69.0
+layer_a:
+  reaction: great            # perfect>great>good>neutral>bad>awful>detracting
+  judge: activity-fallback   # or: rubric
+  activity_band: great
+  activity_score: 8.69
+layer_b:
+  status: shown
+  vs: your baseline corpus (same task_class)
+  failed_tool_calls_lift_pct: +34.3
+  baseline_sessions: 15
+  masque_sessions: 3
+supporting_signals:          # demoted proxies — context, not the verdict
+  tool_success_pct: 98
+  tools: 41
+  ...
+tool_mix: { read: 7, edit: 8, write: 5, bash: 21, search: 0, web: 0 }
 ```
 
-### Running
+## Running
 
 ```bash
-# Direct
-./services/judge/judge.sh
-
-# Via plugin
+./services/judge/judge.sh                                  # most recent session
+TARGET_SESSION="$CLAUDE_CODE_SESSION_ID" ./services/judge/judge.sh   # this session
+BASELINE_MIN=8 ./services/judge/judge.sh                   # require a thicker baseline
+RUBRIC_BAND=great ./services/judge/judge.sh                # supply a rubric-judge band
+# or:
 /performance
 ```
 
-Requires DuckDB installed and telemetry data in `services/collector/data/logs.jsonl`.
+Requires DuckDB and telemetry in `services/collector/data/logs.jsonl`.
 
-## ClickHouse Reputation Scoring
+## Persistent reputation (Phase 3 — designed, not yet built)
 
-Persistent, identity-level scoring stored in ClickHouse. Reputation aggregates signals across all sessions and interactions — not just one session.
-
-### reputation_events
-
-Raw signals that feed into scoring. Each event is a single data point about an identity's behavior.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `event_id` | UUID | Unique event identifier |
-| `timestamp` | DateTime64(3) | When the event occurred |
-| `identity_id` | UUID | The identity being scored |
-| `category` | String | One of: `task_quality`, `economic`, `identity_hygiene` |
-| `event_type` | String | Specific signal — e.g. `task_completed`, `payment_failed`, `key_rotated` |
-| `score_delta` | Float32 | Positive or negative impact on score |
-| `confidence` | Float32 | Signal confidence (0–1, default 1.0) |
-| `reference_type` | String | What this event refers to — `session`, `transaction`, or `attestation` |
-| `reference_id` | String | ID of the referenced object |
-| `attributes` | Map(String, String) | Additional context as key-value pairs |
-
-Partitioned by month, TTL 3 years.
-
-### reputation_scores
-
-Aggregated scores per identity. Uses `ReplacingMergeTree(computed_at)` so only the latest score per identity survives deduplication.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `identity_id` | UUID | The scored identity |
-| `computed_at` | DateTime64(3) | When this score was computed |
-| `overall_score` | Float32 | Weighted composite of category scores |
-| `task_quality_score` | Float32 | Average score_delta for `task_quality` events |
-| `economic_score` | Float32 | Average score_delta for `economic` events |
-| `identity_hygiene_score` | Float32 | Average score_delta for `identity_hygiene` events |
-| `total_events` | UInt64 | Events in the scoring window |
-| `positive_events` | UInt64 | Events with positive score_delta |
-| `negative_events` | UInt64 | Events with negative score_delta |
-| `confidence` | Float32 | `min(1.0, total_events / 100)` — ramps up with data volume |
-| `score_7d_ago` | Float32 | Score snapshot for 7-day trend |
-| `score_30d_ago` | Float32 | Score snapshot for 30-day trend |
-
-### Categories
-
-| Category | Weight | What it tracks | Example events |
-|----------|--------|---------------|----------------|
-| **task_quality** | 40% | How well the identity performs work | `task_completed`, `task_failed`, `review_positive` |
-| **economic** | 35% | Payment and financial behavior | `payment_completed`, `payment_failed`, `settlement_delayed` |
-| **identity_hygiene** | 25% | Identity management practices | `key_rotated`, `session_expired`, `credential_leaked` |
-
-### Materialized View
-
-`reputation_scores_mv` auto-updates `reputation_scores` when new events arrive. It:
-
-1. Looks at the last 90 days of `reputation_events`
-2. Computes average `score_delta` per category per identity
-3. Produces a weighted composite: `task_quality×0.40 + economic×0.35 + identity_hygiene×0.25`
-4. Sets confidence based on event volume: `min(1.0, total_events / 100)`
-
-### Schema
-
-```
-sql/006_reputation.sql
-├── reputation_events         MergeTree, partitioned by month, 3-year TTL
-├── reputation_scores         ReplacingMergeTree(computed_at), no TTL
-└── reputation_scores_mv      Materialized view, auto-aggregates on insert
-```
-
-## How the Two Systems Relate
-
-They measure different things and operate independently:
-
-| | DuckDB Performance | ClickHouse Reputation |
-|---|---|---|
-| **Scope** | Single session | All sessions over time |
-| **Subject** | A masque session | An identity |
-| **Storage** | Ephemeral (in-memory) | Persistent (ClickHouse) |
-| **Input** | Local OTEL JSONL | reputation_events table |
-| **Trigger** | On-demand (`/performance`) | Continuous (materialized view) |
-| **Time window** | One don-to-doff session | Rolling 90 days |
-| **Output** | YAML with keep/review/doff | Score with confidence and trends |
-
-The planned connection: DuckDB session scores will feed into ClickHouse as `reputation_events` with `category = 'task_quality'` and `reference_type = 'session'`. This bridges immediate session feedback into long-term reputation.
+Layers A and B score *sessions*. Making the verdict **accumulate** —
+per-(masque, task-class) lift with a sample count, across many sessions and
+machines, so "Codesmith beats my baseline on refactors" becomes a standing fact
+— is Phase 3 (a persistent personal corpus). The opt-in global community pool,
+with normalization and anti-gaming, is Phase 4. Both are designed but not yet
+built; the payment/marketplace economy remains deferred in
+[`docs/future/`](future/).

@@ -10,30 +10,46 @@
 
 Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
 
-When you don a masque, you get cognitive framing, situational context, and performance scoring via OTEL telemetry. The [roadmap](#roadmap) extends this to bundled knowledge, credentials, tools, and author payments.
+It's a representation layer you slap on top of any agent: don a masque to adopt its lens and context, do the work, then doff to step backstage and return to baseline. The core needs **zero infrastructure** — a masque is just YAML, and identity lives in a session file. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge, credentials, and tools.
 
-## Architecture
+## Measurable Identity — the differentiated half
+
+A masque without an audience is just a system prompt. The interesting question
+isn't that you *wore* a costume — it's whether wearing it made the work **better**.
+
+So the audience is **always seated**: a local, always-on observer captures every
+session — masque or baseline — and scores it two ways. From session one you get a
+**7-point house reaction** (`perfect · great · good · neutral · bad · awful ·
+detracting`) — an honest read of how the session went. As your own baseline corpus
+thickens, the audience adds **lift**: how a masque compares to *your* no-masque
+baseline on the *same kind of work* — *"Codesmith runs +1.4 on your refactor
+work."* A difference, never a vanity number, and it never leaves your machine.
+
+This is the part that makes masques more than prompt presets. See
+[`docs/evaluation.md`](docs/evaluation.md) and [`docs/otel-setup.md`](docs/otel-setup.md).
+
+## How It Works
+
+The core loop needs no databases, no services, no credentials — just YAML and a session file:
 
 ```
-Agent dons masque
-  → session created
-  → OTEL metrics/logs flow through collector → ClickHouse + JSONL
-
-Agent works with masque
-  → api_requests metered, tool usage tracked
-  → DuckDB scores session performance locally
-
-Agent doffs masque
-  → session closed, performance scored
+Don   → read masque YAML, inject lens + context, write .claude/masque.session.yaml
+Work  → operate with the masque's framing
+Doff  → clear the session, return to baseline Claude
 ```
 
-Two databases today, a third planned:
+That don/doff loop needs zero infrastructure. The **audience** that measures it
+(above) runs locally and stays on your machine:
 
-| Engine | Role | Data |
-|--------|------|------|
-| **ClickHouse** | Analytics | Telemetry, metering, reputation |
-| **DuckDB** | Local scoring | Session performance from OTEL JSONL exports |
-| **TigerBeetle** | *(Planned)* Ledger of record | Account balances, transfers, two-phase payments |
+| Component | Role | Where |
+|-----------|------|-------|
+| **OTEL collector** | Always-on capture of every session → local JSONL | Local Docker, seated once (`/audience seat`) |
+| **DuckDB judge** | Two-layer scoring (reaction + lift) | Local, ephemeral |
+| **ClickHouse** | Remote reputation store *(opt-in, deferred — Tier 3)* | masques.ai, off by default |
+
+The local collector + DuckDB are the measurable-identity layer. Remote forwarding
+to masques.ai is strictly opt-in and ships only derived scores — never your
+prompts, code, or tool I/O.
 
 ## Quick Start
 
@@ -51,9 +67,34 @@ claude plugins add github:ChrisDBaldwin/masques
 /list                     # List available masques
 /inspect [masque]         # View full masque details
 /sync-manifest [scope]    # Regenerate manifest files
-/audience [action]        # Manage telemetry (start/stop/status/config/logs)
+/audience [action]        # Manage the audience (seat/dismiss/status/logs)
 /performance              # Score masque session performance
 ```
+
+## MCP Server
+
+Masques also ships as an **MCP server**, so any MCP client — Claude Code, Claude
+Desktop, Cursor, the MCP Inspector — can `list` / `inspect` / `don` a masque and
+`score` a session. It's a thin adapter over the **same authoritative core** the
+plugin uses, so both surfaces compose identical identities (no drift).
+
+Local, free, and unauthenticated over **stdio**. Scoring runs the local DuckDB
+judge on-device and never leaves your machine.
+
+```bash
+cd services/mcp
+uv tool install --editable .              # installs masques-cli + masques-mcp
+claude mcp add masques -- masques-mcp     # register in Claude Code
+claude mcp list                           # → masques: … ✓ Connected
+```
+
+It exposes five tools (`list_masques`, `inspect_masque`, `don`, `doff`, `score`),
+one `don-<name>` prompt per masque, and `masque://catalog` resources. The
+`masques-cli` command is also what the plugin shells out to, so plugin and server
+stay in lockstep. See [`docs/mcp-server.md`](docs/mcp-server.md).
+
+> A hosted catalog on masques.ai with OAuth is **designed but not built** — the
+> shipping server is local stdio only.
 
 ## Schema
 
@@ -87,39 +128,38 @@ See [Schema Reference](docs/schema.md) for the full specification.
 
 ### OTEL Collector
 
-Receives metrics and logs from Claude Code sessions via OTLP, exports to ClickHouse (remote analytics) and local JSONL (DuckDB scoring).
+The always-on audience. Receives metrics and logs from every Claude Code session via OTLP and writes them to local JSONL. **Local-only by default** — nothing leaves the machine. Seated once and left running:
 
 ```bash
 cd services/collector
-docker compose up -d      # Start collector
-# Configure via .env — see .env.example
+docker compose up -d --build   # or: /audience seat — seat the house once
 ```
 
 ### Performance Judge (DuckDB)
 
-Scores masque sessions across 5 dimensions from local OTEL exports:
+Reads the local OTEL exports and emits the **two-layer** score (see [evaluation](docs/evaluation.md)):
 
-- **Quality** (30%) — tool success rate
-- **Autonomy** (25%) — agent actions per user prompt
-- **Productivity** (20%) — tool completions per minute
-- **Token Efficiency** (15%) — cache hit ratio
-- **Cost Efficiency** (10%) — cost per tool completion
+- **Layer A — house reaction** (always): a 7-point verdict — `perfect · great · good · neutral · bad · awful · detracting` — from a rubric judge (if the masque carries a `rubric`) or an activity fallback.
+- **Layer B — lift** (once earned): the masque's delta vs *your* baseline corpus on the same task-class — never a bare number, never below threshold.
+
+The old activity proxies (tool success, throughput, cost…) are demoted to *supporting signals* — context, not the verdict.
 
 ```bash
-services/judge/judge.sh   # Outputs YAML score to stdout
+services/judge/judge.sh   # Outputs the two-layer YAML score to stdout
+# or: /performance
 ```
 
-### ClickHouse Schema
+### ClickHouse (opt-in, deferred)
 
-Analytics and payment infrastructure schema — identity, metering, reputation, ledger mirrors, and settlements. See [sql/README.md](sql/README.md) for the full schema and migration instructions.
+The remote reputation store (Tier 3, masques.ai). **Off by default** and not wired into the shipping collector — the local audience never depends on it. When enabled it must forward only the derived Tier-2 signal (scores + coarse metadata), never prompts, code, or tool I/O.
 
-## TUI — Masque
+## TUI — `masques`
 
-Terminal UI for browsing masques and drafting teams. Built with Zig + [libvaxis](https://github.com/rockorager/libvaxis).
+Terminal UI for browsing masques and drafting teams. Built with Zig 0.16+ and [libvaxis](https://github.com/rockorager/libvaxis).
 
 ```bash
-cd tui && zig build
-./zig-out/bin/masque    # Run from repo root
+cd tui && zig build run   # build and launch
+# or: zig build && ./zig-out/bin/masques
 ```
 
 - Animated portraits with domain-specific patterns (forge, cybernetic, art, etc.)
@@ -131,7 +171,7 @@ Navigate with arrow keys, `Enter` to add to team, `Tab` to switch focus, `1`–`
 
 ## Roadmap
 
-Masques is the **identity layer** in an agentic ecosystem. Today it provides cognitive framing (lens, context, attributes) and telemetry-based scoring. The vision extends to full ecosystem integration:
+Masques is the **identity layer** for any agent. Today it provides cognitive framing (lens, context, attributes) and telemetry-based scoring. The minimal product stops there. Possible future integration:
 
 | Need | Status | Why | Approach |
 |------|--------|-----|----------|
@@ -139,7 +179,8 @@ Masques is the **identity layer** in an agentic ecosystem. Today it provides cog
 | Knowledge | Planned | Masques should bring their own context | MCP URIs bundled per masque |
 | Credentials | Planned | Identity implies access | Vault role + TTL declarations |
 | Tools | Planned | Masques should bring their own capabilities | Bundled MCP servers per masque |
-| Payments | Planned | Authors should earn income from their work | TigerBeetle ledger, 402-gated access, author settlement |
+
+The larger "agent marketplace" direction — spawning masques as paid workers with a reputation + payment gate — is deferred. See [`docs/future/`](docs/future/) for that vision.
 
 ## Documentation
 
@@ -149,11 +190,12 @@ Masques is the **identity layer** in an agentic ecosystem. Today it provides cog
 | [Vision](docs/vision.md) | The theater metaphor and why masques exist |
 | [Concepts](docs/concepts.md) | The five components explained |
 | [Schema](docs/schema.md) | Full YAML specification |
+| [MCP Server](docs/mcp-server.md) | Run Masques as an MCP server for any client |
 | [OTEL Setup](docs/otel-setup.md) | Configuring the telemetry pipeline |
-| [Evaluation & Reputation](docs/evaluation.md) | DuckDB session scoring and ClickHouse reputation |
-| [ClickHouse Schema](sql/README.md) | Payment infrastructure tables |
+| [Evaluation](docs/evaluation.md) | DuckDB session scoring |
 | [Evaluations](evals/README.md) | Testing masque behavioral fidelity |
-| [TUI](tui/) | Masque — terminal UI for browsing and team drafting |
+| [Future](docs/future/) | Deferred vision — agent marketplace, payments |
+| [TUI](tui/) | `masques` — terminal UI for browsing and team drafting |
 
 ## Contributing
 
@@ -171,7 +213,7 @@ This is a personal project maintained in spare time. For bugs, please [open an i
 
 ## Status
 
-Claude Code plugin with OTEL telemetry, ClickHouse analytics, and DuckDB performance scoring. Payment infrastructure (TigerBeetle) is designed but not yet integrated.
+A Claude Code plugin for donning cognitive identities, an MCP server exposing the same masques to any MCP client, a library of 35 masques, and a Zig TUI for team drafting. The core is infrastructure-free; telemetry (OTEL → optional ClickHouse + DuckDB scoring) is opt-in. Payment/marketplace infrastructure is deferred (see [`docs/future/`](docs/future/)).
 
 ---
 

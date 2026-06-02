@@ -66,3 +66,15 @@ properties:
       System prompt fragment defining cognitive framing.
       How to approach problems, what to prioritize, what to reject.
       Include intent guidance (what to do, what to avoid) as prose.
+
+  rubric:
+    type: string
+    description: |
+      Optional. The measurable shadow of the lens — how to know a session
+      wearing this masque went well. Freeform prose, in the same prose-first
+      spirit as lens and context: describe what a great session looks like and
+      what makes one fail. The audience's qualitative judge (an LLM judge,
+      optionally a Witness masque) reads a session against this rubric to assign
+      its Layer-A reaction band. Masques without a rubric fall back to a generic
+      activity-only band. Self-authored rubrics are fine for personal
+      reputation; the global pool (later) will need normalized rubrics.

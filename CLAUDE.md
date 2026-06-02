@@ -8,7 +8,7 @@ Masques applies theater's ancient coordination model to AI agents. Just as actor
 
 The core problem: today agents get configured through scattered mechanisms (system prompts, MCP servers, credentials, knowledge bases, tool permissions). These are disconnected. A masque unifies cognitive identity into a single "become this" operation — one `don`, one `doff`, session over.
 
-**Masques is "AssumeRole for Agents."** A masque is a temporary cognitive identity bundling lens (how to think), context (situational grounding), and attributes (metadata). Masque authors get paid when their masques are used.
+**Masques is "AssumeRole for Agents."** A masque is a temporary cognitive identity bundling lens (how to think), context (situational grounding), and attributes (metadata). It's a representation tool that slaps on top of any agent — don, work, doff.
 
 ## What Masques Own (and Don't)
 
@@ -121,7 +121,7 @@ previous:
   doffed_at: 2026-01-26T11:00:00Z
 ```
 
-### 2. TUI — `masque`
+### 2. TUI — `masques`
 
 A Zig terminal application for visually composing masque teams. Lives in `tui/`.
 
@@ -140,7 +140,7 @@ cd tui && zig build          # Compile
 cd tui && zig build run      # Run immediately
 ```
 
-Requires Zig 0.15.0+. Dependencies: [libvaxis](https://github.com/rockorager/libvaxis) (TUI framework), [zig-yaml](https://github.com/kubkon/zig-yaml) (YAML parsing).
+Requires Zig 0.16.0+. Dependencies: [libvaxis](https://github.com/rockorager/libvaxis) (TUI framework, fetched), and [zig-yaml](https://github.com/kubkon/zig-yaml) (YAML parsing) — vendored under `tui/vendor/zig-yaml` because upstream's `build.zig` doesn't yet compile under Zig 0.16.
 
 **Writes to**: `~/.masques/{name}.team.yaml` — team composition files loadable from the lobby.
 
@@ -173,19 +173,16 @@ Requires Zig 0.15.0+. Dependencies: [libvaxis](https://github.com/rockorager/lib
 
 ## Architecture
 
-Three databases, each doing what it's best at:
+Telemetry is optional and entirely separate from donning a masque. When enabled, two databases each do what they're best at:
 
-- **TigerBeetle** — Ledger of record (designed, not yet integrated). Account balances, two-phase transfers (pending on don, posted on doff). Source of truth for all money movement.
-- **ClickHouse** — Analytics. Telemetry (OTEL metrics/logs), metering (`api_requests`), reputation scoring, balance snapshots synced from TigerBeetle. Remote, columnar, cost-efficient at scale.
+- **ClickHouse** — Analytics (optional). Remote sink for OTEL metrics/logs from the collector; auto-creates its schema. Columnar, cost-efficient at scale. Leave it unset to keep everything local.
 - **DuckDB** — Local performance scoring. Reads OTEL JSONL exports from the collector, scores masque sessions across 5 dimensions. Zero-infrastructure, ephemeral.
 
-Data flow:
+Data flow (only when telemetry is enabled):
 ```
-Agent dons masque → session + pending TigerBeetle transfer
+Agent dons masque → session state written (no infra required)
   ↓
-OTEL metrics/logs → Collector → ClickHouse (remote) + JSONL (local)
-  ↓
-Agent doffs masque → TigerBeetle posts transfer → ClickHouse gets analytical copy
+OTEL metrics/logs → Collector → ClickHouse (remote, optional) + JSONL (local)
   ↓
 DuckDB reads JSONL → scores session → /performance outputs YAML
 ```
@@ -221,14 +218,6 @@ masques/                         # Plugin repo root
 │   └── ...                      # 25+ more across domains
 ├── schemas/
 │   └── masque.schema.yaml       # JSON Schema for masque validation
-├── sql/                         # ClickHouse schema (numbered migrations)
-│   ├── README.md                # Schema docs + architecture diagram
-│   ├── 001_create_database.sql
-│   ├── 002_identities.sql       # Identities + masque sessions
-│   ├── 003_ledger.sql           # TigerBeetle account/transaction mirrors
-│   ├── 004_settlements.sql      # On-chain/Lightning settlement records
-│   ├── 005_metering.sql         # 402-gated API request metering
-│   └── 006_reputation.sql       # Reputation events, scores, + MV
 ├── services/
 │   ├── collector/               # OTEL collector (Docker)
 │   │   ├── config.yaml          # Dual export: ClickHouse + JSONL
@@ -238,8 +227,9 @@ masques/                         # Plugin repo root
 │       ├── sessions.sql         # Extract session boundaries from JSONL
 │       └── score.sql            # 5-dimension scoring + composite
 ├── tui/                         # Terminal UI — masque
-│   ├── build.zig                # Zig build config (v0.15.0+)
+│   ├── build.zig                # Zig build config (v0.16.0+)
 │   ├── build.zig.zon            # Dependency manifest (vaxis, zig-yaml)
+│   ├── vendor/zig-yaml/         # Vendored YAML lib (0.16-compatible build.zig)
 │   └── src/                     # Source (see TUI Source Map above)
 ├── evals/                       # Promptfoo behavioral fidelity tests
 │   ├── codesmith/
@@ -251,7 +241,7 @@ masques/                         # Plugin repo root
     ├── concepts.md              # Components explained
     ├── schema.md                # Schema reference guide
     ├── otel-setup.md            # Telemetry pipeline setup
-    └── session-prompts/         # Design session context docs
+    └── future/                  # Deferred vision (agent marketplace, payments)
 ```
 
 ## Masque Discovery
@@ -302,8 +292,8 @@ Work is NOT complete until `git push` succeeds. See `AGENTS.md` for the full che
 
 ## Database Conventions
 
-- **TigerBeetle is the ledger of record.** ClickHouse is analytics. Never reverse this.
-- **ClickHouse schema lives in `sql/`**, numbered migrations executed in order.
+- **Telemetry is optional.** Donning a masque never requires a database. ClickHouse and DuckDB only come into play if you enable the collector.
+- **ClickHouse is analytics only.** The collector auto-creates its schema; there are no migrations to run.
 - **DuckDB is ephemeral.** No persistent state. Reads JSONL, scores in-memory, outputs YAML.
 - **No hardcoded credentials.** Use `.env` patterns with `.env.example` templates.
 - **Writes to files, not databases.** DDL and DML are output for human review, not executed directly.
@@ -314,8 +304,8 @@ Work is NOT complete until `git push` succeeds. See `AGENTS.md` for the full che
 2. **Session-scoped** — masques are temporary. Don, work, doff.
 3. **Versioned** — pin to versions, upgrade deliberately, never silently.
 4. **Plugin-first** — YAML source, Claude Code delivery.
-5. **Authors get paid** — metered usage, 402-gated, real settlement rails.
-6. **Three databases** — TigerBeetle (money), ClickHouse (analytics), DuckDB (local scoring). Each does what it's best at.
+5. **Slaps on top of any agent** — masques are a representation layer, not infrastructure. Core identity needs zero databases.
+6. **Telemetry is optional** — ClickHouse (analytics) and DuckDB (local scoring) measure sessions when you want them to, and are never required.
 7. **Separation of concerns** — masques own identity. MCP owns knowledge. Vaults own credentials. Observability owns metrics.
 
 ## Version Management

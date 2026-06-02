@@ -7,6 +7,24 @@ The theater has solved coordination problems for millennia. Actors don costumes 
 
 Masque brings this model to autonomous agents.
 
+## The Thesis: Observability Is the Core
+
+A costume is theater only because there's a house watching. **A masque without an
+audience is just a system prompt.** The differentiated value of masques is not the
+donning — it's the *watching*: giving the person who wears a masque honest evidence
+about whether the costume actually helped *their* work.
+
+So the keystone of the product is a **persistent audience**: an always-on observer,
+seated once and never dismissed, that captures every session — masque or baseline —
+and produces **measurable identity**. From the first session it returns a 7-point
+reaction (how did this go?); as your own baseline accrues, it reports *lift* — how a
+masque performs against your no-masque baseline on the same kind of work.
+
+This is a deliberately personal claim. We are not out-measuring a frontier lab or
+advancing representation engineering. The claim is narrower and attainable: *your*
+audience tells *you* whether *this* costume helped *your* sessions. The honesty
+comes from the audience never leaving. See [`evaluation.md`](evaluation.md).
+
 ## The Insight
 
 Human organizations already work like theater companies. We have roles (engineer, reviewer, on-call), contexts (this sprint, this incident, this customer), and boundaries (what I'm responsible for, what I escalate). When contexts shift, we mentally "change hats."

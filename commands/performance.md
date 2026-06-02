@@ -1,131 +1,158 @@
 ---
 name: performance
-description: Show quantitative performance metrics for the current masque session
+description: Show the audience's two-layer reaction (and lift, once earned) for a session
 arguments: []
 ---
 
 # Performance Command
 
-Display telemetry-based performance scoring for the current masque session. Complements `/id` (identity) and the Witness masque (qualitative fit) with quantitative data from OTEL telemetry.
+Show how the always-on audience scored a session. Output has **two layers**
+(PRD D4):
+
+- **Layer A — the house reaction** (always, from session one): a single
+  7-point verdict — `perfect · great · good · neutral · bad · awful ·
+  detracting`. An honest read of *how the session went*, never a claim that the
+  masque caused it.
+- **Layer B — lift** (only once earned): how the masque compares to *your own
+  baseline corpus* on the same task-class — a **delta**, never a bare level.
+  Hidden until the baseline is thick enough. The audience never shows a
+  misleading number.
+
+This replaces the old five-proxy "masque verdict." Those proxies were
+masque-agnostic — they scored the same with or without a masque — so they are
+**demoted** to `supporting_signals` (context), never the verdict (PRD D7).
 
 ## Instructions
 
 ### Step 1: Check Prerequisites
 
-1. Verify the judge script exists:
+1. Judge script present:
 ```bash
-test -f ${CLAUDE_PLUGIN_ROOT}/services/judge/judge.sh && echo "ok" || echo "missing"
+test -f ${CLAUDE_PLUGIN_ROOT}/services/judge/judge.sh && echo ok || echo missing
 ```
-
-2. Check for DuckDB:
+2. DuckDB present:
 ```bash
-command -v duckdb && echo "ok" || echo "missing"
+command -v duckdb >/dev/null && echo ok || echo missing
 ```
-
-If DuckDB is missing, report:
-```
-Performance scoring requires DuckDB.
-Install: brew install duckdb
-```
-
-3. Check for telemetry data:
+If missing: "Scoring requires DuckDB. Install: brew install duckdb."
+3. Telemetry data present:
 ```bash
-test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/data/logs.jsonl && echo "ok" || echo "no data"
+test -f ${CLAUDE_PLUGIN_ROOT}/services/collector/data/logs.jsonl && echo ok || echo "no data"
 ```
+If no data: the audience hasn't captured anything yet — "Run `/audience seat`
+to open the house (it stays open), then start a session." Note capture needs
+the Claude Code OTEL env (see `/audience seat`).
 
-If no data, report:
-```
-No telemetry data found.
+### Step 2: Identify the session to score
 
-To start collecting:
-  1. /audience start        — launch the collector
-  2. /audience config       — configure Claude Code telemetry
-  3. Start a new session    — data flows automatically
-
-Requires OTEL_LOG_TOOL_DETAILS=1 for masque session detection.
-```
-
-### Step 2: Read Current Masque
-
-Read `.claude/masque.session.yaml` to get the active masque name and donned_at time.
-
-### Step 3: Run the Judge
-
-Execute the scoring script:
+By default the judge scores the **most recent** session. To score *this*
+session explicitly, pass its id (which is also what `/don` records for
+attribution):
 ```bash
-${CLAUDE_PLUGIN_ROOT}/services/judge/judge.sh
+echo "$CLAUDE_CODE_SESSION_ID"
+```
+Optionally read `.claude/masque.session.yaml` to mention the active masque by
+name in your framing.
+
+### Step 3: Run the judge
+
+```bash
+TARGET_SESSION="$CLAUDE_CODE_SESSION_ID" ${CLAUDE_PLUGIN_ROOT}/services/judge/judge.sh
+```
+(Omit `TARGET_SESSION` to score the most recent session.) Optional knobs:
+- `BASELINE_MIN=N` — baseline sessions per task-class before Layer-B lift shows
+  (default 5).
+- `RUBRIC_BAND=<band>` — if a rubric judge (an LLM pass, or a Witness-masque
+  agent — D7) has read the session against the masque's `rubric` and produced a
+  band, pass it here; the judge will use it for Layer A (`judge: rubric`)
+  instead of the activity fallback.
+
+The judge emits YAML:
+```yaml
+session: <id>
+masque: <name | null (baseline)>
+attribution: <clean | mixed | baseline>
+task_class: <refactor|debug|greenfield|review|research|ops|unclassified>
+duration_min: <n>
+layer_a:
+  reaction: <perfect..detracting>
+  judge: <activity-fallback | rubric>
+  activity_band: <band>        # the activity-only band, shown for transparency
+  activity_score: <0-10>
+layer_b:
+  status: <shown | not_yet | n/a ... | excluded ...>
+  # when shown:
+  failed_tool_calls_lift_pct: <+/-n>
+  baseline_sessions: <n>
+  masque_sessions: <n>
+supporting_signals: { ... }    # demoted proxies — context, not the verdict
+tool_mix: { ... }
 ```
 
-The script outputs YAML with:
-- `masque` — name of the scored masque
-- `duration_min` — session length in minutes
-- `dimensions` — quality, autonomy, productivity, token_efficiency, cost_efficiency (0-10 each)
-- `composite` — weighted composite score (0-10)
-- `recommendation` — `keep`, `review`, or `doff`
-- `stats` — raw counts (cost, tools, prompts, tokens)
+### Step 4: Display
 
-### Step 4: Display Results
-
-Parse the YAML output and display as a visual dashboard:
+Lead with Layer A. Show Layer B **only** when `layer_b.status: shown` — otherwise
+print the one-line honest reason, never invent a number.
 
 ```
-Performance: [masque] ([duration] min)
-═══════════════════════════════════════
-  Quality:          [score]  [bar]
-  Autonomy:         [score]  [bar]
-  Productivity:     [score]  [bar]
-  Token Efficiency: [score]  [bar]
-  Cost Efficiency:  [score]  [bar]
+Audience reaction: GREAT   (codesmith · refactor · 38 min)
+  judge: rubric            ← or "activity-fallback" when no rubric judge ran
 
-  Composite: [score] / 10 → [recommendation]
-  Cost: $[cost] | Tools: [total] ([pct]% ok) | Prompts: [count]
+Lift vs your baseline (refactor):
+  failed tool calls: -22%   (you make 22% fewer)   [5 baseline · 3 masque sessions]
 ```
 
-**Bar rendering**: Each score maps to a 10-character bar where each full block = 1 point.
-Use `█` for full points, `▌` for half points, `░` for empty.
+When Layer B is not earned, render its status plainly, e.g.:
+```
+Lift: not yet — baseline corpus too thin for refactor (3 / 5 sessions needed)
+```
+```
+Lift: n/a — this is a baseline session (nothing to lift against)
+```
+```
+Lift: excluded — mixed attribution (more than one masque this session)
+```
 
-Example: score 7.5 → `███████▌░░`
+Render the 7-point reaction with orientation (color/emphasis your call):
+`perfect · great · good` positive, `neutral` flat, `bad · awful · detracting`
+negative.
 
-**Recommendation styling**:
-- `keep` — "masque is amplifying"
-- `review` — "check masque fit"
-- `doff` — "masque may be constraining"
+Then a compact supporting-signals line, clearly subordinate:
+```
+  supporting: 95% tool success · 41 tools · $0.00 · 4.5 tools/min
+  tool mix: read 7 · edit 8 · write 5 · bash 21 · search 0 · web 0
+```
 
-### Step 5: Handle Errors
+### Step 5: Errors
 
-If the judge script fails:
-- Parse stderr for the error message
-- Common issues:
-  - "duckdb not found" → suggest `brew install duckdb`
-  - "no logs data" → suggest `/audience start` and running a session
-  - SQL errors → likely the JSONL structure doesn't match expected schema; suggest checking `/audience logs` for the actual event format
+Parse stderr from the judge:
+- "duckdb not found" → `brew install duckdb`.
+- "no logs" → `/audience seat` and run a session.
+- A SQL/parse error → the JSONL shape may have drifted; inspect
+  `services/collector/data/logs.jsonl` and `services/judge/sessions.sql`.
 
-### Step 6: Suggest Next Actions
+### Step 6: Next actions
 
-- "Use `/id` to see current masque identity"
-- "Use `/audience logs` to inspect raw telemetry"
-- "Use `/inspect` to review masque lens and context"
+- "`/id` — current masque identity."
+- "`/audience status` — is the house open, how many sessions captured."
+- "`/inspect` — the masque's lens, context, and rubric."
 
-**Important caveat**: The DuckDB SQL is best-effort based on the OTLP JSON spec. If scores look wrong, the JSONL structure may differ from expected — check `services/collector/data/logs.jsonl` to see the actual format and adjust `services/judge/sessions.sql` and `score.sql` accordingly.
+## How the two layers are computed
 
-## Dimensions Explained
+| Layer | Question | Source | Shows when |
+|-------|----------|--------|------------|
+| A — reaction | How did this session go? | Rubric judge (D7) if available, else activity composite (success, throughput, cost, low-friction) mapped to 7 bands | Always, from session one |
+| B — lift | Did the masque beat *your* baseline? | Δ vs your baseline corpus, same task-class (failed-tool-call rate) | Only when baseline ≥ threshold AND attribution is clean |
 
-| Dimension | Weight | Source | Measures |
-|-----------|--------|--------|----------|
-| Quality | 30% | tool_result success/failure | Did tools work? Low rejection rate? |
-| Autonomy | 25% | user_prompt count vs tool_result count | More agent actions per prompt = better |
-| Productivity | 20% | tool completions / time | Throughput per minute |
-| Token Efficiency | 15% | cache_read_tokens / total_tokens | Cache utilization |
-| Cost Efficiency | 10% | cost_usd / tool completions | Cost per unit of work |
-
-**Composite scoring**: weighted sum → 0-10 scale.
-- **>= 7**: `keep` — masque is amplifying
-- **4-6.9**: `review` — check fit
-- **< 4**: `doff` — masque is constraining
+**Honesty rules:**
+- Layer B is a **difference**, never an absolute level.
+- Below the baseline threshold, or for `baseline`/`mixed` sessions, Layer B is
+  suppressed with a stated reason — never a fabricated number.
+- `supporting_signals` are activity proxies; they describe the session, they do
+  **not** attribute outcome to the masque.
 
 ## Tool Calls Summary
 
-This command requires:
-- 1-3 tool calls for prerequisite checks
-- 1 tool call to read session state
-- 1 tool call to run the judge script
+- 1–3 prerequisite checks
+- 1 to read the session id / active masque
+- 1 to run the judge

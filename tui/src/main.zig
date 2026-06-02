@@ -23,36 +23,39 @@ const Event = union(enum) {
 
 var running: bool = true;
 
+// Process-wide Io and environment map. Zig 0.16 threads an `io` through every
+// filesystem op and provides the environment via the runtime instead of a
+// global getenv. Both are set once at the top of main() and read by handlers.
+var app_io: std.Io = undefined;
+var app_env: *std.process.Environ.Map = undefined;
+
 fn timerThread(loop: *vaxis.Loop(Event)) void {
     while (running) {
-        std.Thread.sleep(33 * std.time.ns_per_ms); // ~30fps
+        app_io.sleep(std.Io.Duration.fromMilliseconds(33), .awake) catch {}; // ~30fps
         if (!running) break;
-        loop.postEvent(.tick);
+        loop.postEvent(.tick) catch {};
     }
 }
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const alloc = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    // Zig 0.16 hands main a runtime-managed allocator, Io, and environment map.
+    const alloc = init.gpa;
+    app_io = init.io;
+    app_env = init.environ_map;
 
     var buffer: [4096]u8 = undefined;
-    var tty = try vaxis.Tty.init(&buffer);
+    var tty = try vaxis.Tty.init(app_io, &buffer);
     defer tty.deinit();
 
-    var vx = try vaxis.init(alloc, .{});
+    var vx = try vaxis.init(app_io, alloc, init.environ_map, .{});
     defer vx.deinit(alloc, tty.writer());
 
-    var loop: vaxis.Loop(Event) = .{
-        .tty = &tty,
-        .vaxis = &vx,
-    };
-    try loop.init();
+    var loop = vaxis.Loop(Event).init(app_io, &tty, &vx);
     try loop.start();
     defer loop.stop();
 
     try vx.enterAltScreen(tty.writer());
-    try vx.queryTerminal(tty.writer(), 1 * std.time.ns_per_s);
+    try vx.queryTerminal(tty.writer(), std.Io.Duration.fromSeconds(1));
 
     // Use semicolon-delimited SGR (universally supported).
     // The colon-delimited "standard" format is not supported by
@@ -77,7 +80,7 @@ pub fn main() !void {
     defer alloc.free(app.team);
 
     // Load lobby entries
-    app.lobby_entries = lobby_mod.loadTeamEntries(alloc) catch &.{};
+    app.lobby_entries = lobby_mod.loadTeamEntries(alloc, app_io, app_env) catch &.{};
     defer lobby_mod.deinitTeamEntries(alloc, app.lobby_entries);
 
     // Load masques from shared and private locations, then merge
@@ -87,7 +90,7 @@ pub fn main() !void {
         .{ .manifest = "../personas/manifest.yaml", .dir = "../personas" },
     };
     for (shared_paths) |sp| {
-        if (masque_mod.loadManifest(alloc, sp.manifest, .shared, sp.dir)) |masques| {
+        if (masque_mod.loadManifest(alloc, app_io, sp.manifest, .shared, sp.dir)) |masques| {
             shared_masques = masques;
             break;
         } else |_| {}
@@ -96,8 +99,8 @@ pub fn main() !void {
     // Load private masques from $MASQUES_HOME or ~/.masques
     var private_masques: []masque_mod.Masque = &.{};
     {
-        const masques_home = std.posix.getenv("MASQUES_HOME");
-        const home = std.posix.getenv("HOME");
+        const masques_home = app_env.get("MASQUES_HOME");
+        const home = app_env.get("HOME");
         var priv_dir_buf: [512]u8 = undefined;
         const priv_dir: ?[]const u8 = if (masques_home) |mh|
             std.fmt.bufPrint(&priv_dir_buf, "{s}", .{mh}) catch null
@@ -110,7 +113,7 @@ pub fn main() !void {
             var manifest_buf: [768]u8 = undefined;
             const manifest_path = std.fmt.bufPrint(&manifest_buf, "{s}/manifest.yaml", .{dir}) catch null;
             if (manifest_path) |mp| {
-                if (masque_mod.loadManifest(alloc, mp, .private, dir)) |masques| {
+                if (masque_mod.loadManifest(alloc, app_io, mp, .private, dir)) |masques| {
                     private_masques = masques;
                 } else |_| {}
             }
@@ -143,7 +146,7 @@ pub fn main() !void {
 
     // Main event loop
     while (true) {
-        const event = loop.nextEvent();
+        const event = try loop.nextEvent();
         switch (event) {
             .key_press => |key| {
                 switch (app.screen) {
@@ -270,7 +273,7 @@ fn handleKey(app: *state_mod.AppState, key: vaxis.Key, alloc: std.mem.Allocator)
     // Eagerly load detail for cursor masque
     if (app.cursorMasqueIndex()) |idx| {
         if (!app.masques[idx].detail_loaded) {
-            masque_mod.loadDetail(alloc, &app.masques[idx]) catch {};
+            masque_mod.loadDetail(alloc, app_io, &app.masques[idx]) catch {};
         }
     }
 
@@ -309,7 +312,7 @@ fn addToTeam(app: *state_mod.AppState, alloc: std.mem.Allocator) void {
     const masque_idx = app.cursorMasqueIndex() orelse return;
     const m = &app.masques[masque_idx];
 
-    masque_mod.loadDetail(alloc, m) catch {};
+    masque_mod.loadDetail(alloc, app_io, m) catch {};
 
     app.team[app.team_count] = .{
         .name = m.name,
@@ -375,7 +378,7 @@ fn writeTeam(app: *state_mod.AppState, alloc: std.mem.Allocator) void {
         app.setNotification("Need at least 2 members");
         return;
     }
-    if (writer_mod.writeTeamYaml(app)) |_| {
+    if (writer_mod.writeTeamYaml(app, app_io, app_env)) |_| {
         app.setNotification("Team file written!");
         // Refresh lobby entries so returning shows the new file
         refreshLobbyEntries(app, alloc);
@@ -612,7 +615,7 @@ fn writeMasqueBufChar(app: *state_mod.AppState, focus: state_mod.LobbyFocus, pos
 fn handleMasqueWhyInput(app: *state_mod.AppState, key: vaxis.Key) void {
     if (key.matches(vaxis.Key.enter, .{})) {
         // Final step — write the masque file
-        if (writer_mod.writeMasqueYaml(app)) |_| {
+        if (writer_mod.writeMasqueYaml(app, app_io, app_env)) |_| {
             app.setNotification("Masque created!");
             app.lobby_focus = .menu;
         } else |_| {
@@ -808,7 +811,7 @@ fn returnToLobby(app: *state_mod.AppState, alloc: std.mem.Allocator) void {
 
 fn refreshLobbyEntries(app: *state_mod.AppState, alloc: std.mem.Allocator) void {
     lobby_mod.deinitTeamEntries(alloc, app.lobby_entries);
-    app.lobby_entries = lobby_mod.loadTeamEntries(alloc) catch &.{};
+    app.lobby_entries = lobby_mod.loadTeamEntries(alloc, app_io, app_env) catch &.{};
 }
 
 fn renderApp(win: vaxis.Window, app: *state_mod.AppState) void {

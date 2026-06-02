@@ -8,27 +8,27 @@ const math = @import("math.zig");
 const Yaml = @import("yaml").Yaml;
 
 /// Scan ~/.masques/ for *.team.yaml files, parse each, return entries.
-pub fn loadTeamEntries(alloc: std.mem.Allocator) ![]state_mod.TeamEntry {
-    const home = std.posix.getenv("MASQUES_HOME") orelse blk: {
-        const h = std.posix.getenv("HOME") orelse return error.NoHomeDir;
+pub fn loadTeamEntries(alloc: std.mem.Allocator, io: std.Io, env: *std.process.Environ.Map) ![]state_mod.TeamEntry {
+    const home = env.get("MASQUES_HOME") orelse blk: {
+        const h = env.get("HOME") orelse return error.NoHomeDir;
         break :blk h;
     };
 
     var dir_buf: [512]u8 = undefined;
-    const dir_path = if (std.posix.getenv("MASQUES_HOME") != null)
+    const dir_path = if (env.get("MASQUES_HOME") != null)
         try std.fmt.bufPrint(&dir_buf, "{s}", .{home})
     else
         try std.fmt.bufPrint(&dir_buf, "{s}/.masques", .{home});
 
-    var dir = std.fs.cwd().openDir(dir_path, .{ .iterate = true }) catch {
+    var dir = std.Io.Dir.cwd().openDir(io, dir_path, .{ .iterate = true }) catch {
         return try alloc.alloc(state_mod.TeamEntry, 0);
     };
-    defer dir.close();
+    defer dir.close(io);
 
     // First pass: count team files
     var count: usize = 0;
     var iter = dir.iterate();
-    while (try iter.next()) |entry| {
+    while (try iter.next(io)) |entry| {
         if (entry.kind != .file) continue;
         if (std.mem.endsWith(u8, entry.name, ".team.yaml")) count += 1;
     }
@@ -40,11 +40,11 @@ pub fn loadTeamEntries(alloc: std.mem.Allocator) ![]state_mod.TeamEntry {
 
     // Second pass: parse each
     var iter2 = dir.iterate();
-    while (try iter2.next()) |entry| {
+    while (try iter2.next(io)) |entry| {
         if (entry.kind != .file) continue;
         if (!std.mem.endsWith(u8, entry.name, ".team.yaml")) continue;
 
-        if (parseTeamFile(alloc, dir, entry.name)) |te| {
+        if (parseTeamFile(alloc, io, dir, entry.name)) |te| {
             entries[ei] = te;
             ei += 1;
         } else |_| {}
@@ -60,13 +60,11 @@ pub fn loadTeamEntries(alloc: std.mem.Allocator) ![]state_mod.TeamEntry {
 
 fn parseTeamFile(
     alloc: std.mem.Allocator,
-    dir: std.fs.Dir,
+    io: std.Io,
+    dir: std.Io.Dir,
     filename: []const u8,
 ) !state_mod.TeamEntry {
-    const file = try dir.openFile(filename, .{});
-    defer file.close();
-
-    const source = try file.readToEndAlloc(alloc, 64 * 1024);
+    const source = try dir.readFileAlloc(io, filename, alloc, .limited(64 * 1024));
     defer alloc.free(source);
 
     var yaml: Yaml = .{ .source = source };

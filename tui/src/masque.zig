@@ -135,13 +135,10 @@ pub fn findComplement(name: []const u8) ?[]const u8 {
     return null;
 }
 
-pub fn loadManifest(allocator: std.mem.Allocator, manifest_path: []const u8, source: Source, detail_dir: []const u8) ![]Masque {
-    const file = std.fs.cwd().openFile(manifest_path, .{}) catch {
+pub fn loadManifest(allocator: std.mem.Allocator, io: std.Io, manifest_path: []const u8, source: Source, detail_dir: []const u8) ![]Masque {
+    const file_content = std.Io.Dir.cwd().readFileAlloc(io, manifest_path, allocator, .limited(1024 * 1024)) catch {
         return error.ManifestNotFound;
     };
-    defer file.close();
-
-    const file_content = try file.readToEndAlloc(allocator, 1024 * 1024);
     defer allocator.free(file_content);
 
     var yaml: Yaml = .{ .source = file_content };
@@ -205,7 +202,7 @@ pub fn loadManifest(allocator: std.mem.Allocator, manifest_path: []const u8, sou
 /// support YAML block scalars (| and >), which masque files use extensively
 /// for lens and context fields. This parser handles the subset of YAML
 /// that masque files actually use.
-pub fn loadDetail(allocator: std.mem.Allocator, masque: *Masque) !void {
+pub fn loadDetail(allocator: std.mem.Allocator, io: std.Io, masque: *Masque) !void {
     if (masque.detail_loaded) return;
 
     var name_lower_buf: [256]u8 = undefined;
@@ -218,10 +215,7 @@ pub fn loadDetail(allocator: std.mem.Allocator, masque: *Masque) !void {
     const path = try std.fmt.allocPrint(allocator, "{s}/{s}.masque.yaml", .{ masque.detail_dir, name_lower });
     defer allocator.free(path);
 
-    const file = std.fs.cwd().openFile(path, .{}) catch return;
-    defer file.close();
-
-    const source = try file.readToEndAlloc(allocator, 1024 * 1024);
+    const source = std.Io.Dir.cwd().readFileAlloc(io, path, allocator, .limited(1024 * 1024)) catch return;
     defer allocator.free(source);
 
     // Extract block scalar regions and attribute values by scanning the source.
@@ -243,7 +237,7 @@ pub fn loadDetail(allocator: std.mem.Allocator, masque: *Masque) !void {
         while (pos < source.len) {
             const line_end = std.mem.indexOfScalarPos(u8, source, pos, '\n') orelse source.len;
             const line = source[pos..line_end];
-            const trimmed = std.mem.trimLeft(u8, line, " ");
+            const trimmed = std.mem.trimStart(u8, line, " ");
 
             // End of attributes block: non-empty, non-comment line with no indent
             if (trimmed.len > 0 and trimmed[0] != '#' and countIndent(line) < 2) break;
@@ -338,7 +332,7 @@ const KV = struct { key: []const u8, value: []const u8 };
 fn parseSimpleKV(line: []const u8) ?KV {
     const colon_pos = std.mem.indexOf(u8, line, ": ") orelse return null;
     const key = line[0..colon_pos];
-    const value = std.mem.trimLeft(u8, line[colon_pos + 2 ..], " ");
+    const value = std.mem.trimStart(u8, line[colon_pos + 2 ..], " ");
     return .{ .key = key, .value = value };
 }
 
@@ -385,7 +379,7 @@ fn extractBlockScalar(source: []const u8, key: []const u8) ?[]const u8 {
             const line_start = pos;
             const line_end = std.mem.indexOfScalarPos(u8, source, pos, '\n') orelse source.len;
             const line = source[line_start..line_end];
-            const trimmed = std.mem.trimLeft(u8, line, " ");
+            const trimmed = std.mem.trimStart(u8, line, " ");
 
             if (trimmed.len == 0) {
                 // Blank line — include it (preserves paragraph breaks)
@@ -495,13 +489,13 @@ pub fn mergeMasques(allocator: std.mem.Allocator, primary: []Masque, secondary: 
 }
 
 /// Resolve the private masques directory: $MASQUES_HOME or ~/.masques
-pub fn resolvePrivateDir() ?[]const u8 {
-    if (std.posix.getenv("MASQUES_HOME")) |home| return home;
-    if (std.posix.getenv("HOME")) |home| {
+pub fn resolvePrivateDir(io: std.Io, env: *std.process.Environ.Map) ?[]const u8 {
+    if (env.get("MASQUES_HOME")) |home| return home;
+    if (env.get("HOME")) |home| {
         var buf: [512]u8 = undefined;
         const path = std.fmt.bufPrint(&buf, "{s}/.masques", .{home}) catch return null;
         // Check if directory exists
-        std.fs.cwd().access(path, .{}) catch return null;
+        std.Io.Dir.cwd().access(io, path, .{}) catch return null;
         // Return the env-based string for later use (caller will need to format it)
         return home;
     }

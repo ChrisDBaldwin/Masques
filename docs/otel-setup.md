@@ -1,69 +1,60 @@
-# OTEL Setup for Claude Code
+# OTEL Setup — Seating the Always-On Audience
 
-This guide explains how to configure Claude Code to send telemetry to a local OpenTelemetry collector.
+This guide seats the **persistent audience**: a local OpenTelemetry collector
+that captures *every* Claude Code session — masque or baseline — to local JSONL.
+You seat it **once**; Docker keeps it alive across crashes and reboots. There is
+no per-session start (PRD D1).
 
-> **Quick Start**: Use `/audience start` to launch the collector with a single command.
+> **Quick start:** `/audience seat` does all of Step 1–2 for you and verifies
+> the result. This document is the manual / reference version.
 
-## Overview
+## Why always-on
 
-Claude Code emits **metrics** and **logs** (events) via OTLP. This setup:
-1. Runs a local OTEL collector in Docker
-2. Configures Claude Code to send telemetry to it
-3. Displays telemetry in the collector's console output
+The audience can only baseline a masque against "no masque" if it has been
+watching all along. Summoning a collector per session can't accrue a baseline
+corpus. So the collector is seated once and left running; the record of
+baseline sessions builds itself, and lift ("Codesmith vs your baseline on
+refactor work") becomes computable. See `docs/evaluation.md`.
+
+## Privacy posture (read this first)
+
+The collector is **local-only by default**. Its only sinks are a debug console
+and local JSONL files under `services/collector/data/`. **Nothing leaves the
+machine.** Forwarding to a remote (masques.ai / ClickHouse, Tier 3) is **opt-in
+and disabled** — it lives commented-out in `config.yaml` and is deferred work.
+Note the local JSONL *does* contain raw prompt/tool content; that is fine
+locally, but it is exactly why forwarding must ship only the derived Tier-2
+signal, never this raw file (PRD D3).
 
 ## Prerequisites
 
-- Docker installed and running
-- Claude Code installed
+- Docker installed and running — and set to **start on login** (Docker Desktop →
+  Settings → General). This is what makes the audience survive a reboot.
+- Claude Code installed.
+- DuckDB for scoring: `brew install duckdb`.
 
-## Step 1: Start the Collector
+## Step 1: Seat the collector (once)
 
 ```bash
 cd services/collector
-
-# Build the image
-docker build -t masques-audience .
-
-# Run in foreground (see telemetry output)
-docker run --rm -p 4317:4317 -p 4318:4318 -p 13133:13133 masques-audience
+docker compose up -d --build
 ```
 
-Verify it's running:
-```bash
-curl http://localhost:13133/health
-# Should return: {"status":"Server available","upSince":"...","uptime":"..."}
-```
-
-## Step 2: Configure Claude Code
-
-### Option A: Environment Variables
-
-Set these before running `claude`:
+`docker-compose.yml` pins `restart: unless-stopped` and a healthcheck that
+probes the `:13133` health endpoint, so a crashed *or hung* collector is
+restarted automatically. Verify:
 
 ```bash
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=otlp
-export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-export OTEL_LOG_TOOL_DETAILS=1
+docker compose ps                  # masques-audience → Up (healthy)
+curl -s http://localhost:13133/    # → {"status":"Server available",...}
 ```
 
-Or add to your shell profile (`~/.zshrc`, `~/.bashrc`):
+You do **not** run this per session. Once it is up, Docker re-seats it after
+reboots on its own.
 
-```bash
-# Claude Code OTEL configuration
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=otlp
-export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-export OTEL_LOG_TOOL_DETAILS=1
-```
+## Step 2: Configure Claude Code telemetry (once)
 
-### Option B: Claude Code Settings
-
-Add to `~/.claude/settings.json`:
+Add to `~/.claude/settings.json` (then restart `claude` so it takes effect):
 
 ```json
 {
@@ -78,92 +69,99 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-> **`OTEL_LOG_TOOL_DETAILS=1`** enables `skill_name` in tool events, which is required for `/performance` to detect masque don/doff session boundaries in the telemetry stream.
+(Equivalently, `export` these in your shell profile before launching `claude`.)
 
-## Step 3: Verify
+> **`OTEL_LOG_TOOL_DETAILS=1`** enriches tool events. The richer the tool
+> events, the better the heuristic task-class inference and scoring.
 
-1. Start the collector (Step 1)
-2. Open a new Claude Code session
-3. Watch the collector output for telemetry data
+Telemetry env is read at `claude` startup — a session already running won't be
+captured until it restarts.
 
-You should see metrics and log events flowing through:
+## Step 3: Verify capture
+
+Open a new Claude Code session, do a little work, then:
+
+```bash
+# How many sessions has the house captured? (distinct session.id)
+./services/judge/captured.sh
+
+# Watch live capture
+cd services/collector && docker compose logs -f
 ```
-2024-01-26T12:00:00.000Z info LogsExporter {"kind": "exporter", "data_type": "logs", ...}
-2024-01-26T12:00:00.000Z info MetricsExporter {"kind": "exporter", "data_type": "metrics", ...}
+
+Every session writes events tagged with a `session.id`; the judge uses that as
+the session boundary (`don_time` = first event, `doff_time` = last). Baseline
+sessions (no `/don`) are captured exactly the same way — they simply carry no
+masque attribution.
+
+## How masque vs baseline is distinguished
+
+The telemetry stream itself has no masque field. Attribution is added by `/don`,
+which appends one line to a **local sidecar map**,
+`services/collector/data/sessions.attribution.jsonl`:
+
+```json
+{"session_id":"<CLAUDE_CODE_SESSION_ID>","masque":"Codesmith","donned_at":"..."}
 ```
+
+`CLAUDE_CODE_SESSION_ID` equals the telemetry `session.id`, so the judge joins
+the two cleanly. A session with no line is a **baseline** sample; one line is a
+**clean** masque sample; two+ distinct masques in one session is **mixed** and
+excluded from lift (PRD D2). This sidecar is local attribution metadata and is
+never forwarded.
+
+## What gets collected
+
+Claude Code emits **metrics** and **logs** (events) over OTLP — no traces. The
+log events that matter for scoring:
+
+- `claude_code.tool_result` — `tool_name`, `success`, `duration_ms`
+- `claude_code.user_prompt` — user turns
+- `claude_code.api_request` — `cost_usd`, token counts, cache stats
+- `claude_code.api_error` — friction signal
+
+## Scoring
+
+```bash
+./services/judge/judge.sh          # most recent session
+TARGET_SESSION="$CLAUDE_CODE_SESSION_ID" ./services/judge/judge.sh   # this session
+# or the plugin command:
+/performance
+```
+
+Output is the two-layer reaction (Layer A always; Layer B lift once earned).
+See `docs/evaluation.md` for the model.
 
 ## Troubleshooting
 
-### No telemetry appearing
+**Collector won't stay up / crash-loops.** In v1.1 the default config is
+local-only and has no remote dependency, so it should not crash-loop. If you
+opted into ClickHouse forwarding and the remote is down, that can wedge startup
+— disable it (re-comment the `clickhouse` exporter in `config.yaml`) and rebuild.
 
-1. Check `CLAUDE_CODE_ENABLE_TELEMETRY=1` is set
-2. Verify collector is running: `curl http://localhost:13133/health`
-3. Check port 4317 isn't blocked or in use
+**No telemetry appearing.**
+1. `CLAUDE_CODE_ENABLE_TELEMETRY=1` set, and `claude` restarted since.
+2. Collector healthy: `curl http://localhost:13133/`.
+3. Endpoint reachable: HTTP `:4318` (or gRPC `:4317`).
 
-### Connection refused
-
-Ensure the collector started successfully and ports are exposed:
-```bash
-docker ps  # Should show masques-audience
-netstat -an | grep 4317  # Should show LISTEN
-```
-
-### Using gRPC instead of HTTP
-
-If HTTP/protobuf doesn't work, try gRPC:
+**Use gRPC instead of HTTP:**
 ```bash
 export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 ```
 
-## Running in Background
+## Dismissing the audience
 
-For persistent operation, use `/audience start` or manually:
-```bash
-docker run -d --name masques-audience \
-  -p 4317:4317 -p 4318:4318 -p 13133:13133 \
-  masques-audience
-
-# View logs
-docker logs -f masques-audience
-
-# Stop
-docker stop masques-audience && docker rm masques-audience
-```
-
-## What Gets Collected
-
-Claude Code emits:
-- **Metrics**: Tool usage counts, response times, token consumption
-- **Logs**: Session events, errors, tool invocations
-
-Note: Claude Code does **not** emit traces (spans). The collector config handles metrics and logs pipelines.
-
-## Performance Scoring
-
-The collector writes JSONL files to `services/collector/data/` alongside shipping to ClickHouse. The DuckDB judge (`services/judge/`) reads this local data to score masque sessions.
+Rare — you normally leave it seated. To close the house entirely:
 
 ```bash
-# Run performance scoring directly
-./services/judge/judge.sh
-
-# Or use the plugin command
-/performance
+cd services/collector && docker compose down   # or: /audience dismiss
 ```
 
-The judge scores 5 dimensions — Quality, Autonomy, Productivity, Token Efficiency, Cost Efficiency — and produces a composite score with a keep/review/doff recommendation.
+## Deferred (not in v1.1)
 
-Requires:
-- DuckDB installed (`brew install duckdb`)
-- `OTEL_LOG_TOOL_DETAILS=1` for masque session detection
-- Telemetry data in `services/collector/data/logs.jsonl`
-
-## Next Steps
-
-Once you've verified data flows, you can:
-- Run `/performance` to score your masque sessions
-- Add persistent storage (ClickHouse, PostgreSQL)
-- Export to visualization tools (Grafana)
-- Add alerting based on metrics
-
-See `services/collector/config.yaml` for exporter configuration.
+- A **no-Docker, zero-infra** capture path (native `otelcol` as a launchd
+  service, a purpose-built local OTLP receiver, or a direct OTEL file sink) —
+  friction reduction on the always-on loop (PRD OQ1).
+- **Forwarding** the derived Tier-2 signal to masques.ai (Tier 3) — opt-in,
+  privacy-gated, Phase 4.

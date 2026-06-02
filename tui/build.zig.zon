@@ -2,20 +2,22 @@
     .name = .masque,
     .version = "0.2.0",
     .fingerprint = 0xe2d3f6aba67537b1,
-    .minimum_zig_version = "0.15.0",
+    .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",
         "src",
+        "vendor",
     },
     .dependencies = .{
         .vaxis = .{
             .url = "https://github.com/rockorager/libvaxis/archive/refs/heads/main.tar.gz",
-            .hash = "vaxis-0.5.1-BWNV_Bw_CQAIVNh1ekGVzbip25CYBQ_J3kgABnYGFnI4",
+            .hash = "vaxis-0.6.0-BWNV_HHwCQB451KS7A8SMykALblPmGwHnzSfiJHjN3_9",
         },
+        // Vendored: upstream zig-yaml main targets Zig 0.16 but its build.zig
+        // fails to compile (un-migrated test/spec.zig). See vendor/zig-yaml.
         .yaml = .{
-            .url = "https://github.com/kubkon/zig-yaml/archive/refs/tags/0.2.0.tar.gz",
-            .hash = "zig_yaml-0.2.0-C1161pmrAgC_rL9WzjvgNg7HnmyAMwHsG3Sre0F4haPI",
+            .path = "vendor/zig-yaml",
         },
     },
 }
