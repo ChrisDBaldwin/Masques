@@ -4,20 +4,17 @@
 
 # Masques
 
-**AssumeRole for Agents.** A masque is a temporary cognitive identity—bundling lens (how to think), context (who you're helping), and attributes (metadata) into a single assumable primitive.
+**Role-Playing for Agents.** A masque is a temporary cognitive identity—bundling lens (how to think), context (who you're helping), and attributes (metadata) into a single assumable primitive.
 
-## What Is This?
+**And, crucially, a *measured* one.** A masque without an audience is just a system
+prompt. The thesis of this project is that the interesting question isn't that you
+*wore* a costume — it's whether wearing it made the work **better**, and that an
+always-seated local audience can tell you, honestly, on *your own* work. That
+measurable identity is the differentiated half, described next.
 
-Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
+## Measurable Identity — the product thesis
 
-It's a representation layer you slap on top of any agent: don a masque to adopt its lens and context, do the work, then doff to step backstage and return to baseline. The core needs **zero infrastructure** — a masque is just YAML, and identity lives in a session file. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge, credentials, and tools.
-
-## Measurable Identity — the differentiated half
-
-A masque without an audience is just a system prompt. The interesting question
-isn't that you *wore* a costume — it's whether wearing it made the work **better**.
-
-So the audience is **always seated**: a local, always-on observer captures every
+The audience is **always seated**: a local, always-on observer captures every
 session — masque or baseline — and scores it two ways. From session one you get a
 **7-point house reaction** (`perfect · great · good · neutral · bad · awful ·
 detracting`) — an honest read of how the session went. As your own baseline corpus
@@ -27,6 +24,12 @@ work."* A difference, never a vanity number, and it never leaves your machine.
 
 This is the part that makes masques more than prompt presets. See
 [`docs/evaluation.md`](docs/evaluation.md) and [`docs/otel-setup.md`](docs/otel-setup.md).
+
+## What Is This?
+
+Agents today get configured through scattered mechanisms: system prompts, MCP servers, environment variables, knowledge bases. These are disconnected. Masques unifies them into a single "become this identity" operation.
+
+It's a representation layer you slap on top of any agent: don a masque to adopt its lens and context, do the work, then doff to step backstage and return to baseline. The core needs **zero infrastructure** — a masque is just YAML, and identity lives in a session file. The [roadmap](#roadmap) sketches where this could grow — bundled knowledge per masque.
 
 ## How It Works
 
@@ -116,6 +119,11 @@ context: |                # Optional. Situational framing
 lens: |                   # Required. Cognitive framing (system prompt fragment)
   How to approach problems. What to prioritize. What to reject.
 
+rubric: |                 # Optional. How to know it worked — the measurable
+  shadow of the lens. The audience's judge reads a session against this to
+  assign the Layer-A reaction band; masques without one fall back to a
+  generic activity band.
+
 spinnerVerbs:             # Optional. Custom activity indicators
   mode: replace           # replace | append | prepend
   verbs:
@@ -177,8 +185,8 @@ Masques is the **identity layer** for any agent. Today it provides cognitive fra
 |------|--------|-----|----------|
 | Telemetry | **Working** | Measure what masques actually do | OTEL → Collector → ClickHouse + DuckDB |
 | Knowledge | Planned | Masques should bring their own context | MCP URIs bundled per masque |
-| Credentials | Planned | Identity implies access | Vault role + TTL declarations |
-| Tools | Planned | Masques should bring their own capabilities | Bundled MCP servers per masque |
+
+Credentials and tools are deliberately **out of scope** — they're agent primitives the host already handles (vaults, MCP config). Masques stays the identity layer and composes on top of them rather than re-owning them.
 
 The larger "agent marketplace" direction — spawning masques as paid workers with a reputation + payment gate — is deferred. See [`docs/future/`](docs/future/) for that vision.
 
