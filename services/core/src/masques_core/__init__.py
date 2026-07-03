@@ -1,0 +1,105 @@
+"""masques-core — the portable Masques core.
+
+Resolve/compose a Persona (pinned Identity + optional operational sidecar)
+with zero infrastructure. Pure Python over YAML files; PyYAML is the only
+dependency. Hosts (the Claude Code plugin's MCP server, loon-agent, a CLI)
+are thin adapters over this package.
+"""
+
+from .core import (
+    MASQUE_SUFFIX,
+    PERSONA_SUFFIX,
+    REQUIRED_FIELDS,
+    build_capability_plan,
+    build_identity_block,
+    bundled_dir,
+    compose,
+    inspect,
+    list_masques,
+    private_dir,
+    resolve,
+    search_paths,
+)
+from .model import (
+    HOST_APPLY_TIERS,
+    BoundRef,
+    CapabilityPlan,
+    ConfigError,
+    CredentialBinding,
+    CredentialScope,
+    HostSnapshot,
+    Identity,
+    MasqueError,
+    MasqueNotFoundError,
+    MasqueParseError,
+    McpBinding,
+    MeasurementPolicy,
+    Persona,
+    PersonaConfig,
+    PersonaConfigError,
+    PersonaRef,
+    PlanBinding,
+    SecretRef,
+    Version,
+)
+from .ports import (
+    AdvisoryMcpAdapter,
+    EnvAdapter,
+    McpPort,
+    NullSecretAdapter,
+    NullTelemetryAdapter,
+    ResolvedSecret,
+    SecretPort,
+    TelemetryPort,
+    get_port,
+    register,
+)
+from .sidecar import parse_persona_config
+
+__version__ = "0.1.0"
+
+__all__ = [
+    "HOST_APPLY_TIERS",
+    "MASQUE_SUFFIX",
+    "PERSONA_SUFFIX",
+    "REQUIRED_FIELDS",
+    "AdvisoryMcpAdapter",
+    "BoundRef",
+    "CapabilityPlan",
+    "ConfigError",
+    "CredentialBinding",
+    "CredentialScope",
+    "EnvAdapter",
+    "HostSnapshot",
+    "Identity",
+    "MasqueError",
+    "MasqueNotFoundError",
+    "MasqueParseError",
+    "McpBinding",
+    "McpPort",
+    "MeasurementPolicy",
+    "NullSecretAdapter",
+    "NullTelemetryAdapter",
+    "Persona",
+    "PersonaConfig",
+    "PersonaConfigError",
+    "PersonaRef",
+    "PlanBinding",
+    "ResolvedSecret",
+    "SecretPort",
+    "SecretRef",
+    "TelemetryPort",
+    "Version",
+    "build_capability_plan",
+    "build_identity_block",
+    "bundled_dir",
+    "compose",
+    "get_port",
+    "inspect",
+    "list_masques",
+    "parse_persona_config",
+    "private_dir",
+    "register",
+    "resolve",
+    "search_paths",
+]
