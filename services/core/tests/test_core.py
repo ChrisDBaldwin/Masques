@@ -220,6 +220,83 @@ def test_sidecar_enforces_alias_audience_symmetry(private: Path) -> None:
     assert "symmetry" in p.config_error.reason
 
 
+# --- memory binding (Phase 3 §3) -----------------------------------------------
+
+
+MEMORY_SIDECAR = """\
+    persona: Codesmith
+    memory:
+      namespace: research
+      mode: read-only
+    """
+
+
+def test_memory_binding_parses_with_defaults(private: Path) -> None:
+    _write(private, "codesmith", PRIVATE_CODESMITH)
+    _write(private, "codesmith", MEMORY_SIDECAR, suffix=".persona.yaml")
+    p = core.resolve("Codesmith")
+    memory = p.config.memory
+    assert memory.namespace == "research"
+    assert memory.mode == "read-only"
+    assert memory.prompt_block is True  # default
+    assert memory.provider is None  # host default
+
+
+def test_memory_binding_rejects_bad_mode(private: Path) -> None:
+    _write(private, "codesmith", PRIVATE_CODESMITH)
+    _write(
+        private,
+        "codesmith",
+        "persona: Codesmith\nmemory: {namespace: x, mode: append-only}\n",
+        suffix=".persona.yaml",
+    )
+    p = core.resolve("Codesmith")
+    assert p.config is None
+    assert "mode" in p.config_error.reason
+
+
+def test_memory_binding_requires_namespace(private: Path) -> None:
+    _write(private, "codesmith", PRIVATE_CODESMITH)
+    _write(
+        private,
+        "codesmith",
+        "persona: Codesmith\nmemory: {mode: read-only}\n",
+        suffix=".persona.yaml",
+    )
+    p = core.resolve("Codesmith")
+    assert p.config is None
+    assert "namespace" in p.config_error.reason
+
+
+def test_memory_folds_by_host_seam(private: Path) -> None:
+    _write(private, "codesmith", PRIVATE_CODESMITH)
+    _write(private, "codesmith", MEMORY_SIDECAR, suffix=".persona.yaml")
+    p = core.resolve("Codesmith")
+
+    plan, _ = core.build_capability_plan(p, None)
+    assert plan.memory.status == "advisory"  # no snapshot: inspect-style purity
+
+    no_seam = HostSnapshot(achievable_tier="hook", memory_seam=False)
+    plan, _ = core.build_capability_plan(p, no_seam)
+    assert plan.memory.status == "unresolved-host"  # host cannot scope memory
+
+    seam = HostSnapshot(achievable_tier="bind", memory_seam=True)
+    plan, _ = core.build_capability_plan(p, seam)
+    assert plan.memory.status == "applied"
+    assert plan.to_dict()["memory"] == {
+        "namespace": "research",
+        "mode": "read-only",
+        "status": "applied",
+    }
+
+
+def test_plan_omits_memory_when_unbound() -> None:
+    p = core.resolve("Codesmith")
+    plan, _ = core.build_capability_plan(p, None)
+    assert plan.memory is None
+    assert "memory" not in plan.to_dict()
+
+
 # --- compose (ported spec + additive keys) ------------------------------------
 
 

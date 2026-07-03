@@ -184,12 +184,18 @@ class CredentialBinding:
     ttl: str | None = None
 
 
+# Reserved server id: a host's native (non-MCP) tool registry (Phase 3 §4).
+# loon-agent's built-in tools bind under this id; real MCP servers use their own.
+HOST_NATIVE_SERVER = "host"
+
+
 @dataclass(frozen=True)
 class McpBinding:
     """ONE per-persona capability toggle + tool-permission scope.
 
-    `server` is a stable id in the host's registry; the reserved id "host"
-    denotes the host's native (non-MCP) tool registry (Phase 3 §4).
+    `server` is a stable id in the host's registry; the reserved id
+    HOST_NATIVE_SERVER ("host") denotes the host's native (non-MCP) tool
+    registry (Phase 3 §4).
     """
 
     server: str
@@ -199,6 +205,21 @@ class McpBinding:
     uses_credentials: tuple[str, ...] = ()
     config: dict[str, bool | int] | None = None  # closed typed keys only
     required: bool = False
+
+
+@dataclass(frozen=True)
+class MemoryBinding:
+    """This persona's memory scope — the third binding type (Phase 3 §3).
+
+    The persona owns the scope and mode; the memory provider owns the storage.
+    Only meaningful on a host with a memory seam (loon-agent's MemoryProvider);
+    elsewhere it folds to `unresolved-host` in the CapabilityPlan.
+    """
+
+    namespace: str  # partition key; personas sharing it share recall (deliberate)
+    mode: str = "read-write"  # "read-write" | "read-only" | "none"
+    prompt_block: bool = True  # inject the provider's static block while donned?
+    provider: str | None = None  # named provider; None = host default
 
 
 @dataclass(frozen=True)
@@ -220,6 +241,7 @@ class PersonaConfig:
     etag: str | None = None
     credentials: list[CredentialBinding] = field(default_factory=list)
     mcp: list[McpBinding] = field(default_factory=list)
+    memory: MemoryBinding | None = None
     measurement: MeasurementPolicy = field(default_factory=MeasurementPolicy)
 
     def credential(self, alias: str) -> CredentialBinding | None:
@@ -249,6 +271,7 @@ class HostSnapshot:
 
     servers: frozenset[str] = frozenset()
     achievable_tier: str = "none"
+    memory_seam: bool = False  # host exposes a scoped MemoryProvider (Phase 3 §3)
 
 
 @dataclass(frozen=True)
@@ -283,21 +306,46 @@ class PlanBinding:
 
 
 @dataclass(frozen=True)
+class PlanMemory:
+    """The MemoryBinding folded against the host: scope + whether anything
+    actually enforces it (applied | advisory | unresolved-host)."""
+
+    namespace: str
+    mode: str
+    status: str  # applied | advisory | unresolved-host
+    provider: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "namespace": self.namespace,
+            "mode": self.mode,
+            "status": self.status,
+        }
+        if self.provider is not None:
+            d["provider"] = self.provider
+        return d
+
+
+@dataclass(frozen=True)
 class CapabilityPlan:
     """What the donned persona requests from the host. Discarded at doff."""
 
     host_apply: str = "none"
     bindings: tuple[PlanBinding, ...] = ()
+    memory: PlanMemory | None = None
 
     @classmethod
     def empty(cls) -> CapabilityPlan:
         return cls()
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d: dict[str, Any] = {
             "host_apply": self.host_apply,
             "bindings": [b.to_dict() for b in self.bindings],
         }
+        if self.memory is not None:
+            d["memory"] = self.memory.to_dict()
+        return d
 
 
 @dataclass(frozen=True)

@@ -22,6 +22,7 @@ from .core import (
 )
 from .model import (
     HOST_APPLY_TIERS,
+    HOST_NATIVE_SERVER,
     BoundRef,
     CapabilityPlan,
     ConfigError,
@@ -34,11 +35,13 @@ from .model import (
     MasqueParseError,
     McpBinding,
     MeasurementPolicy,
+    MemoryBinding,
     Persona,
     PersonaConfig,
     PersonaConfigError,
     PersonaRef,
     PlanBinding,
+    PlanMemory,
     SecretRef,
     Version,
 )
@@ -60,6 +63,7 @@ __version__ = "0.1.0"
 
 __all__ = [
     "HOST_APPLY_TIERS",
+    "HOST_NATIVE_SERVER",
     "MASQUE_SUFFIX",
     "PERSONA_SUFFIX",
     "REQUIRED_FIELDS",
@@ -78,6 +82,7 @@ __all__ = [
     "McpBinding",
     "McpPort",
     "MeasurementPolicy",
+    "MemoryBinding",
     "NullSecretAdapter",
     "NullTelemetryAdapter",
     "Persona",
@@ -85,6 +90,7 @@ __all__ = [
     "PersonaConfigError",
     "PersonaRef",
     "PlanBinding",
+    "PlanMemory",
     "ResolvedSecret",
     "SecretPort",
     "SecretRef",

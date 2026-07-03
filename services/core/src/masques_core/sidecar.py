@@ -30,6 +30,7 @@ from .model import (
     CredentialScope,
     McpBinding,
     MeasurementPolicy,
+    MemoryBinding,
     PersonaConfig,
     PersonaConfigError,
     SecretRef,
@@ -80,6 +81,7 @@ def _parse(path: Path, identity_name: str) -> PersonaConfig | None:
         etag=hashlib.sha256(text.encode("utf-8")).hexdigest()[:16],
         credentials=credentials,
         mcp=mcp,
+        memory=_memory(data.get("memory"), path.name),
         measurement=_measurement(data.get("measurement"), path.name),
     )
 
@@ -158,6 +160,27 @@ def _mcp_binding(data: dict, filename: str) -> McpBinding:
         uses_credentials=tuple(str(a) for a in data.get("uses_credentials") or ()),
         config=dict(config) if config else None,
         required=bool(data.get("required", False)),
+    )
+
+
+def _memory(data: object, filename: str) -> MemoryBinding | None:
+    if data is None:
+        return None
+    if not isinstance(data, dict):
+        raise PersonaConfigError(f"{filename}: `memory:` must be a mapping")
+    namespace = str(data.get("namespace", "")).strip()
+    if not namespace:
+        raise PersonaConfigError(f"{filename}: memory binding missing `namespace:`")
+    mode = str(data.get("mode", "read-write"))
+    if mode not in ("read-write", "read-only", "none"):
+        raise PersonaConfigError(
+            f"{filename}: memory mode must be read-write|read-only|none, got {mode!r}"
+        )
+    return MemoryBinding(
+        namespace=namespace,
+        mode=mode,
+        prompt_block=bool(data.get("prompt_block", True)),
+        provider=str(data["provider"]) if data.get("provider") is not None else None,
     )
 
 

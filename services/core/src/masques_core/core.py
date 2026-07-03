@@ -33,6 +33,7 @@ from .model import (
     Persona,
     PersonaRef,
     PlanBinding,
+    PlanMemory,
     Version,
 )
 from .sidecar import PERSONA_SUFFIX, parse_persona_config
@@ -318,11 +319,31 @@ def build_capability_plan(
             )
         )
 
+    # Memory: only a host with a memory seam can enforce scope/mode (Phase 3 §3).
+    memory = None
+    memory_binding = persona.config.memory if persona.config else None
+    if memory_binding is not None:
+        if host_caps is None:
+            memory_status = "advisory"
+        elif host_caps.memory_seam:
+            memory_status = "applied"
+        else:
+            memory_status = "unresolved-host"
+        memory = PlanMemory(
+            namespace=memory_binding.namespace,
+            mode=memory_binding.mode,
+            status=memory_status,
+            provider=memory_binding.provider,
+        )
+
     ref_status = "pending" if enforcing else "advisory"
     bound_refs = [
         BoundRef(alias=c.alias, scheme=c.ref.scheme, status=ref_status) for c in credentials
     ]
-    return CapabilityPlan(host_apply=host_apply, bindings=tuple(bindings)), bound_refs
+    return (
+        CapabilityPlan(host_apply=host_apply, bindings=tuple(bindings), memory=memory),
+        bound_refs,
+    )
 
 
 # =============================================================================
