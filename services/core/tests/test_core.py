@@ -437,6 +437,41 @@ def test_inspect_is_pure_and_advisory_with_sidecar(private: Path) -> None:
     assert info["measurement_policy"]["enabled"] is False
 
 
+# --- attribution contract (Phase 3 §6) -------------------------------------------
+
+
+def test_otel_attributes_trio() -> None:
+    p = core.resolve("Codesmith")
+    attrs = p.otel_attributes()
+    assert set(attrs) == {"persona.id", "persona.version", "persona.identity_hash"}
+    assert attrs["persona.id"] == "Codesmith"
+    assert type(attrs["persona.version"]) is str  # raw string, never the Version object
+    assert len(attrs["persona.identity_hash"]) == 64  # sha256 hex
+
+
+def test_identity_hash_is_deterministic_and_fork_sensitive(private: Path) -> None:
+    _write(private, "codesmith", PRIVATE_CODESMITH)
+    a = core.resolve("Codesmith").identity.identity_hash()
+    b = core.resolve("Codesmith").identity.identity_hash()
+    assert a == b  # same bytes, same hash — across separate resolves
+
+    # A forked lens must hash differently (content addressing, Phase 1 §7).
+    _write(private, "codesmith", PRIVATE_CODESMITH.replace("private shadow", "forked lens"))
+    assert core.resolve("Codesmith").identity.identity_hash() != a
+
+
+def test_identity_hash_normalizes_line_endings(private: Path) -> None:
+    _write(private, "codesmith", PRIVATE_CODESMITH)
+    h = core.resolve("Codesmith").identity.identity_hash()
+    crlf = private / "codesmith.masque.yaml"
+    crlf.write_bytes(crlf.read_bytes().replace(b"\n", b"\r\n"))
+    assert core.resolve("Codesmith").identity.identity_hash() == h
+
+
+def test_host_apply_tiers_are_ordered_weakest_to_strongest() -> None:
+    assert core.HOST_APPLY_TIERS == ("none", "config-write", "hook", "bind")
+
+
 # --- ports ----------------------------------------------------------------------
 
 

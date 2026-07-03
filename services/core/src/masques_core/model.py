@@ -132,6 +132,36 @@ class Identity:
     def has_rubric(self) -> bool:
         return bool(self.rubric and self.rubric.strip())
 
+    def identity_hash(self) -> str:
+        """sha256 over the canonical encoding of {name, version, lens, context,
+        rubric} — sorted keys, LF-normalized (Phase 1 §7). Only byte-identical
+        pinned identities hash alike; a forked lens hashes differently.
+        Computed lazily on first call and cached."""
+        cached = getattr(self, "_identity_hash", None)
+        if cached is not None:
+            return cached
+        import hashlib
+        import json
+
+        def lf(value: str | None) -> str | None:
+            return value.replace("\r\n", "\n") if value is not None else None
+
+        canonical = json.dumps(
+            {
+                "name": self.name,
+                "version": self.version.raw,
+                "lens": lf(self.lens),
+                "context": lf(self.context),
+                "rubric": lf(self.rubric),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        object.__setattr__(self, "_identity_hash", digest)
+        return digest
+
 
 # =============================================================================
 # Sidecar value-objects — references and scopes only, never material
@@ -431,3 +461,17 @@ class Persona:
     @property
     def has_rubric(self) -> bool:
         return self.identity.has_rubric
+
+    # --- the attribution contract (Phase 3 §6) ------------------------------
+
+    def otel_attributes(self) -> dict[str, str]:
+        """The low-cardinality attribution trio a host stamps on its OTEL
+        spans/resource at don (Phase 1 §7, Phase 3 §6). This is the part of
+        observability masques standardizes; the pipeline is the host's.
+        session/user/machine ids are the host's business and stay OUT of
+        these attributes (cardinality)."""
+        return {
+            "persona.id": self.identity.name,
+            "persona.version": self.identity.version.raw,
+            "persona.identity_hash": self.identity.identity_hash(),
+        }
