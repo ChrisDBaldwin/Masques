@@ -1,0 +1,80 @@
+# Masque Schema v0.2
+# Simplified schema for masque definitions
+#
+# A masque is a temporary cognitive identity bundling three components:
+# lens (cognitive framing), context (situational grounding), and attributes (metadata).
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://masques.ai/schemas/masque.schema.yaml"
+title: Masque
+description: A temporary cognitive identity for agents
+
+type: object
+required:
+  - name
+  - version
+  - lens
+
+properties:
+  # === Identity ===
+  name:
+    type: string
+    description: Human-readable name for this masque
+    minLength: 1
+
+  version:
+    type: string
+    description: Semantic version (e.g., "0.1.0")
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+
+  # === Metadata ===
+  attributes:
+    type: object
+    description: Flexible key-value metadata (domain, tagline, style, etc.)
+    additionalProperties: true
+
+  # === Presentation ===
+  spinnerVerbs:
+    type: object
+    description: Custom spinner verbs shown during agent activity
+    properties:
+      mode:
+        type: string
+        description: How to apply verbs to the session
+        enum: [replace, append, prepend]
+        default: replace
+      verbs:
+        type: array
+        description: List of spinner verb phrases (e.g., "Codesmith:Forging")
+        items:
+          type: string
+          minLength: 1
+        minItems: 1
+
+  # === Core Components ===
+
+  context:
+    type: string
+    description: |
+      Domain knowledge and situational framing.
+      Who are you helping? What do they value?
+      What's the operational environment?
+
+  lens:
+    type: string
+    description: |
+      System prompt fragment defining cognitive framing.
+      How to approach problems, what to prioritize, what to reject.
+      Include intent guidance (what to do, what to avoid) as prose.
+
+  rubric:
+    type: string
+    description: |
+      Optional. The measurable shadow of the lens — how to know a session
+      wearing this masque went well. Freeform prose, in the same prose-first
+      spirit as lens and context: describe what a great session looks like and
+      what makes one fail. The audience's qualitative judge (an LLM judge,
+      optionally a Witness masque) reads a session against this rubric to assign
+      its Layer-A reaction band. Masques without a rubric fall back to a generic
+      activity-only band. Self-authored rubrics are fine for personal
+      reputation; the global pool (later) will need normalized rubrics.

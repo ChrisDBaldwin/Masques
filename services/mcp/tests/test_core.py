@@ -15,7 +15,6 @@ import pytest
 
 from masques_mcp import core
 
-
 # --- fixtures ---------------------------------------------------------------
 
 

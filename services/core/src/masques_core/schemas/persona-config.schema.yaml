@@ -1,0 +1,170 @@
+# Persona Config (sidecar) Schema v1
+# Validates <name>.persona.yaml — the mutable operational half of a Persona.
+#
+# The sidecar binds a pinned identity (<name>.masque.yaml, masque.schema.yaml)
+# to operational capability: credential references, MCP/tool scopes, memory
+# scope, and measurement opt-in. It is per-user, always private, never shipped,
+# and never under the identity's semver pin (Phase 1 §4).
+#
+# Two structural security decisions are encoded here (Phase 1 §2/§6):
+#   * credential entries use `additionalProperties: false` — an inline
+#     `value:`/`secret:`/`token:` key is a schema violation, so secret
+#     material can never ride in a sidecar
+#   * `mcp[].config` values are bool/int only — a free-form string is a
+#     potential DSN/bearer-token sink and is rejected; credential-bearing
+#     values must route through `uses_credentials` -> `credentials[].ref`
+#
+# masques-core performs equivalent load-time validation in code (sidecar.py);
+# this file is the formal contract for editors, CI, and non-Python hosts.
+# A failing sidecar DEGRADES the don (config=None + surfaced warning) — it
+# never blocks it.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://masques.ai/schemas/persona-config.schema.yaml"
+title: PersonaConfig
+description: Mutable operational sidecar binding a pinned masque identity to capability
+
+type: object
+required:
+  - persona
+# Top-level unknown keys are IGNORED, not rejected — the sidecar evolves by
+# additive fields under schema_version (Phase 1 §2 "Schema evolution rules").
+additionalProperties: true
+
+properties:
+  persona:
+    type: string
+    description: Back-reference to the identity by name; a mismatch means this sidecar is ignored
+    minLength: 1
+
+  schema_version:
+    type: integer
+    description: Config-file format version (NOT the identity semver)
+    default: 1
+    minimum: 1
+
+  credentials:
+    type: array
+    description: Credential REFERENCES and scopes — never material
+    items:
+      type: object
+      required: [alias, ref]
+      # Closed set: an inline value/secret/token/password key is a violation.
+      additionalProperties: false
+      properties:
+        alias:
+          type: string
+          description: Logical handle the bindings refer to (stable across rotation)
+          minLength: 1
+        ref:
+          type: string
+          description: "SecretRef URI: keychain://locator | env://NAME | vault://path#field | sts://role-arn"
+          pattern: "^[a-z][a-z0-9+.-]*://.+$"
+        scope:
+          type: object
+          additionalProperties: false
+          properties:
+            audience:
+              type: array
+              description: Server ids this secret may be injected into. ABSENT or empty = deny-all (fail-closed)
+              items: { type: string }
+            required:
+              type: boolean
+              default: false
+              description: If true and unresolvable, don warns loudly (never hard-fails)
+            availability:
+              type: string
+              enum: [while-donned, on-demand]
+              default: while-donned
+        rotate:
+          type: string
+          enum: [static, dynamic]
+          default: static
+          description: dynamic lets Vault/STS adapters mint per-session credentials
+        ttl:
+          type: string
+          description: Lease duration for rotate=dynamic schemes (e.g. "15m")
+
+  mcp:
+    type: array
+    description: Per-persona capability toggles + tool scopes. The persona owns the policy; the host owns the server/tools
+    items:
+      type: object
+      required: [server]
+      additionalProperties: false
+      properties:
+        server:
+          type: string
+          description: >-
+            Stable id in the host's registry. The id "host" is RESERVED for
+            the host's native (non-MCP) tool registry (Phase 3 §4) — real MCP
+            servers must not use it.
+          minLength: 1
+        enabled:
+          type: boolean
+          default: true
+          description: Disable lets a persona deliberately shed an ambient capability
+        allow:
+          type: array
+          description: Allow-list of tool names (deny-by-default when present); supports globs. Advisory unless the host enforces
+          items: { type: string }
+        deny:
+          type: array
+          description: Applied after allow; deny wins (fail-closed) when host-enforced
+          items: { type: string }
+        uses_credentials:
+          type: array
+          description: Credential aliases this server may consume. Each alias MUST list this server in its scope.audience (alias<->audience symmetry, enforced on load)
+          items: { type: string }
+        config:
+          type: object
+          description: Closed typed non-secret keys ONLY — strings are rejected structurally
+          additionalProperties:
+            type: [boolean, integer]
+        required:
+          type: boolean
+          default: false
+
+  memory:
+    type: object
+    description: This persona's memory scope — the third binding type (Phase 3 §3). Persona owns scope+mode; the provider owns storage. Enforceable only on hosts with a memory seam
+    required: [namespace]
+    additionalProperties: false
+    properties:
+      namespace:
+        type: string
+        description: Partition key. Personas sharing a namespace share recall (deliberate); distinct namespaces are structurally isolated
+        minLength: 1
+      mode:
+        type: string
+        enum: [read-write, read-only, none]
+        default: read-write
+        description: read-only = recall without write-back; none = full amnesia while donned
+      prompt_block:
+        type: boolean
+        default: true
+        description: Inject the provider's static system-prompt block while donned?
+      provider:
+        type: string
+        description: Named provider for hosts with more than one; absent = host default
+
+  measurement:
+    type: object
+    description: Opt-in to being measured. Absent = enabled false = local-first, zero-infra
+    additionalProperties: false
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      scope:
+        type: string
+        enum: [local, global]
+        default: local
+        description: global consents to the k-anon/DP/attested aggregate ONLY (Phase 1 §7)
+      rubric_judge:
+        type: string
+        enum: [activity-fallback, rubric, witness]
+        default: activity-fallback
+      baseline_min:
+        type: integer
+        description: Override for the Layer-B lift gate
